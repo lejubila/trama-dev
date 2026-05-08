@@ -14,7 +14,7 @@
         "league/csv": "^9.16",
         "livewire/livewire": "^3.5",
         "owen-it/laravel-auditing": "^13.6",
-        "spatie/browsershot": "^4.2",
+        "spatie/browsershot": "^5.0",
         "spatie/laravel-data": "^4.10",
         "spatie/laravel-permission": "^6.10"
     },

@@ -70,7 +70,7 @@ docker compose exec app composer require \
   livewire/livewire:^3.5 \
   spatie/laravel-permission:^6.10 \
   owen-it/laravel-auditing:^13.6 \
-  spatie/browsershot:^4.2 \
+  spatie/browsershot:^5.0 \
   spatie/laravel-data:^4.10 \
   laravel/sanctum:^4.0 \
   darkaonline/l5-swagger:^8.6 \
