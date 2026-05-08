@@ -1,0 +1,32 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - database
+        - routes
+        - tests
+
+    level: 6
+
+    ignoreErrors:
+        # Pest's expect()->extend() callbacks are runtime-bound to an Expectation,
+        # so $this inside them is valid even though PHPStan can't see it statically.
+        -
+            message: '#Undefined variable: \$this#'
+            path: tests/Pest.php
+        # Boilerplate placeholders shipped by `pest --init`: harmless and expected
+        # to be replaced or removed as we add real tests.
+        -
+            message: '#Function something\(\) has no return type specified#'
+            path: tests/Pest.php
+        -
+            message: '#assertTrue\(\) with true will always evaluate to true#'
+            path: tests/Unit/ExampleTest.php
+
+    excludePaths:
+        - vendor/*
+        - storage/*
+        - bootstrap/cache/*
+        - public/*

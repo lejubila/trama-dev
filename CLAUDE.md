@@ -265,6 +265,6 @@ docker compose exec app composer install
 docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate --seed
 docker compose exec app npm install && npm run build
-# App su http://localhost:8080
+# App su http://localhost:8081
 # Login demo: admin@demo.test / password
 ```

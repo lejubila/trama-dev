@@ -3,12 +3,14 @@ services:
     build:
       context: .
       dockerfile: docker/app/Dockerfile
+      args:
+        UID: "${TRAMA_UID:-1000}"
+        GID: "${TRAMA_GID:-1000}"
     container_name: trama-app
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
-      - app-storage:/var/www/html/storage
     environment:
       PHP_IDE_CONFIG: "serverName=trama"
     depends_on:
@@ -24,7 +26,7 @@ services:
     container_name: trama-nginx
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - ./:/var/www/html:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
@@ -78,12 +80,14 @@ services:
     build:
       context: .
       dockerfile: docker/app/Dockerfile
+      args:
+        UID: "${TRAMA_UID:-1000}"
+        GID: "${TRAMA_GID:-1000}"
     container_name: trama-scheduler
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
-      - app-storage:/var/www/html/storage
     command: ["php", "artisan", "schedule:work"]
     depends_on:
       - app
@@ -94,12 +98,14 @@ services:
     build:
       context: .
       dockerfile: docker/app/Dockerfile
+      args:
+        UID: "${TRAMA_UID:-1000}"
+        GID: "${TRAMA_GID:-1000}"
     container_name: trama-queue
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
-      - app-storage:/var/www/html/storage
     command: ["php", "artisan", "queue:work", "--tries=3", "--timeout=120"]
     depends_on:
       - app
@@ -110,7 +116,6 @@ services:
 volumes:
   postgres-data:
   redis-data:
-  app-storage:
 
 networks:
   trama:

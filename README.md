@@ -11,7 +11,7 @@ Laravel 11 · Livewire 3 · Alpine.js · Tailwind · PostgreSQL 16 · Redis 7 ·
 
 - Docker Desktop (o Docker Engine + Compose plugin)
 - Almeno 4 GB di RAM liberi
-- Porte libere: 8080 (web), 5432 (postgres), 6379 (redis), 1025/8025 (mailpit)
+- Porte libere: 8081 (web), 5432 (postgres), 6379 (redis), 1025/8025 (mailpit)
 
 ## Quick start
 
@@ -39,7 +39,7 @@ docker compose exec app npm run build
 # (in dev usa: docker compose exec app npm run dev)
 ```
 
-App raggiungibile su **http://localhost:8080**.
+App raggiungibile su **http://localhost:8081**.
 Mailpit (cattura email in dev) su **http://localhost:8025**.
 
 ### Credenziali demo
