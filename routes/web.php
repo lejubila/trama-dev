@@ -14,6 +14,7 @@ use App\Livewire\Equipment\Show as EquipmentShow;
 use App\Livewire\Imports\Index as ImportsIndex;
 use App\Livewire\Racks\Index as RacksIndex;
 use App\Livewire\Racks\Show as RacksShow;
+use App\Livewire\Settings\ApiTokens as SettingsApiTokens;
 use App\Livewire\Sites\Index as SitesIndex;
 use App\Livewire\Sites\Show as SitesShow;
 use App\Livewire\Tags\Manager as TagsManager;
@@ -65,6 +66,9 @@ Route::middleware(['auth'])->group(function (): void {
 
     // Audit
     Route::get('audit', AuditTrail::class)->name('audit.index');
+
+    // Settings
+    Route::get('settings/api-tokens', SettingsApiTokens::class)->name('settings.api-tokens');
 });
 
 require __DIR__.'/auth.php';

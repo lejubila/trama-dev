@@ -1,0 +1,110 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Trama Network REST API",
+        "description": "API per integrazioni esterne (provisioning, monitoring, automazioni). Tutti gli endpoint richiedono Bearer token (Sanctum) e l'header X-Tenant-Id.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/api",
+            "description": "Trama Network API"
+        }
+    ],
+    "paths": {
+        "/v1/equipment": {
+            "get": {
+                "tags": [
+                    "Equipment"
+                ],
+                "summary": "Lista dispositivi",
+                "operationId": "0067c31bf1c2ffe28a362ff6f3a3cf21",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TenantHeader"
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "site_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "rack_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 200
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginata"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "parameters": {
+            "TenantHeader": {
+                "name": "X-Tenant-Id",
+                "in": "header",
+                "description": "ID del tenant (cliente) sul quale opera la richiesta",
+                "required": true,
+                "schema": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "bearerFormat": "Sanctum",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Equipment",
+            "description": "Dispositivi di rete"
+        }
+    ]
+}

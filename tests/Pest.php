@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -55,4 +56,46 @@ function actingAsInTenant(User $user, Tenant $tenant): User
 function something(): void
 {
     // ..
+}
+
+/**
+ * Bootstrap an API user with a Sanctum token. Returns the tenant, user, and
+ * a Bearer-ready plain-text token. Intentionally separate from
+ * `actingAsInTenant` because API tests rely on token auth, not session.
+ *
+ * @return array{tenant: Tenant, user: User, token: string}
+ */
+function apiUser(string $role = 'admin'): array
+{
+    $tenant = Tenant::factory()->create();
+    /** @var User $user */
+    $user = User::factory()->create();
+    $user->tenants()->attach($tenant, ['role' => $role]);
+    $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
+
+    test()->seed(RolePermissionSeeder::class);
+    app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
+    $user->syncRoles([$role]);
+
+    $token = $user->createToken('api-test', ['read', 'write'])->plainTextToken;
+
+    TenantContext::clear();
+    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
+
+    return ['tenant' => $tenant, 'user' => $user, 'token' => $token];
+}
+
+/**
+ * Standard `Authorization: Bearer …` + `X-Tenant-Id` headers expected by
+ * every protected API route.
+ *
+ * @return array<string, string>
+ */
+function apiHeaders(string $token, int $tenantId): array
+{
+    return [
+        'Authorization' => "Bearer {$token}",
+        'X-Tenant-Id' => (string) $tenantId,
+        'Accept' => 'application/json',
+    ];
 }

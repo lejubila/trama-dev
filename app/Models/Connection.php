@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 /**
@@ -23,6 +24,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string $cable_type
  * @property string|null $cable_label
  * @property ConnectionStatus|null $status
+ * @property Carbon|null $established_at
  */
 class Connection extends Model implements AuditableContract
 {

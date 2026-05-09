@@ -32,6 +32,7 @@
                             <x-nav-item :href="route('tags.index')" :active="request()->routeIs('tags.*')" icon="tag">Tag</x-nav-item>
                             <x-nav-item :href="route('imports.index')" :active="request()->routeIs('imports.*')" icon="clock">Import</x-nav-item>
                             <x-nav-item :href="route('audit.index')" :active="request()->routeIs('audit.*')" icon="clock">Audit</x-nav-item>
+                            <x-nav-item :href="route('settings.api-tokens')" :active="request()->routeIs('settings.*')" icon="link">API Tokens</x-nav-item>
                         </x-nav-section>
                     </nav>
                 </aside>

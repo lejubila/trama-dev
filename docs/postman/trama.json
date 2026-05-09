@@ -1,0 +1,147 @@
+{
+  "info": {
+    "name": "Trama Network API v1",
+    "description": "Endpoint REST autenticati via Sanctum. Imposta {{baseUrl}}, {{token}} e {{tenantId}} a livello di environment Postman.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8081/api" },
+    { "key": "token", "value": "your-sanctum-plain-text-token" },
+    { "key": "tenantId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Tokens",
+      "item": [
+        {
+          "name": "List my tokens",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/v1/tokens"
+          }
+        },
+        {
+          "name": "Create token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/v1/tokens",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"my integration\",\n  \"abilities\": [\"read\", \"write\"]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sites",
+      "item": [
+        {
+          "name": "List sites",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "url": "{{baseUrl}}/v1/sites"
+          }
+        },
+        {
+          "name": "Create site",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "url": "{{baseUrl}}/v1/sites",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sede Test\",\n  \"address\": \"Via Esempio 1, Milano\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Equipment",
+      "item": [
+        {
+          "name": "List equipment",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "url": "{{baseUrl}}/v1/equipment?per_page=50"
+          }
+        },
+        {
+          "name": "Create equipment (non-mounted)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "url": "{{baseUrl}}/v1/equipment",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"AP-API-1\",\n  \"type\": \"access_point\",\n  \"vendor\": \"Cisco\",\n  \"model\": \"C9120AXI\",\n  \"mounted\": false\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Connections",
+      "item": [
+        {
+          "name": "Create connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "url": "{{baseUrl}}/v1/connections",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from_interface_id\": 1,\n  \"to_interface_id\": 2,\n  \"cable_type\": \"utp_cat6a\",\n  \"cable_length_m\": 1.5\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Topology",
+      "item": [
+        {
+          "name": "Get graph",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "url": "{{baseUrl}}/v1/topology?site_id="
+          }
+        }
+      ]
+    }
+  ]
+}

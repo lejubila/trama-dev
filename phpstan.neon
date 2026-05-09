@@ -20,7 +20,7 @@ parameters:
             paths:
                 - tests/*
             messages:
-                - '#Call to an undefined method PHPUnit\\Framework\\TestCase::(get|post|put|patch|delete|actingAs|assertAuthenticated|assertGuest|seed)\(\)#'
+                - '#Call to an undefined method PHPUnit\\Framework\\TestCase::(get|post|put|patch|delete|getJson|postJson|patchJson|putJson|deleteJson|withHeaders|actingAs|assertAuthenticated|assertGuest|seed)\(\)#'
                 - '#Call to an undefined method Pest\\PendingCalls\\TestCall\|Pest\\Support\\HigherOrderTapProxy::(actingAs|seed)\(\)#'
         # Pest's expect()->extend() callbacks bind $this at runtime — PHPStan
         # only sees the static call site.
@@ -45,6 +45,13 @@ parameters:
         # PHPDoc adds clarity here.
         -
             identifier: missingType.iterableValue
+            paths:
+                - tests/*
+        # collect()/$response->json() comes back as mixed; tests pluck
+        # specific keys and compare. The template inference noise isn't
+        # actionable in this layer.
+        -
+            identifier: argument.templateType
             paths:
                 - tests/*
         # Stock Breeze scaffolding — User does not implement MustVerifyEmail in
