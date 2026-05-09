@@ -51,6 +51,8 @@ class Index extends Component
 
     public bool $mounted = false;
 
+    public bool $locked = false;
+
     public ?int $positionUStart = null;
 
     public ?int $positionUHeight = 1;
@@ -72,6 +74,7 @@ class Index extends Component
             'modelName' => 'nullable|string|max:120',
             'serial' => 'nullable|string|max:120',
             'mounted' => 'boolean',
+            'locked' => 'boolean',
             'positionUStart' => 'nullable|integer|min:1|max:60',
             'positionUHeight' => 'nullable|integer|min:1|max:60',
             'status' => ['required', Rule::in(array_column(EquipmentStatus::cases(), 'value'))],
@@ -102,7 +105,7 @@ class Index extends Component
     public function openCreate(): void
     {
         $this->authorize('create', Equipment::class);
-        $this->reset(['editingId', 'rackId', 'name', 'vendor', 'modelName', 'serial', 'mounted', 'positionUStart', 'description']);
+        $this->reset(['editingId', 'rackId', 'name', 'vendor', 'modelName', 'serial', 'mounted', 'locked', 'positionUStart', 'description']);
         $this->type = 'switch';
         $this->status = 'active';
         $this->positionUHeight = 1;
@@ -123,6 +126,7 @@ class Index extends Component
         $this->modelName = (string) ($eq->model ?? '');
         $this->serial = (string) ($eq->serial ?? '');
         $this->mounted = (bool) $eq->mounted;
+        $this->locked = (bool) $eq->locked;
         $this->positionUStart = $eq->position_u_start;
         $this->positionUHeight = $eq->position_u_height ?? 1;
         $this->status = $eq->status?->value ?? 'active';
@@ -165,6 +169,7 @@ class Index extends Component
             'model' => $this->modelName !== '' ? $this->modelName : null,
             'serial' => $this->serial !== '' ? $this->serial : null,
             'mounted' => $this->mounted,
+            'locked' => $this->locked,
             'position_u_start' => $this->mounted ? $this->positionUStart : null,
             'position_u_height' => $this->mounted ? $this->positionUHeight : null,
             'status' => EquipmentStatus::from($this->status),

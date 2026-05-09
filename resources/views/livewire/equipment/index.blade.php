@@ -118,10 +118,14 @@
                         </div>
                     </div>
 
-                    <div class="border-t pt-3">
+                    <div class="border-t pt-3 flex items-center gap-x-6">
                         <label class="inline-flex items-center gap-x-2 text-sm">
                             <input type="checkbox" wire:model.live="mounted" class="rounded border-gray-300 text-indigo-600" />
                             Rack-mounted
+                        </label>
+                        <label class="inline-flex items-center gap-x-2 text-sm">
+                            <input type="checkbox" wire:model="locked" class="rounded border-gray-300 text-indigo-600" />
+                            Bloccato (no drag&amp;drop)
                         </label>
                         @if ($mounted)
                             <div class="grid grid-cols-3 gap-3 mt-3">

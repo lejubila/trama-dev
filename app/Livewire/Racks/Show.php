@@ -22,12 +22,6 @@ class Show extends Component
 
     public function render(): View
     {
-        return view('livewire.racks.show', [
-            'mountedEquipment' => $this->rack
-                ->equipment()
-                ->where('mounted', true)
-                ->orderByDesc('position_u_start')
-                ->get(),
-        ]);
+        return view('livewire.racks.show');
     }
 }

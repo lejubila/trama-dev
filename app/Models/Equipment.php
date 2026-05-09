@@ -25,6 +25,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property EquipmentType|null $type
  * @property EquipmentStatus|null $status
  * @property bool $mounted
+ * @property bool $locked
  * @property int|null $position_u_start
  * @property int|null $position_u_height
  * @property string|null $vendor
@@ -46,6 +47,7 @@ class Equipment extends Model implements AuditableContract
         'firmware',
         'asset_tag',
         'mounted',
+        'locked',
         'position_u_start',
         'position_u_height',
         'position_orient',
@@ -61,6 +63,7 @@ class Equipment extends Model implements AuditableContract
             'type' => EquipmentType::class,
             'status' => EquipmentStatus::class,
             'mounted' => 'boolean',
+            'locked' => 'boolean',
             'custom_fields' => 'array',
             'position_u_start' => 'integer',
             'position_u_height' => 'integer',
