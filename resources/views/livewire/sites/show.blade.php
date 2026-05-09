@@ -49,6 +49,20 @@
         </table>
     </div>
 
+    @if ($rooms->isNotEmpty())
+        <div class="mt-8">
+            <h2 class="text-lg font-semibold mb-3">Planimetria locali</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                @foreach ($rooms as $room)
+                    <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md p-4">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-2">{{ $room->name }}</h3>
+                        <x-room-map :room="$room" />
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     @if ($showRoomForm)
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" wire:click.self="$set('showRoomForm', false)">
             <div class="bg-white rounded-md shadow-lg w-full max-w-md p-6">

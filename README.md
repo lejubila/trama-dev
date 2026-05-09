@@ -5,7 +5,25 @@ interfacce, connessioni, con visualizzazione topologica interattiva e vista rack
 
 ## Stack
 
-Laravel 11 · Livewire 3 · Alpine.js · Tailwind · PostgreSQL 16 · Redis 7 · Cytoscape.js · Docker
+Laravel 11 · Livewire 3 · Alpine.js · Tailwind · PostgreSQL 16 · Redis 7 · Cytoscape.js · Sanctum · Browsershot · Docker
+
+## Funzionalità
+
+- **Multi-tenant** (FASE 1): un'app per N clienti, isolamento completo via `tenant_id` + global scope.
+  Ruoli admin/tecnico/cliente per-tenant via spatie/laravel-permission con teams.
+- **Modello di rete completo** (FASE 2): sites → rooms → racks → equipment → interfaces → connections,
+  con vincolo unique parziale che impedisce due connessioni attive sulla stessa interfaccia.
+- **CRUD Livewire** (FASE 3) per ogni entità, audit log, validazione client+server.
+- **Vista rack elevation** (FASE 4): SVG interattivo con drag &amp; drop su U disponibili,
+  drawer di dettaglio, toggle front/rear, locked equipment.
+- **Topologia Cytoscape** (FASE 5): grafo navigabile con cose-bilkent/dagre/breadthfirst,
+  filtri sede/tipo/VLAN/status, mini-mappa, export PNG, drill-down al rack.
+- **Export/Import** (FASE 6): PDF rack via Browsershot, CSV equipment con preview/transaction,
+  storico import in audit trail.
+- **REST API** (FASE 7): `/api/v1` con Sanctum + `X-Tenant-Id` header, rate limit 60/min,
+  Swagger UI su `/api/documentation`, Postman collection in `docs/postman/trama.json`.
+- **Polish** (FASE 8): dashboard con KPI cached, ricerca globale debounced, dark mode persistente,
+  notifiche persistenti con bell badge, mini-mappa room.
 
 ## Prerequisiti
 

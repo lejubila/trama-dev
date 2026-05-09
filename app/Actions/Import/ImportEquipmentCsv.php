@@ -11,6 +11,8 @@ use App\Models\Import;
 use App\Models\Rack;
 use App\Models\Room;
 use App\Models\Site;
+use App\Models\User;
+use App\Notifications\ImportCompleted;
 use App\Services\RackPlacementService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
@@ -79,7 +81,15 @@ class ImportEquipmentCsv
             ]);
         }
 
-        return $import->fresh() ?? $import;
+        $import = $import->fresh() ?? $import;
+
+        // Persistent notification for the user who launched the import.
+        if ($userId !== null) {
+            $user = User::query()->find($userId);
+            $user?->notify(new ImportCompleted($import));
+        }
+
+        return $import;
     }
 
     /**

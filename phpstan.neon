@@ -35,11 +35,12 @@ parameters:
             identifier: property.notFound
             paths:
                 - tests/*
-        # `?->value ?? default` is the safe pattern for enum casts on nullable
-        # DB columns (e.g. NetworkInterface.vlan_mode is nullable). Larastan
-        # narrows via the cast and considers `?->` redundant, but it's not.
+        # `?->prop ?? default` is the safe pattern for enum casts and json
+        # arrays on nullable columns (e.g. NetworkInterface.vlan_mode,
+        # User.preferences). Larastan narrows via the cast and considers
+        # `?->` redundant, but at runtime the chain root can be null.
         -
-            message: '#Using nullsafe property access "\?->value" on left side of \?\? is unnecessary#'
+            message: '#Using nullsafe property access "\?->[a-zA-Z_]+" on left side of \?\? is unnecessary#'
         # Tests' setupX() helpers return mixed-shape arrays of fixtures; the
         # returned values are unpacked directly via list-destructuring, no
         # PHPDoc adds clarity here.

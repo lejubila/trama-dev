@@ -9,10 +9,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property int|null $current_tenant_id
+ * @property array<string, mixed>|null $preferences
+ * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications
+ * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $unreadNotifications
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -26,6 +37,7 @@ class User extends Authenticatable
         'email',
         'password',
         'current_tenant_id',
+        'preferences',
     ];
 
     /**
@@ -44,6 +56,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'preferences' => 'array',
         ];
     }
 

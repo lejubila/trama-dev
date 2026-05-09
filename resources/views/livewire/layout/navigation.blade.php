@@ -16,7 +16,7 @@ new class extends Component
     }
 }; ?>
 
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+<nav x-data="{ open: false }" class="bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -38,7 +38,10 @@ new class extends Component
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6 sm:gap-x-4">
+                <livewire:layout.global-search />
                 <livewire:layout.tenant-selector />
+                <livewire:layout.notification-bell />
+                <livewire:layout.theme-toggle />
 
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">

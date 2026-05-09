@@ -8,10 +8,12 @@ use App\Http\Controllers\Tenancy\SwitchTenantController;
 use App\Livewire\Audit\Trail as AuditTrail;
 use App\Livewire\Connections\Index as ConnectionsIndex;
 use App\Livewire\Connections\Wizard as ConnectionsWizard;
+use App\Livewire\Dashboard\Index as DashboardIndex;
 use App\Livewire\Equipment\Import as EquipmentImport;
 use App\Livewire\Equipment\Index as EquipmentIndex;
 use App\Livewire\Equipment\Show as EquipmentShow;
 use App\Livewire\Imports\Index as ImportsIndex;
+use App\Livewire\Notifications\Index as NotificationsIndex;
 use App\Livewire\Racks\Index as RacksIndex;
 use App\Livewire\Racks\Show as RacksShow;
 use App\Livewire\Settings\ApiTokens as SettingsApiTokens;
@@ -23,7 +25,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
 
-Route::view('dashboard', 'dashboard')
+Route::get('dashboard', DashboardIndex::class)
     ->middleware(['auth'])
     ->name('dashboard');
 
@@ -66,6 +68,9 @@ Route::middleware(['auth'])->group(function (): void {
 
     // Audit
     Route::get('audit', AuditTrail::class)->name('audit.index');
+
+    // Notifications
+    Route::get('notifications', NotificationsIndex::class)->name('notifications.index');
 
     // Settings
     Route::get('settings/api-tokens', SettingsApiTokens::class)->name('settings.api-tokens');
