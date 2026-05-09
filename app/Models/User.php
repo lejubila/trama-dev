@@ -85,4 +85,31 @@ class User extends Authenticatable
             ->where('tenants.id', $tenant->getKey())
             ->exists();
     }
+
+    public function hasRoleInCurrentTenant(string $role): bool
+    {
+        if ($this->current_tenant_id === null) {
+            return false;
+        }
+
+        return $this->tenants()
+            ->where('tenants.id', $this->current_tenant_id)
+            ->wherePivot('role', $role)
+            ->exists();
+    }
+
+    /**
+     * @param  list<string>  $roles
+     */
+    public function hasAnyRoleInCurrentTenant(array $roles): bool
+    {
+        if ($this->current_tenant_id === null || $roles === []) {
+            return false;
+        }
+
+        return $this->tenants()
+            ->where('tenants.id', $this->current_tenant_id)
+            ->wherePivotIn('role', $roles)
+            ->exists();
+    }
 }

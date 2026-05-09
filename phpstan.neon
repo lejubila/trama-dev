@@ -27,6 +27,14 @@ parameters:
         -
             message: '#Undefined variable: \$this#'
             path: tests/Pest.php
+        # Pest beforeEach/afterEach closures bind $this to the underlying
+        # TestCase, where `$this->foo = ...` adds dynamic properties shared
+        # across the file. PHPStan can't see the binding, so suppress the
+        # property.notFound noise inside tests/.
+        -
+            identifier: property.notFound
+            paths:
+                - tests/*
         # Stock Breeze scaffolding — User does not implement MustVerifyEmail in
         # FASE 1; we'll address email verification properly when we wire it.
         -
