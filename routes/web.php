@@ -2,12 +2,16 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Export\EquipmentCsvController;
+use App\Http\Controllers\Export\RackPdfController;
 use App\Http\Controllers\Tenancy\SwitchTenantController;
 use App\Livewire\Audit\Trail as AuditTrail;
 use App\Livewire\Connections\Index as ConnectionsIndex;
 use App\Livewire\Connections\Wizard as ConnectionsWizard;
+use App\Livewire\Equipment\Import as EquipmentImport;
 use App\Livewire\Equipment\Index as EquipmentIndex;
 use App\Livewire\Equipment\Show as EquipmentShow;
+use App\Livewire\Imports\Index as ImportsIndex;
 use App\Livewire\Racks\Index as RacksIndex;
 use App\Livewire\Racks\Show as RacksShow;
 use App\Livewire\Sites\Index as SitesIndex;
@@ -37,9 +41,13 @@ Route::middleware(['auth'])->group(function (): void {
     // Racks
     Route::get('racks', RacksIndex::class)->name('racks.index');
     Route::get('racks/{rack}', RacksShow::class)->name('racks.show');
+    Route::get('racks/{rack}/export.pdf', RackPdfController::class)->name('racks.export.pdf');
 
     // Equipment
     Route::get('equipment', EquipmentIndex::class)->name('equipment.index');
+    Route::get('equipment/import', EquipmentImport::class)->name('equipment.import');
+    Route::get('equipment/export.csv', EquipmentCsvController::class)->name('export.equipment.csv');
+    Route::get('equipment/template.csv', [EquipmentCsvController::class, 'template'])->name('export.equipment.template');
     Route::get('equipment/{equipment}', EquipmentShow::class)->name('equipment.show');
 
     // Connections
@@ -51,6 +59,9 @@ Route::middleware(['auth'])->group(function (): void {
 
     // Tags
     Route::get('tags', TagsManager::class)->name('tags.index');
+
+    // Imports history
+    Route::get('imports', ImportsIndex::class)->name('imports.index');
 
     // Audit
     Route::get('audit', AuditTrail::class)->name('audit.index');

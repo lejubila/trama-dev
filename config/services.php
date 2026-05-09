@@ -37,4 +37,12 @@ return [
         ],
     ],
 
+    'browsershot' => [
+        // Headless Chromium binary used by spatie/browsershot. Set via the
+        // BROWSERSHOT_CHROME_PATH env (the docker image installs Chromium at
+        // /usr/bin/chromium and the .env.example wires it).
+        'chrome_path' => env('BROWSERSHOT_CHROME_PATH'),
+        'node_binary' => env('BROWSERSHOT_NODE_BINARY'),
+    ],
+
 ];

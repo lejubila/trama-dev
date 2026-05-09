@@ -1,6 +1,7 @@
 <div>
     <x-page-header :title="$rack->name" :subtitle="$rack->room->name . ' — ' . $rack->room->site->name">
         <a href="{{ route('racks.index') }}" wire:navigate class="text-sm text-gray-600 hover:text-gray-800">← Torna ai rack</a>
+        <a href="{{ route('racks.export.pdf', $rack) }}" class="text-sm text-gray-700 hover:text-gray-900">⤓ PDF</a>
     </x-page-header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -1,6 +1,8 @@
 <div>
     <x-page-header title="Dispositivi" subtitle="Tutti gli equipment del cliente attivo">
+        <a href="{{ route('export.equipment.csv') }}" class="text-sm text-gray-700 hover:text-gray-900 inline-flex items-center gap-x-1">⤓ Esporta CSV</a>
         @can('create', App\Models\Equipment::class)
+            <a href="{{ route('equipment.import') }}" wire:navigate class="text-sm text-gray-700 hover:text-gray-900 inline-flex items-center gap-x-1">⤒ Importa CSV</a>
             <button wire:click="openCreate" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
                 <x-icon name="plus" class="h-4 w-4" /> Nuovo dispositivo
             </button>
