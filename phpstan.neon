@@ -11,19 +11,27 @@ parameters:
     level: 6
 
     ignoreErrors:
-        # Pest's expect()->extend() callbacks are runtime-bound to an Expectation,
-        # so $this inside them is valid even though PHPStan can't see it statically.
+        # Pest binds test closures to Tests\TestCase at runtime, but PHPStan
+        # only sees them inside PHPUnit\Framework\TestCase. The HTTP/auth
+        # helpers below are therefore "missing" from its view, even though
+        # they work at runtime. Restricting to test files keeps real callsites honest.
+        -
+            identifier: method.notFound
+            paths:
+                - tests/*
+            messages:
+                - '#Call to an undefined method PHPUnit\\Framework\\TestCase::(get|post|put|patch|delete|actingAs|assertAuthenticated|assertGuest|seed)\(\)#'
+                - '#Call to an undefined method Pest\\PendingCalls\\TestCall\|Pest\\Support\\HigherOrderTapProxy::(actingAs|seed)\(\)#'
+        # Pest's expect()->extend() callbacks bind $this at runtime — PHPStan
+        # only sees the static call site.
         -
             message: '#Undefined variable: \$this#'
             path: tests/Pest.php
-        # Boilerplate placeholders shipped by `pest --init`: harmless and expected
-        # to be replaced or removed as we add real tests.
+        # Stock Breeze scaffolding — User does not implement MustVerifyEmail in
+        # FASE 1; we'll address email verification properly when we wire it.
         -
-            message: '#Function something\(\) has no return type specified#'
-            path: tests/Pest.php
-        -
-            message: '#assertTrue\(\) with true will always evaluate to true#'
-            path: tests/Unit/ExampleTest.php
+            message: '#Parameter \#1 \$user of class Illuminate\\Auth\\Events\\Verified constructor expects#'
+            path: app/Http/Controllers/Auth/VerifyEmailController.php
 
     excludePaths:
         - vendor/*
