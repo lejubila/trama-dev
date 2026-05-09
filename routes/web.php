@@ -3,20 +3,53 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Tenancy\SwitchTenantController;
+use App\Livewire\Audit\Trail as AuditTrail;
+use App\Livewire\Connections\Index as ConnectionsIndex;
+use App\Livewire\Connections\Wizard as ConnectionsWizard;
+use App\Livewire\Equipment\Index as EquipmentIndex;
+use App\Livewire\Equipment\Show as EquipmentShow;
+use App\Livewire\Racks\Index as RacksIndex;
+use App\Livewire\Racks\Show as RacksShow;
+use App\Livewire\Sites\Index as SitesIndex;
+use App\Livewire\Sites\Show as SitesShow;
+use App\Livewire\Tags\Manager as TagsManager;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
 
 Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('dashboard');
 
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
 
-Route::post('tenant/switch/{tenant}', SwitchTenantController::class)
-    ->middleware(['auth'])
-    ->name('tenant.switch');
+Route::middleware(['auth'])->group(function (): void {
+    // Tenancy
+    Route::post('tenant/switch/{tenant}', SwitchTenantController::class)->name('tenant.switch');
+
+    // Sites
+    Route::get('sites', SitesIndex::class)->name('sites.index');
+    Route::get('sites/{site}', SitesShow::class)->name('sites.show');
+
+    // Racks
+    Route::get('racks', RacksIndex::class)->name('racks.index');
+    Route::get('racks/{rack}', RacksShow::class)->name('racks.show');
+
+    // Equipment
+    Route::get('equipment', EquipmentIndex::class)->name('equipment.index');
+    Route::get('equipment/{equipment}', EquipmentShow::class)->name('equipment.show');
+
+    // Connections
+    Route::get('connections', ConnectionsIndex::class)->name('connections.index');
+    Route::get('connections/create', ConnectionsWizard::class)->name('connections.create');
+
+    // Tags
+    Route::get('tags', TagsManager::class)->name('tags.index');
+
+    // Audit
+    Route::get('audit', AuditTrail::class)->name('audit.index');
+});
 
 require __DIR__.'/auth.php';

@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $room_id
  * @property string $name
  * @property int $height_units
+ * @property RackNumbering $numbering
  */
 class Rack extends Model
 {

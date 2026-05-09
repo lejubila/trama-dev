@@ -35,6 +35,18 @@ parameters:
             identifier: property.notFound
             paths:
                 - tests/*
+        # `?->value ?? default` is the safe pattern for enum casts on nullable
+        # DB columns (e.g. NetworkInterface.vlan_mode is nullable). Larastan
+        # narrows via the cast and considers `?->` redundant, but it's not.
+        -
+            message: '#Using nullsafe property access "\?->value" on left side of \?\? is unnecessary#'
+        # Tests' setupX() helpers return mixed-shape arrays of fixtures; the
+        # returned values are unpacked directly via list-destructuring, no
+        # PHPDoc adds clarity here.
+        -
+            identifier: missingType.iterableValue
+            paths:
+                - tests/*
         # Stock Breeze scaffolding — User does not implement MustVerifyEmail in
         # FASE 1; we'll address email verification properly when we wire it.
         -
