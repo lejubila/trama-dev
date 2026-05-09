@@ -26,6 +26,7 @@
                             <x-nav-item :href="route('racks.index')" :active="request()->routeIs('racks.*')" icon="server-stack">Rack</x-nav-item>
                             <x-nav-item :href="route('equipment.index')" :active="request()->routeIs('equipment.*')" icon="cpu">Dispositivi</x-nav-item>
                             <x-nav-item :href="route('connections.index')" :active="request()->routeIs('connections.*')" icon="link">Connessioni</x-nav-item>
+                            <x-nav-item :href="route('topology.index')" :active="request()->routeIs('topology.*')" icon="link">Topologia</x-nav-item>
                         </x-nav-section>
                         <x-nav-section title="Organizzazione">
                             <x-nav-item :href="route('tags.index')" :active="request()->routeIs('tags.*')" icon="tag">Tag</x-nav-item>

@@ -13,6 +13,7 @@ use App\Livewire\Racks\Show as RacksShow;
 use App\Livewire\Sites\Index as SitesIndex;
 use App\Livewire\Sites\Show as SitesShow;
 use App\Livewire\Tags\Manager as TagsManager;
+use App\Livewire\Topology\Graph as TopologyGraph;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
@@ -44,6 +45,9 @@ Route::middleware(['auth'])->group(function (): void {
     // Connections
     Route::get('connections', ConnectionsIndex::class)->name('connections.index');
     Route::get('connections/create', ConnectionsWizard::class)->name('connections.create');
+
+    // Topology
+    Route::get('topology', TopologyGraph::class)->name('topology.index');
 
     // Tags
     Route::get('tags', TagsManager::class)->name('tags.index');
