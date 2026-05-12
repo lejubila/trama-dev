@@ -6,6 +6,7 @@ use App\Enums\EquipmentType;
 use App\Livewire\Equipment\Index as EquipmentIndex;
 use App\Livewire\Equipment\Show as EquipmentShow;
 use App\Models\Equipment;
+use App\Models\NetworkInterface;
 use App\Models\Rack;
 use App\Models\Room;
 use App\Models\Site;
@@ -140,4 +141,117 @@ it('creates a new interface from the equipment Show', function (): void {
         ->assertHasNoErrors();
 
     expect($eq->interfaces()->where('name', 'Gi0/99')->exists())->toBeTrue();
+});
+
+it('refuses to create an interface with duplicate name on same equipment', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+    NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $eq->getKey(),
+        'name' => 'Gi0/1',
+    ]);
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifName', 'Gi0/1')
+        ->call('saveIf')
+        ->assertHasErrors(['ifName']);
+
+    expect($eq->interfaces()->where('name', 'Gi0/1')->count())->toBe(1);
+});
+
+it('allows the same interface name on different equipment', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eqA = Equipment::factory()->create();
+    $eqB = Equipment::factory()->create();
+    NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $eqA->getKey(),
+        'name' => 'Gi0/1',
+    ]);
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eqB])
+        ->call('openIfCreate')
+        ->set('ifName', 'Gi0/1')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    expect($eqB->interfaces()->where('name', 'Gi0/1')->exists())->toBeTrue();
+});
+
+it('refuses to rename an interface to a name already used on the same equipment', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+    NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $eq->getKey(),
+        'name' => 'Gi0/1',
+    ]);
+    $second = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $eq->getKey(),
+        'name' => 'Gi0/2',
+    ]);
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfEdit', $second->getKey())
+        ->set('ifName', 'Gi0/1')
+        ->call('saveIf')
+        ->assertHasErrors(['ifName']);
+
+    expect($second->fresh()->name)->toBe('Gi0/2');
+});
+
+it('bulk-creates interfaces with zero-padded suffix based on max-digit count', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifBulk', true)
+        ->set('ifBulkQuantity', 12)
+        ->set('ifBulkStartFrom', 1)
+        ->set('ifName', 'Port')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    $names = $eq->interfaces()->pluck('name')->sort()->values()->all();
+    expect($names)->toBe([
+        'Port01', 'Port02', 'Port03', 'Port04', 'Port05', 'Port06',
+        'Port07', 'Port08', 'Port09', 'Port10', 'Port11', 'Port12',
+    ]);
+});
+
+it('pads bulk suffix only when the max number has more than one digit', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+
+    // qty=8 → max=8, single digit → no padding
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifBulk', true)
+        ->set('ifBulkQuantity', 8)
+        ->set('ifName', 'P')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    $names = $eq->interfaces()->pluck('name')->sort()->values()->all();
+    expect($names)->toBe(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8']);
+});
+
+it('rolls back bulk creation when any generated name conflicts', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+    NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $eq->getKey(),
+        'name' => 'Port05',
+    ]);
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifBulk', true)
+        ->set('ifBulkQuantity', 10)
+        ->set('ifName', 'Port')
+        ->call('saveIf')
+        ->assertHasErrors(['ifName']);
+
+    expect($eq->interfaces()->count())->toBe(1)
+        ->and($eq->interfaces()->pluck('name')->all())->toBe(['Port05']);
 });

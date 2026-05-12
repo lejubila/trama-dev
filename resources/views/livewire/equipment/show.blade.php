@@ -124,10 +124,38 @@
             <div class="bg-white rounded-md shadow-lg w-full max-w-2xl p-6 my-8">
                 <h2 class="text-lg font-semibold mb-4">{{ $editingIfId ? 'Modifica interfaccia' : 'Nuova interfaccia' }}</h2>
                 <form wire:submit="saveIf" class="space-y-3">
+                    @if ($editingIfId === null)
+                        <div class="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 rounded-md p-3">
+                            <label class="inline-flex items-center gap-x-2 text-sm font-medium text-indigo-900 dark:text-indigo-200">
+                                <input type="checkbox" wire:model.live="ifBulk" class="rounded border-gray-300 text-indigo-600" />
+                                Crea più interfacce in un colpo solo
+                            </label>
+                            @if ($ifBulk)
+                                <div class="grid grid-cols-2 gap-3 mt-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-slate-300">Quantità</label>
+                                        <input type="number" min="2" max="256" wire:model.live="ifBulkQuantity" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 shadow-sm text-sm" />
+                                        @error('ifBulkQuantity')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-slate-300">Inizia da</label>
+                                        <input type="number" min="0" max="9999" wire:model.live="ifBulkStartFrom" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 shadow-sm text-sm" />
+                                        @error('ifBulkStartFrom')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                                    </div>
+                                </div>
+                                @php $preview = $this->previewBulkNames(); @endphp
+                                @if ($preview !== [])
+                                    <div class="text-xs text-indigo-900 dark:text-indigo-200 mt-2">
+                                        Anteprima: <span class="font-mono">{{ implode(', ', $preview) }}</span>
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
+                    @endif
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Nome</label>
-                            <input type="text" wire:model="ifName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm font-mono" />
+                            <label class="block text-sm font-medium text-gray-700">{{ $ifBulk && $editingIfId === null ? 'Prefisso nome' : 'Nome' }}</label>
+                            <input type="text" wire:model.live="ifName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm font-mono" />
                             @error('ifName')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -183,7 +211,9 @@
                     </div>
                     <div class="flex justify-end gap-x-2 pt-2">
                         <button type="button" wire:click="$set('showIfForm', false)" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Annulla</button>
-                        <button type="submit" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Salva</button>
+                        <button type="submit" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
+                            {{ $ifBulk && $editingIfId === null ? 'Crea '.$ifBulkQuantity.' interfacce' : 'Salva' }}
+                        </button>
                     </div>
                 </form>
             </div>

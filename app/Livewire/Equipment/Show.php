@@ -12,6 +12,7 @@ use App\Enums\InterfaceVlanMode;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -50,13 +51,19 @@ class Show extends Component
 
     public string $ifDescription = '';
 
+    // ── Bulk creation (visible only when creating, not editing) ──────────
+    public bool $ifBulk = false;
+
+    public int $ifBulkQuantity = 12;
+
+    public int $ifBulkStartFrom = 1;
+
     /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
-        return [
-            'ifName' => 'required|string|max:80',
+        $base = [
             'ifType' => ['required', Rule::in(array_column(InterfaceType::cases(), 'value'))],
             'ifMedia' => ['required', Rule::in(array_column(InterfaceMedia::cases(), 'value'))],
             'ifSpeedMbps' => 'nullable|integer|min:1',
@@ -67,6 +74,34 @@ class Show extends Component
             'ifStatus' => ['required', Rule::in(array_column(InterfaceStatus::cases(), 'value'))],
             'ifPoe' => ['required', Rule::in(array_column(InterfacePoe::cases(), 'value'))],
             'ifDescription' => 'nullable|string|max:255',
+        ];
+
+        // In bulk mode the name is a *prefix*; the unicità is checked per
+        // generated suffix inside saveBulkIf(), not at validate time.
+        $base['ifName'] = $this->ifBulk && $this->editingIfId === null
+            ? 'required|string|max:60'
+            : [
+                'required', 'string', 'max:80',
+                Rule::unique('interfaces', 'name')
+                    ->where('equipment_id', $this->equipment->getKey())
+                    ->ignore($this->editingIfId),
+            ];
+
+        if ($this->ifBulk && $this->editingIfId === null) {
+            $base['ifBulkQuantity'] = 'required|integer|min:2|max:256';
+            $base['ifBulkStartFrom'] = 'required|integer|min:0|max:9999';
+        }
+
+        return $base;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'ifName.unique' => 'Esiste già un\'interfaccia con questo nome su questo dispositivo.',
         ];
     }
 
@@ -84,7 +119,9 @@ class Show extends Component
     public function openIfCreate(): void
     {
         $this->authorize('create', NetworkInterface::class);
-        $this->reset(['editingIfId', 'ifName', 'ifIpAddress', 'ifMacAddress', 'ifDescription']);
+        $this->reset(['editingIfId', 'ifName', 'ifIpAddress', 'ifMacAddress', 'ifDescription', 'ifBulk']);
+        $this->ifBulkQuantity = 12;
+        $this->ifBulkStartFrom = 1;
         $this->ifType = 'ethernet';
         $this->ifMedia = 'copper';
         $this->ifSpeedMbps = 1000;
@@ -101,6 +138,7 @@ class Show extends Component
         $if = NetworkInterface::query()->findOrFail($id);
         $this->authorize('update', $if);
 
+        $this->ifBulk = false; // bulk mode is creation-only
         $this->editingIfId = $if->getKey();
         $this->ifName = $if->name;
         $this->ifType = $if->type?->value ?? 'ethernet';
@@ -119,22 +157,20 @@ class Show extends Component
 
     public function saveIf(): void
     {
+        if ($this->ifBulk && $this->editingIfId === null) {
+            $this->saveBulkIf();
+
+            return;
+        }
+
+        $this->saveSingleIf();
+    }
+
+    private function saveSingleIf(): void
+    {
         $this->validate();
 
-        $payload = [
-            'equipment_id' => $this->equipment->getKey(),
-            'name' => $this->ifName,
-            'type' => InterfaceType::from($this->ifType),
-            'media' => InterfaceMedia::from($this->ifMedia),
-            'speed_mbps' => $this->ifSpeedMbps,
-            'vlan_mode' => InterfaceVlanMode::from($this->ifVlanMode),
-            'vlan_default' => $this->ifVlanDefault,
-            'ip_address' => $this->ifIpAddress !== '' ? $this->ifIpAddress : null,
-            'mac_address' => $this->ifMacAddress !== '' ? $this->ifMacAddress : null,
-            'status' => InterfaceStatus::from($this->ifStatus),
-            'poe' => InterfacePoe::from($this->ifPoe),
-            'description' => $this->ifDescription !== '' ? $this->ifDescription : null,
-        ];
+        $payload = array_merge($this->basePayload(), ['name' => $this->ifName]);
 
         if ($this->editingIfId !== null) {
             $if = NetworkInterface::query()->findOrFail($this->editingIfId);
@@ -148,6 +184,101 @@ class Show extends Component
         }
 
         $this->showIfForm = false;
+    }
+
+    private function saveBulkIf(): void
+    {
+        $this->authorize('create', NetworkInterface::class);
+        $this->validate();
+
+        $names = $this->generateBulkNames();
+
+        // Pre-check uniqueness in batch — friendlier than a DB exception
+        // (and we'd still hit the unique partial index if a parallel write
+        // landed in between, but the window is tiny).
+        $existing = NetworkInterface::query()
+            ->where('equipment_id', $this->equipment->getKey())
+            ->whereIn('name', $names)
+            ->pluck('name')
+            ->all();
+
+        if ($existing !== []) {
+            $this->addError('ifName', 'Conflitto: '.implode(', ', $existing).' già presenti.');
+
+            return;
+        }
+
+        $base = $this->basePayload();
+        DB::transaction(function () use ($names, $base): void {
+            foreach ($names as $name) {
+                NetworkInterface::create(array_merge($base, ['name' => $name]));
+            }
+        });
+
+        $this->dispatch('toast', type: 'success', message: count($names).' interfacce create.');
+        $this->showIfForm = false;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function basePayload(): array
+    {
+        return [
+            'equipment_id' => $this->equipment->getKey(),
+            'type' => InterfaceType::from($this->ifType),
+            'media' => InterfaceMedia::from($this->ifMedia),
+            'speed_mbps' => $this->ifSpeedMbps,
+            'vlan_mode' => InterfaceVlanMode::from($this->ifVlanMode),
+            'vlan_default' => $this->ifVlanDefault,
+            'ip_address' => $this->ifIpAddress !== '' ? $this->ifIpAddress : null,
+            'mac_address' => $this->ifMacAddress !== '' ? $this->ifMacAddress : null,
+            'status' => InterfaceStatus::from($this->ifStatus),
+            'poe' => InterfacePoe::from($this->ifPoe),
+            'description' => $this->ifDescription !== '' ? $this->ifDescription : null,
+        ];
+    }
+
+    /**
+     * Generates the list of suffixed names for a bulk create.
+     * Pad length is the digit count of the LARGEST number in the range
+     * (start..start+quantity-1), so start=95/qty=10 yields 95..104 with
+     * width 3 → 095, 096, …, 104.
+     *
+     * @return list<string>
+     */
+    private function generateBulkNames(): array
+    {
+        $start = max(0, $this->ifBulkStartFrom);
+        $quantity = max(1, min(256, $this->ifBulkQuantity));
+        $max = $start + $quantity - 1;
+        $padLen = strlen((string) $max);
+
+        $names = [];
+        for ($i = 0; $i < $quantity; $i++) {
+            $names[] = $this->ifName.str_pad((string) ($start + $i), $padLen, '0', STR_PAD_LEFT);
+        }
+
+        return $names;
+    }
+
+    /**
+     * Sample preview of the generated bulk names for the form: first 3 +
+     * last 1 if the list is longer than 4 — used only in the Blade.
+     *
+     * @return list<string>
+     */
+    public function previewBulkNames(): array
+    {
+        if (! $this->ifBulk || $this->ifName === '') {
+            return [];
+        }
+        $all = $this->generateBulkNames();
+        if (count($all) <= 4) {
+            return $all;
+        }
+
+        return [$all[0], $all[1], $all[2], '…', end($all)];
     }
 
     public function deleteIf(int $id): void
