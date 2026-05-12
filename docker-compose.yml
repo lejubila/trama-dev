@@ -9,6 +9,10 @@ services:
     container_name: trama-app
     restart: unless-stopped
     working_dir: /var/www/html
+    ports:
+      # Vite dev server (HMR) — only used when running `npm run dev` inside
+      # the container; harmless when only the prod build is in use.
+      - "5173:5173"
     volumes:
       - ./:/var/www/html
     environment:

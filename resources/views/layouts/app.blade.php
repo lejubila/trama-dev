@@ -49,6 +49,7 @@
                             <x-nav-item :href="route('topology.index')" :active="request()->routeIs('topology.*')" icon="link">Topologia</x-nav-item>
                         </x-nav-section>
                         <x-nav-section title="Organizzazione">
+                            <x-nav-item :href="route('tenants.index')" :active="request()->routeIs('tenants.*')" icon="building">Clienti</x-nav-item>
                             <x-nav-item :href="route('tags.index')" :active="request()->routeIs('tags.*')" icon="tag">Tag</x-nav-item>
                             <x-nav-item :href="route('imports.index')" :active="request()->routeIs('imports.*')" icon="clock">Import</x-nav-item>
                             <x-nav-item :href="route('audit.index')" :active="request()->routeIs('audit.*')" icon="clock">Audit</x-nav-item>

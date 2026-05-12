@@ -1,8 +1,12 @@
 <div>
 @if ($tenants->isEmpty())
-    <div class="text-sm text-gray-500 dark:text-gray-400">
-        Nessun cliente associato
-    </div>
+    <a
+        href="{{ route('tenants.index', ['new' => 1]) }}"
+        wire:navigate
+        class="inline-flex items-center gap-x-1.5 rounded-md border border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-500/20 px-3 py-1.5 text-sm font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/30"
+    >
+        + Crea il tuo primo cliente
+    </a>
 @else
     <div x-data="{ open: false }" @click.outside="open = false" class="relative">
         <button

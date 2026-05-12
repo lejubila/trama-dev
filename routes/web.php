@@ -20,6 +20,8 @@ use App\Livewire\Settings\ApiTokens as SettingsApiTokens;
 use App\Livewire\Sites\Index as SitesIndex;
 use App\Livewire\Sites\Show as SitesShow;
 use App\Livewire\Tags\Manager as TagsManager;
+use App\Livewire\Tenants\Index as TenantsIndex;
+use App\Livewire\Tenants\Manage as TenantsManage;
 use App\Livewire\Topology\Graph as TopologyGraph;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +38,8 @@ Route::view('profile', 'profile')
 Route::middleware(['auth'])->group(function (): void {
     // Tenancy
     Route::post('tenant/switch/{tenant}', SwitchTenantController::class)->name('tenant.switch');
+    Route::get('tenants', TenantsIndex::class)->name('tenants.index');
+    Route::get('tenants/{tenant}/manage', TenantsManage::class)->name('tenants.manage');
 
     // Sites
     Route::get('sites', SitesIndex::class)->name('sites.index');
