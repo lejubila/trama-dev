@@ -31,7 +31,7 @@ class Manage extends Component
     public string $domain = '';
 
     // Members tab state
-    public string $newEmail = '';
+    public ?int $newUserId = null;
 
     public string $newRole = 'tecnico';
 
@@ -89,19 +89,22 @@ class Manage extends Component
         $this->authorize('update', $this->tenant);
 
         $this->validate([
-            'newEmail' => 'required|email',
+            'newUserId' => 'required|integer|exists:users,id',
             'newRole' => 'required|in:admin,tecnico,cliente',
         ]);
 
+        /** @var User $user */
+        $user = User::query()->findOrFail($this->newUserId);
+
         try {
-            $action->execute($this->tenant, $this->newEmail, $this->newRole);
+            $action->execute($this->tenant, $user, $this->newRole);
         } catch (InvalidArgumentException $e) {
-            $this->addError('newEmail', $e->getMessage());
+            $this->addError('newUserId', $e->getMessage());
 
             return;
         }
 
-        $this->reset(['newEmail']);
+        $this->reset(['newUserId']);
         $this->newRole = 'tecnico';
         $this->dispatch('toast', type: 'success', message: 'Membro aggiunto.');
     }
@@ -142,10 +145,20 @@ class Manage extends Component
 
     public function render(): View
     {
+        $memberIds = $this->tenant->users()->pluck('users.id');
+
         return view('livewire.tenants.manage', [
             'members' => $this->tenant->users()
                 ->orderBy('name')
                 ->get(['users.id', 'users.name', 'users.email']),
+            // Candidates for the "add member" picker: every registered user
+            // who isn't already in this tenant. With teams of dozens this is
+            // a plain <select>; with thousands we'd swap for a searchable
+            // combobox.
+            'candidates' => User::query()
+                ->whereNotIn('id', $memberIds)
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']),
         ]);
     }
 }

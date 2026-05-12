@@ -14,16 +14,10 @@ class AddMember
 {
     public function __construct(private readonly PermissionRegistrar $registrar) {}
 
-    public function execute(Tenant $tenant, string $email, string $role): User
+    public function execute(Tenant $tenant, User $user, string $role): User
     {
         if (! in_array($role, ['admin', 'tecnico', 'cliente'], true)) {
             throw new InvalidArgumentException('Ruolo non valido.');
-        }
-
-        /** @var User|null $user */
-        $user = User::query()->where('email', $email)->first();
-        if ($user === null) {
-            throw new InvalidArgumentException("Nessun utente registrato con email {$email}.");
         }
 
         if ($user->belongsToTenant($tenant)) {

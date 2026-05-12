@@ -64,9 +64,18 @@
         @can('update', $tenant)
             <form wire:submit="addMember" class="bg-white dark:bg-slate-800 shadow ring-1 ring-black ring-opacity-5 dark:ring-slate-600 rounded-md p-4 mb-6 grid grid-cols-1 md:grid-cols-[1fr_10rem_auto] gap-3 items-end">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Email utente</label>
-                    <input type="email" wire:model="newEmail" placeholder="utente@esempio.com" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm text-sm" />
-                    @error('newEmail')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Utente</label>
+                    @if ($candidates->isEmpty())
+                        <p class="mt-1 text-sm text-gray-500 dark:text-slate-400 italic">Tutti gli utenti registrati sono già membri.</p>
+                    @else
+                        <select wire:model="newUserId" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm text-sm">
+                            <option value="">Seleziona…</option>
+                            @foreach ($candidates as $u)
+                                <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->email }})</option>
+                            @endforeach
+                        </select>
+                    @endif
+                    @error('newUserId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Ruolo</label>
@@ -76,7 +85,7 @@
                         <option value="cliente">Cliente</option>
                     </select>
                 </div>
-                <button type="submit" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Aggiungi</button>
+                <button type="submit" @disabled($candidates->isEmpty()) class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">Aggiungi</button>
             </form>
         @endcan
 

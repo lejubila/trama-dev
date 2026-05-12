@@ -26,13 +26,13 @@ function bootTenantWithAdmin(): array
     return [$tenant, $admin];
 }
 
-it('adds a member by email', function (): void {
+it('adds a member from the user picker', function (): void {
     [$tenant, $admin] = bootTenantWithAdmin();
-    $other = User::factory()->create(['email' => 'newbie@demo.test']);
+    $other = User::factory()->create();
 
     Livewire::test(Manage::class, ['tenant' => $tenant])
         ->set('activeTab', 'members')
-        ->set('newEmail', 'newbie@demo.test')
+        ->set('newUserId', $other->getKey())
         ->set('newRole', 'tecnico')
         ->call('addMember')
         ->assertHasNoErrors();
@@ -41,15 +41,28 @@ it('adds a member by email', function (): void {
         ->and($other->fresh()->roleInTenant($tenant))->toBe('tecnico');
 });
 
-it('refuses to add a non-existent email', function (): void {
+it('refuses to add a user id that does not exist', function (): void {
     [$tenant] = bootTenantWithAdmin();
 
     Livewire::test(Manage::class, ['tenant' => $tenant])
         ->set('activeTab', 'members')
-        ->set('newEmail', 'ghost@nowhere.test')
+        ->set('newUserId', 999999) // not in DB
         ->set('newRole', 'tecnico')
         ->call('addMember')
-        ->assertHasErrors(['newEmail']);
+        ->assertHasErrors(['newUserId']);
+});
+
+it('refuses to add a user who is already a member', function (): void {
+    [$tenant, $admin] = bootTenantWithAdmin();
+    $other = User::factory()->create();
+    $other->tenants()->attach($tenant->getKey(), ['role' => 'cliente']);
+
+    Livewire::test(Manage::class, ['tenant' => $tenant])
+        ->set('activeTab', 'members')
+        ->set('newUserId', $other->getKey())
+        ->set('newRole', 'tecnico')
+        ->call('addMember')
+        ->assertHasErrors(['newUserId']);
 });
 
 it('changes a member role', function (): void {
@@ -89,10 +102,11 @@ it('forbids non-admin from managing members', function (): void {
     /** @var User $cliente */
     $cliente = User::factory()->create();
     $cliente->tenants()->attach($tenant->getKey(), ['role' => 'cliente']);
+    $candidate = User::factory()->create();
     test()->actingAs($cliente);
 
     Livewire::test(Manage::class, ['tenant' => $tenant])
-        ->set('newEmail', 'whoever@demo.test')
+        ->set('newUserId', $candidate->getKey())
         ->call('addMember')
         ->assertForbidden();
 });
