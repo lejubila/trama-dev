@@ -137,3 +137,57 @@ it('only admin can move equipment, tecnico ok, cliente forbidden', function (): 
 
     expect($eq->fresh()->position_u_start)->toBe(3);
 });
+
+it('opens the create form when slot-clicked fires', function (): void {
+    [$tenant, $user, $rack] = bootRackScene('admin');
+
+    Livewire::test(Elevation::class, ['rack' => $rack])
+        ->assertSet('showForm', false)
+        ->dispatch('slot-clicked', u: 5)
+        ->assertSet('showForm', true)
+        ->assertSet('selectedU', 5)
+        ->assertSet('positionUHeight', 1);
+});
+
+it('creates a mounted equipment at the clicked U', function (): void {
+    [$tenant, $user, $rack] = bootRackScene('admin');
+
+    Livewire::test(Elevation::class, ['rack' => $rack])
+        ->dispatch('slot-clicked', u: 7)
+        ->set('name', 'NEW-FROM-SLOT')
+        ->set('type', 'switch')
+        ->call('saveEquipment')
+        ->assertHasNoErrors()
+        ->assertSet('showForm', false);
+
+    expect(Equipment::query()
+        ->where('rack_id', $rack->getKey())
+        ->where('name', 'NEW-FROM-SLOT')
+        ->where('mounted', true)
+        ->where('position_u_start', 7)
+        ->where('position_u_height', 1)
+        ->exists()
+    )->toBeTrue();
+});
+
+it('refuses to create when the requested height overlaps a neighbor', function (): void {
+    [$tenant, $user, $rack] = bootRackScene('admin');
+    Equipment::factory()->mountedAt(4, 2)->create(['rack_id' => $rack->getKey()]); // occupies U4-U5
+
+    Livewire::test(Elevation::class, ['rack' => $rack])
+        ->dispatch('slot-clicked', u: 3)
+        ->set('name', 'CONFLICT')
+        ->set('positionUHeight', 3) // would cover U3-U4-U5, overlapping U4-U5
+        ->call('saveEquipment')
+        ->assertHasErrors(['positionUHeight']);
+
+    expect(Equipment::query()->where('name', 'CONFLICT')->exists())->toBeFalse();
+});
+
+it('forbids cliente from opening the create form via slot-clicked', function (): void {
+    [$tenant, $user, $rack] = bootRackScene('cliente');
+
+    Livewire::test(Elevation::class, ['rack' => $rack])
+        ->dispatch('slot-clicked', u: 5)
+        ->assertForbidden();
+});
