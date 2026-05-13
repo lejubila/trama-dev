@@ -6,6 +6,7 @@ use App\Http\Controllers\Export\EquipmentCsvController;
 use App\Http\Controllers\Export\RackPdfController;
 use App\Http\Controllers\Tenancy\SwitchTenantController;
 use App\Livewire\Audit\Trail as AuditTrail;
+use App\Livewire\Connections\Edit as ConnectionsEdit;
 use App\Livewire\Connections\Index as ConnectionsIndex;
 use App\Livewire\Connections\Wizard as ConnectionsWizard;
 use App\Livewire\Dashboard\Index as DashboardIndex;
@@ -60,6 +61,7 @@ Route::middleware(['auth'])->group(function (): void {
     // Connections
     Route::get('connections', ConnectionsIndex::class)->name('connections.index');
     Route::get('connections/create', ConnectionsWizard::class)->name('connections.create');
+    Route::get('connections/{connection}/edit', ConnectionsEdit::class)->name('connections.edit');
 
     // Topology
     Route::get('topology', TopologyGraph::class)->name('topology.index');

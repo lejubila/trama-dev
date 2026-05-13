@@ -8,6 +8,7 @@ use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
 use App\Services\ConnectionService;
+use App\Support\CableColors;
 use Illuminate\Contracts\View\View;
 use InvalidArgumentException;
 use Livewire\Attributes\Layout;
@@ -84,7 +85,7 @@ class Wizard extends Component
             'cableType' => 'required|string|max:30',
             'cableLengthM' => 'nullable|numeric|min:0',
             'cableLabel' => 'nullable|string|max:80',
-            'color' => 'nullable|string|max:20',
+            'color' => ['nullable', 'string', 'regex:'.CableColors::HEX_REGEX],
             'notes' => 'nullable|string|max:2000',
             'establishedAt' => 'nullable|date',
         ]);
@@ -138,6 +139,7 @@ class Wizard extends Component
             'busyIds' => $busyIds,
             'fromInterface' => $fromInterface,
             'toInterface' => $toInterface,
+            'colorPresets' => CableColors::presets(),
         ]);
     }
 }

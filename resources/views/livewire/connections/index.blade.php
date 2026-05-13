@@ -24,6 +24,7 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estremo A</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estremo B</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cavo</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Colore</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Etichetta</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
@@ -43,10 +44,21 @@
                             <span class="font-mono text-gray-700">{{ $c->toInterface->name }}</span>
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $c->cable_type }} {{ $c->cable_length_m ? '· '.$c->cable_length_m.' m' : '' }}</td>
+                        <td class="px-4 py-3 text-gray-600">
+                            @if ($c->color)
+                                <span class="inline-flex items-center gap-x-1.5">
+                                    <span class="inline-block h-4 w-4 rounded border border-gray-300" style="background-color: {{ $c->color }}" title="{{ $c->color }}"></span>
+                                    <span class="font-mono text-xs">{{ strtoupper($c->color) }}</span>
+                                </span>
+                            @else
+                                <span class="text-gray-400">—</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-gray-600">{{ $c->cable_label ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $c->status?->value }}</td>
                         <td class="px-4 py-3 text-right space-x-2">
                             @can('update', $c)
+                                <a href="{{ route('connections.edit', $c) }}" wire:navigate class="text-indigo-600 hover:text-indigo-800 text-xs">Modifica</a>
                                 @if ($c->status?->value === 'active')
                                     <button wire:click="decommission({{ $c->id }})" wire:confirm="Dismettere questa connessione?" class="text-amber-600 hover:text-amber-800 text-xs">Dismetti</button>
                                 @endif
@@ -57,7 +69,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Nessuna connessione.</td></tr>
+                    <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">Nessuna connessione.</td></tr>
                 @endforelse
             </tbody>
         </table>

@@ -92,9 +92,9 @@
                         <input type="text" wire:model="cableLabel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                         @error('cableLabel')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Colore</label>
-                        <input type="text" wire:model="color" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Colore</label>
+                        <x-cable-color-picker :presets="$colorPresets" :value="$color" />
                         @error('color')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>

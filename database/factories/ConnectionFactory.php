@@ -28,7 +28,7 @@ class ConnectionFactory extends Factory
             'cable_type' => $this->faker->randomElement(['utp_cat6', 'utp_cat6a', 'fiber_om3', 'fiber_om4', 'dac']),
             'cable_length_m' => $this->faker->randomFloat(2, 0.5, 50),
             'cable_label' => null,
-            'color' => $this->faker->randomElement(['blue', 'red', 'yellow', 'green', 'gray', null]),
+            'color' => $this->faker->randomElement(['#2563EB', '#DC2626', '#EAB308', '#16A34A', '#6B7280', null]),
             'status' => ConnectionStatus::Active,
             'notes' => null,
             'established_at' => $this->faker->date(),
