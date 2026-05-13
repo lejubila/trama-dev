@@ -43,48 +43,79 @@
                 @error('toInterfaceId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
             </div>
         @else
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Tipo cavo</label>
-                    <select wire:model="cableType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
-                        <option>utp_cat6</option>
-                        <option>utp_cat6a</option>
-                        <option>stp</option>
-                        <option>fiber_om3</option>
-                        <option>fiber_om4</option>
-                        <option>dac</option>
-                    </select>
+            <form wire:submit="save">
+                {{-- Summary degli endpoint scelti agli step 1-2: rende visibile
+                     l'eventuale errore di validazione su from/to che altrimenti
+                     finirebbe in un error bag mai mostrato. --}}
+                <div class="bg-gray-50 rounded p-3 mb-4 text-sm">
+                    <div>
+                        <span class="text-gray-500">Da:</span>
+                        {{ $fromInterface?->equipment?->name ?? '—' }}
+                        ·
+                        <span class="font-mono">{{ $fromInterface?->name ?? '—' }}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">A:</span>
+                        {{ $toInterface?->equipment?->name ?? '—' }}
+                        ·
+                        <span class="font-mono">{{ $toInterface?->name ?? '—' }}</span>
+                    </div>
+                    @error('fromInterfaceId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    @error('toInterfaceId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Lunghezza (m)</label>
-                    <input type="number" step="0.1" wire:model="cableLengthM" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Tipo cavo</label>
+                        <select wire:model="cableType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                            <option value="utp_cat6">utp_cat6</option>
+                            <option value="utp_cat6a">utp_cat6a</option>
+                            <option value="stp">stp</option>
+                            <option value="fiber_om3">fiber_om3</option>
+                            <option value="fiber_om4">fiber_om4</option>
+                            <option value="dac">dac</option>
+                        </select>
+                        @error('cableType')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Lunghezza (m)</label>
+                        <input type="number" step="0.1" wire:model="cableLengthM" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                        @error('cableLengthM')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Etichetta</label>
+                        <input type="text" wire:model="cableLabel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                        @error('cableLabel')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Colore</label>
+                        <input type="text" wire:model="color" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                        @error('color')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Posato il</label>
+                        <input type="date" wire:model="establishedAt" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                        @error('establishedAt')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Note</label>
+                        <textarea wire:model="notes" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
+                        @error('notes')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
                 </div>
-                <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700">Etichetta</label>
-                    <input type="text" wire:model="cableLabel" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+
+                <div class="flex justify-between items-center mt-6">
+                    <button type="button" wire:click="back" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Indietro</button>
+                    <button type="submit" class="px-3 py-2 text-sm text-white bg-emerald-600 rounded-md hover:bg-emerald-700">Crea connessione</button>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Colore</label>
-                    <input type="text" wire:model="color" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Posato il</label>
-                    <input type="date" wire:model="establishedAt" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
-                </div>
-                <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700">Note</label>
-                    <textarea wire:model="notes" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
-                </div>
-            </div>
+            </form>
         @endif
 
-        <div class="flex justify-between items-center mt-6">
-            <button type="button" @if ($step === 1) disabled @endif wire:click="back" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md disabled:opacity-50">Indietro</button>
-            @if ($step < 3)
+        @if ($step < 3)
+            <div class="flex justify-between items-center mt-6">
+                <button type="button" @if ($step === 1) disabled @endif wire:click="back" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md disabled:opacity-50">Indietro</button>
                 <button type="button" wire:click="next" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Avanti →</button>
-            @else
-                <button type="button" wire:click="save" class="px-3 py-2 text-sm text-white bg-emerald-600 rounded-md hover:bg-emerald-700">Crea connessione</button>
-            @endif
-        </div>
+            </div>
+        @endif
     </div>
 </div>

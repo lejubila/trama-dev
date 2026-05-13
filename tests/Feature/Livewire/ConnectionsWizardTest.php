@@ -90,3 +90,42 @@ it('refuses to wire an already busy interface', function (): void {
         ->call('save')
         ->assertHasErrors(['toInterfaceId']);
 });
+
+it('walks through every step and creates the connection at submit', function (): void {
+    [$tenant, $user, $a, $b] = setupConnectionsScene('admin');
+
+    Livewire::test(Wizard::class)
+        ->assertSet('step', 1)
+        ->set('fromInterfaceId', $a->getKey())
+        ->call('next')
+        ->assertSet('step', 2)
+        ->set('toInterfaceId', $b->getKey())
+        ->call('next')
+        ->assertSet('step', 3)
+        ->set('cableType', 'utp_cat6')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Connection::query()
+        ->where('from_interface_id', $a->getKey())
+        ->where('to_interface_id', $b->getKey())
+        ->exists()
+    )->toBeTrue();
+});
+
+it('surfaces validation errors at step 3 instead of failing silently', function (): void {
+    [$tenant, $user, $a, $b] = setupConnectionsScene('admin');
+
+    // Simulate the user reaching step 3 with the from-endpoint blanked.
+    // Before the fix, the resulting validation error lived in an error bag
+    // that step 3 never rendered — so the click looked like a no-op.
+    Livewire::test(Wizard::class)
+        ->set('step', 3)
+        ->set('fromInterfaceId', null)
+        ->set('toInterfaceId', $b->getKey())
+        ->set('cableType', 'utp_cat6')
+        ->call('save')
+        ->assertHasErrors(['fromInterfaceId']);
+
+    expect(Connection::query()->where('to_interface_id', $b->getKey())->exists())->toBeFalse();
+});

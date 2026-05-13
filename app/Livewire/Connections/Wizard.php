@@ -57,6 +57,9 @@ class Wizard extends Component
 
     public function save(ConnectionService $service): void
     {
+        // Clear stale errors so a retry doesn't show last-attempt residue.
+        $this->resetValidation();
+
         $this->validate([
             'fromInterfaceId' => 'required|exists:interfaces,id',
             'toInterfaceId' => 'required|exists:interfaces,id|different:fromInterfaceId',
@@ -102,9 +105,21 @@ class Wizard extends Component
             ->unique()
             ->all();
 
+        // Resolve the currently-chosen endpoints so the step 3 summary can
+        // show the user what they're about to commit. If an ID is null or
+        // stale we just pass null and the view handles the dash fallback.
+        $fromInterface = $this->fromInterfaceId !== null
+            ? NetworkInterface::query()->with('equipment')->find($this->fromInterfaceId)
+            : null;
+        $toInterface = $this->toInterfaceId !== null
+            ? NetworkInterface::query()->with('equipment')->find($this->toInterfaceId)
+            : null;
+
         return view('livewire.connections.wizard', [
             'equipment' => $equipment,
             'busyIds' => $busyIds,
+            'fromInterface' => $fromInterface,
+            'toInterface' => $toInterface,
         ]);
     }
 }
