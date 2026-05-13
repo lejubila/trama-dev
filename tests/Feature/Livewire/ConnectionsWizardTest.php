@@ -113,6 +113,21 @@ it('walks through every step and creates the connection at submit', function ():
     )->toBeTrue();
 });
 
+it('clears a stale toInterfaceId when advancing from step 1', function (): void {
+    [$tenant, $user, $a, $b] = setupConnectionsScene('admin');
+
+    // Simulate the morph-stuck DOM scenario: the step-2 <select> would
+    // carry the step-1 value into toInterfaceId via deferred wire:model.
+    // next() must reset toInterfaceId so server state stays coherent
+    // regardless of what the DOM tries to push up.
+    Livewire::test(Wizard::class)
+        ->set('toInterfaceId', $a->getKey())
+        ->set('fromInterfaceId', $a->getKey())
+        ->call('next')
+        ->assertSet('step', 2)
+        ->assertSet('toInterfaceId', null);
+});
+
 it('surfaces validation errors at step 3 instead of failing silently', function (): void {
     [$tenant, $user, $a, $b] = setupConnectionsScene('admin');
 

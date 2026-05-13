@@ -41,11 +41,29 @@ class Wizard extends Component
 
     public function next(): void
     {
-        match ($this->step) {
-            1 => $this->fromInterfaceId !== null ? $this->step = 2 : $this->addError('fromInterfaceId', 'Scegli l\'interfaccia di partenza.'),
-            2 => $this->toInterfaceId !== null ? $this->step = 3 : $this->addError('toInterfaceId', 'Scegli l\'interfaccia di destinazione.'),
-            default => null,
-        };
+        if ($this->step === 1) {
+            if ($this->fromInterfaceId === null) {
+                $this->addError('fromInterfaceId', 'Scegli l\'interfaccia di partenza.');
+
+                return;
+            }
+            // Step 2 reuses a <select> structurally identical to step 1's,
+            // so morphdom may carry over the previous DOM value. Clear the
+            // server-side property to keep a single source of truth.
+            $this->toInterfaceId = null;
+            $this->step = 2;
+
+            return;
+        }
+
+        if ($this->step === 2) {
+            if ($this->toInterfaceId === null) {
+                $this->addError('toInterfaceId', 'Scegli l\'interfaccia di destinazione.');
+
+                return;
+            }
+            $this->step = 3;
+        }
     }
 
     public function back(): void

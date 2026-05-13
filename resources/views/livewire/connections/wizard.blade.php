@@ -13,7 +13,12 @@
         </ol>
 
         @if ($step === 1)
-            <div>
+            {{-- wire:key forces morphdom to NOT reuse the step-2 <select>
+                 as if it were the same DOM node: structurally the two
+                 selects are near-identical, and without distinct keys the
+                 selected option from step 1 would bleed into step 2's
+                 toInterfaceId via the deferred wire:model sync. --}}
+            <div wire:key="step-1">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Interfaccia di partenza</label>
                 <select wire:model="fromInterfaceId" class="block w-full rounded-md border-gray-300 shadow-sm text-sm">
                     <option value="">Seleziona…</option>
@@ -28,7 +33,7 @@
                 @error('fromInterfaceId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
             </div>
         @elseif ($step === 2)
-            <div>
+            <div wire:key="step-2">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Interfaccia di destinazione</label>
                 <select wire:model="toInterfaceId" class="block w-full rounded-md border-gray-300 shadow-sm text-sm">
                     <option value="">Seleziona…</option>
@@ -43,7 +48,7 @@
                 @error('toInterfaceId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
             </div>
         @else
-            <form wire:submit="save">
+            <form wire:submit="save" wire:key="step-3">
                 {{-- Summary degli endpoint scelti agli step 1-2: rende visibile
                      l'eventuale errore di validazione su from/to che altrimenti
                      finirebbe in un error bag mai mostrato. --}}
