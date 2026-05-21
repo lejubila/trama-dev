@@ -56,6 +56,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Forza la generazione di URL/asset in https. Utile dietro un reverse proxy
+    // che termina il TLS e non inoltra l'header X-Forwarded-Proto.
+    'force_https' => (bool) env('APP_FORCE_HTTPS', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
