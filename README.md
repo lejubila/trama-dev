@@ -51,7 +51,10 @@ docker compose exec app composer install
 docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate --seed
 
-# 6. Build asset frontend
+# 6. Crea il symlink public/storage -> storage/app/public
+docker compose exec app php artisan storage:link
+
+# 7. Build asset frontend
 docker compose exec app npm install
 docker compose exec app npm run build
 # (in dev usa: docker compose exec app npm run dev)
