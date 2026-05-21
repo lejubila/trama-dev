@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Trama Network — Set Icone</title>
+<title>Trama Network — Set Icone Esteso</title>
 <style>
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -11,23 +11,26 @@
     margin: 0;
     padding: 40px 20px;
   }
-  h1 {
-    text-align: center;
-    font-weight: 500;
-    margin-bottom: 8px;
+  h1 { text-align: center; font-weight: 500; margin-bottom: 8px; }
+  .subtitle { text-align: center; color: #5F5E5A; margin-bottom: 40px; font-size: 14px; }
+  .category {
+    max-width: 1200px;
+    margin: 0 auto 32px auto;
   }
-  .subtitle {
-    text-align: center;
-    color: #5F5E5A;
-    margin-bottom: 40px;
+  .category h2 {
     font-size: 14px;
+    font-weight: 500;
+    color: #5F5E5A;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #D3D1C7;
   }
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 16px;
-    max-width: 1200px;
-    margin: 0 auto;
   }
   .icon-card {
     background: #FFFFFF;
@@ -41,6 +44,21 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.06);
   }
+  .icon-card.new {
+    border-color: #1565C0;
+    background: linear-gradient(180deg, #F8FBFF 0%, #FFFFFF 100%);
+  }
+  .icon-card.new::after {
+    content: "NEW";
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 600;
+    background: #1565C0;
+    color: #FFFFFF;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-top: 4px;
+  }
   .icon-wrapper {
     display: flex;
     align-items: center;
@@ -48,50 +66,35 @@
     height: 140px;
     margin-bottom: 12px;
   }
-  .icon-wrapper img {
-    width: 128px;
-    height: 128px;
-  }
-  .icon-name {
-    font-weight: 500;
-    font-size: 14px;
-    color: #2C2C2A;
-    margin-bottom: 4px;
-  }
-  .icon-file {
-    font-size: 12px;
-    color: #888780;
-    font-family: monospace;
-  }
+  .icon-wrapper img { width: 128px; height: 128px; }
+  .icon-name { font-weight: 500; font-size: 14px; color: #2C2C2A; margin-bottom: 4px; }
+  .icon-file { font-size: 12px; color: #888780; font-family: monospace; }
   .size-controls {
     text-align: center;
-    margin: 30px 0;
+    margin: 0 auto 30px auto;
     padding: 16px;
     background: #FFFFFF;
     border-radius: 12px;
     max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
     border: 0.5px solid #D3D1C7;
   }
-  .size-controls label {
-    margin-right: 12px;
+  .size-controls label { margin-right: 12px; font-size: 13px; color: #5F5E5A; }
+  .size-controls input { width: 200px; }
+  .size-controls span { font-weight: 500; margin-left: 8px; }
+  .count {
+    text-align: center;
+    color: #1D9E75;
     font-size: 13px;
-    color: #5F5E5A;
-  }
-  .size-controls input {
-    width: 200px;
-  }
-  .size-controls span {
+    margin-bottom: 20px;
     font-weight: 500;
-    margin-left: 8px;
   }
 </style>
 </head>
 <body>
 
 <h1>Trama Network — Set Icone</h1>
-<p class="subtitle">14 icone isometriche per oggetti di rete · SVG vettoriali · 128×128 px</p>
+<p class="subtitle">Icone isometriche per oggetti di rete · SVG vettoriali · 128×128 px</p>
+<p class="count">19 icone disponibili · 5 nuove aggiunte</p>
 
 <div class="size-controls">
   <label for="sizeSlider">Anteprima dimensione:</label>
@@ -99,76 +102,161 @@
   <span id="sizeValue">128 px</span>
 </div>
 
-<div class="grid" id="grid">
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="rack.svg" alt="Rack"></div>
-    <div class="icon-name">Rack</div>
-    <div class="icon-file">rack.svg</div>
+<!-- INFRASTRUTTURA -->
+<div class="category">
+  <h2>Infrastruttura</h2>
+  <div class="grid">
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="rack.svg" alt="Rack"></div>
+      <div class="icon-name">Rack</div>
+      <div class="icon-file">rack.svg</div>
+    </div>
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="patch_panel.svg" alt="Patch Panel"></div>
+      <div class="icon-name">Patch Panel</div>
+      <div class="icon-file">patch_panel.svg</div>
+    </div>
   </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="switch.svg" alt="Switch"></div>
-    <div class="icon-name">Switch</div>
-    <div class="icon-file">switch.svg</div>
+</div>
+
+<!-- NETWORKING -->
+<div class="category">
+  <h2>Networking</h2>
+  <div class="grid">
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="switch.svg" alt="Switch"></div>
+      <div class="icon-name">Switch</div>
+      <div class="icon-file">switch.svg</div>
+    </div>
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="router.svg" alt="Router"></div>
+      <div class="icon-name">Router</div>
+      <div class="icon-file">router.svg</div>
+    </div>
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="access_point.svg" alt="Access Point"></div>
+      <div class="icon-name">Access Point</div>
+      <div class="icon-file">access_point.svg</div>
+    </div>
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="controller.svg" alt="Controller"></div>
+      <div class="icon-name">Controller</div>
+      <div class="icon-file">controller.svg</div>
+    </div>
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="media_converter.svg" alt="Media Converter"></div>
+      <div class="icon-name">Media Converter</div>
+      <div class="icon-file">media_converter.svg</div>
+    </div>
   </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="router.svg" alt="Router"></div>
-    <div class="icon-name">Router</div>
-    <div class="icon-file">router.svg</div>
+</div>
+
+<!-- SECURITY -->
+<div class="category">
+  <h2>Security</h2>
+  <div class="grid">
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="firewall.svg" alt="Firewall"></div>
+      <div class="icon-name">Firewall</div>
+      <div class="icon-file">firewall.svg</div>
+    </div>
   </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="firewall.svg" alt="Firewall"></div>
-    <div class="icon-name">Firewall</div>
-    <div class="icon-file">firewall.svg</div>
+</div>
+
+<!-- COMPUTE & STORAGE -->
+<div class="category">
+  <h2>Compute & Storage</h2>
+  <div class="grid">
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="server.svg" alt="Server"></div>
+      <div class="icon-name">Server</div>
+      <div class="icon-file">server.svg</div>
+    </div>
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="nas.svg" alt="NAS"></div>
+      <div class="icon-name">NAS</div>
+      <div class="icon-file">nas.svg</div>
+    </div>
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="kvm.svg" alt="KVM"></div>
+      <div class="icon-name">KVM</div>
+      <div class="icon-file">kvm.svg</div>
+    </div>
   </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="access_point.svg" alt="Access Point"></div>
-    <div class="icon-name">Access Point</div>
-    <div class="icon-file">access_point.svg</div>
+</div>
+
+<!-- POWER -->
+<div class="category">
+  <h2>Power</h2>
+  <div class="grid">
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="ups.svg" alt="UPS"></div>
+      <div class="icon-name">UPS</div>
+      <div class="icon-file">ups.svg</div>
+    </div>
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="pdu.svg" alt="PDU"></div>
+      <div class="icon-name">PDU</div>
+      <div class="icon-file">pdu.svg</div>
+    </div>
   </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="controller.svg" alt="Controller"></div>
-    <div class="icon-name">Controller</div>
-    <div class="icon-file">controller.svg</div>
+</div>
+
+<!-- VIDEOSORVEGLIANZA -->
+<div class="category">
+  <h2>Videosorveglianza</h2>
+  <div class="grid">
+    <div class="icon-card new">
+      <div class="icon-wrapper"><img src="telecamera.svg" alt="Telecamera"></div>
+      <div class="icon-name">Telecamera</div>
+      <div class="icon-file">telecamera.svg</div>
+    </div>
+    <div class="icon-card new">
+      <div class="icon-wrapper"><img src="nvr.svg" alt="NVR"></div>
+      <div class="icon-name">NVR</div>
+      <div class="icon-file">nvr.svg</div>
+    </div>
   </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="patch_panel.svg" alt="Patch Panel"></div>
-    <div class="icon-name">Patch Panel</div>
-    <div class="icon-file">patch_panel.svg</div>
+</div>
+
+<!-- COMUNICAZIONI -->
+<div class="category">
+  <h2>Comunicazioni</h2>
+  <div class="grid">
+    <div class="icon-card new">
+      <div class="icon-wrapper"><img src="centralino.svg" alt="Centralino telefonico"></div>
+      <div class="icon-name">Centralino telefonico</div>
+      <div class="icon-file">centralino.svg</div>
+    </div>
+    <div class="icon-card new">
+      <div class="icon-wrapper"><img src="citofono.svg" alt="Citofono"></div>
+      <div class="icon-name">Citofono</div>
+      <div class="icon-file">citofono.svg</div>
+    </div>
   </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="server.svg" alt="Server"></div>
-    <div class="icon-name">Server</div>
-    <div class="icon-file">server.svg</div>
+</div>
+
+<!-- CONTROLLO ACCESSI -->
+<div class="category">
+  <h2>Controllo Accessi</h2>
+  <div class="grid">
+    <div class="icon-card new">
+      <div class="icon-wrapper"><img src="controllo_accessi.svg" alt="Controllo Accessi"></div>
+      <div class="icon-name">Controllo Accessi</div>
+      <div class="icon-file">controllo_accessi.svg</div>
+    </div>
   </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="ups.svg" alt="UPS"></div>
-    <div class="icon-name">UPS</div>
-    <div class="icon-file">ups.svg</div>
-  </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="pdu.svg" alt="PDU"></div>
-    <div class="icon-name">PDU</div>
-    <div class="icon-file">pdu.svg</div>
-  </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="media_converter.svg" alt="Media Converter"></div>
-    <div class="icon-name">Media Converter</div>
-    <div class="icon-file">media_converter.svg</div>
-  </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="nas.svg" alt="NAS"></div>
-    <div class="icon-name">NAS</div>
-    <div class="icon-file">nas.svg</div>
-  </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="kvm.svg" alt="KVM"></div>
-    <div class="icon-name">KVM</div>
-    <div class="icon-file">kvm.svg</div>
-  </div>
-  <div class="icon-card">
-    <div class="icon-wrapper"><img src="generica.svg" alt="Generica"></div>
-    <div class="icon-name">Generica</div>
-    <div class="icon-file">generica.svg</div>
+</div>
+
+<!-- ALTRO -->
+<div class="category">
+  <h2>Altro</h2>
+  <div class="grid">
+    <div class="icon-card">
+      <div class="icon-wrapper"><img src="generica.svg" alt="Generica"></div>
+      <div class="icon-name">Generica</div>
+      <div class="icon-file">generica.svg</div>
+    </div>
   </div>
 </div>
 

@@ -113,6 +113,11 @@
         'fuchsia' => ['bg' => '#fae8ff', 'fg' => '#c026d3'],
         'teal'    => ['bg' => '#ccfbf1', 'fg' => '#0d9488'],
         'orange'  => ['bg' => '#ffedd5', 'fg' => '#ea580c'],
+        'indigo'  => ['bg' => '#e0e7ff', 'fg' => '#4f46e5'],
+        'lime'    => ['bg' => '#ecfccb', 'fg' => '#65a30d'],
+        'sky'     => ['bg' => '#e0f2fe', 'fg' => '#0284c7'],
+        'pink'    => ['bg' => '#fce7f3', 'fg' => '#db2777'],
+        'rose'    => ['bg' => '#ffe4e6', 'fg' => '#e11d48'],
         'gray'    => ['bg' => '#f3f4f6', 'fg' => '#6b7280'],
     ];
 @endphp

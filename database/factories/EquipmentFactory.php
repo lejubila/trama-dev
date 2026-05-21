@@ -73,6 +73,11 @@ class EquipmentFactory extends Factory
             EquipmentType::MediaConverter => 'MC',
             EquipmentType::Nas => 'NAS',
             EquipmentType::Kvm => 'KVM',
+            EquipmentType::PhoneSystem => 'PBX',
+            EquipmentType::AccessControl => 'ACS',
+            EquipmentType::Nvr => 'NVR',
+            EquipmentType::Camera => 'CAM',
+            EquipmentType::Intercom => 'INT',
             EquipmentType::Other => 'DEV',
         };
     }

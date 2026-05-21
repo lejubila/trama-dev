@@ -18,6 +18,11 @@ enum EquipmentType: string
     case MediaConverter = 'media_converter';
     case Nas = 'nas';
     case Kvm = 'kvm';
+    case PhoneSystem = 'phone_system';
+    case AccessControl = 'access_control';
+    case Nvr = 'nvr';
+    case Camera = 'camera';
+    case Intercom = 'intercom';
     case Other = 'other';
 
     public function label(): string
@@ -35,6 +40,11 @@ enum EquipmentType: string
             self::MediaConverter => 'Media Converter',
             self::Nas => 'NAS',
             self::Kvm => 'KVM',
+            self::PhoneSystem => 'Centralino telefonico',
+            self::AccessControl => 'Controllo accessi',
+            self::Nvr => 'NVR',
+            self::Camera => 'Telecamera',
+            self::Intercom => 'Citofono',
             self::Other => 'Altro',
         };
     }
@@ -53,6 +63,11 @@ enum EquipmentType: string
             self::MediaConverter => 'fuchsia',
             self::Nas => 'teal',
             self::Kvm => 'orange',
+            self::PhoneSystem => 'indigo',
+            self::AccessControl => 'lime',
+            self::Nvr => 'sky',
+            self::Camera => 'pink',
+            self::Intercom => 'rose',
             self::Other => 'gray',
         };
     }

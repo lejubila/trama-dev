@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Citofono</title>
+  <desc>Citofono con simbolo casa (interfono interno/esterno)</desc>
+  <!-- Ombra -->
+  <ellipse cx="64" cy="112" rx="32" ry="4" fill="#2C2C2A" opacity="0.12"/>
+
+  <!-- Simbolo casa sopra -->
+  <g transform="translate(64, 28)">
+    <!-- Tetto + corpo casa -->
+    <path d="M -12 5 L 0 -10 L 12 5 L 12 16 L -12 16 Z"
+          fill="#1D9E75" stroke="#0F6E56" stroke-width="1.8" stroke-linejoin="round"/>
+    <!-- Porta -->
+    <rect x="-3" y="8" width="6" height="8" fill="#0F6E56"/>
+    <!-- Comignolo -->
+    <rect x="5" y="-3" width="3" height="6" fill="#1D9E75" stroke="#0F6E56" stroke-width="1.2"/>
+  </g>
+
+  <!-- Linea connessione -->
+  <line x1="64" y1="46" x2="64" y2="60" stroke="#888780" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Case citofono verticale -->
+  <g transform="translate(64, 78)">
+    <!-- TOP -->
+    <path d="M -24 -10 L 0 -22 L 24 -10 L 0 2 Z" fill="#E8E6DE" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- FRONT (alto) -->
+    <path d="M -24 -10 L 0 2 L 0 38 L -24 26 Z" fill="#B4B2A9" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- SIDE -->
+    <path d="M 0 2 L 24 -10 L 24 26 L 0 38 Z" fill="#888780" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- Dettagli sul front -->
+    <g transform="translate(-24, -10) skewY(28)">
+      <!-- Schermo video -->
+      <rect x="3" y="6" width="14" height="10" fill="#04342C" stroke="#5F5E5A" stroke-width="0.6" rx="0.5"/>
+      <!-- Immagine sul display -->
+      <circle cx="10" cy="11" r="2.5" fill="#1D9E75" opacity="0.6"/>
+
+      <!-- Griglia altoparlante -->
+      <g fill="#5F5E5A">
+        <circle cx="5" cy="22" r="0.7"/>
+        <circle cx="8" cy="22" r="0.7"/>
+        <circle cx="11" cy="22" r="0.7"/>
+        <circle cx="14" cy="22" r="0.7"/>
+        <circle cx="17" cy="22" r="0.7"/>
+        <circle cx="5" cy="25" r="0.7"/>
+        <circle cx="8" cy="25" r="0.7"/>
+        <circle cx="11" cy="25" r="0.7"/>
+        <circle cx="14" cy="25" r="0.7"/>
+        <circle cx="17" cy="25" r="0.7"/>
+      </g>
+
+      <!-- Pulsante chiamata grande -->
+      <circle cx="10" cy="33" r="3" fill="#FFC107" stroke="#7A5800" stroke-width="0.8"/>
+      <!-- Icona campanella mini sul pulsante -->
+      <path d="M 8.5 32 Q 8.5 31 9 31 L 11 31 Q 11.5 31 11.5 32 L 11.5 33 Z"
+            fill="#7A5800"/>
+    </g>
+  </g>
+</svg>

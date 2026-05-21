@@ -38,6 +38,11 @@ const TYPE_COLOR = {
     media_converter: '#c026d3',
     nas: '#0d9488',
     kvm: '#ea580c',
+    phone_system: '#4f46e5',
+    access_control: '#65a30d',
+    nvr: '#0284c7',
+    camera: '#db2777',
+    intercom: '#e11d48',
     other: '#6b7280',
 };
 
