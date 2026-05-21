@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\EnsureTenantHeader;
+use App\Http\Middleware\ForceHttpsRequest;
 use App\Http\Middleware\SetCurrentTenant;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -26,11 +27,13 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->web(append: [
+        $middleware->web(prepend: [
+            ForceHttpsRequest::class,
+        ], append: [
             SetLocale::class,
             SetCurrentTenant::class,
         ])
-        ->trustProxies(at: '*');
+            ->trustProxies(at: '*');
         $middleware->alias([
             'tenant.required' => EnsureTenantHeader::class,
         ]);
