@@ -80,11 +80,17 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'it'),
 
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'it'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+
+    /*
+    | Locales the UI is available in. Drives the language selector and the
+    | SetLocale middleware (Accept-Language negotiation for guests).
+    */
+    'supported_locales' => ['it', 'en'],
 
     /*
     |--------------------------------------------------------------------------

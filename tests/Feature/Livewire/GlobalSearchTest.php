@@ -9,13 +9,10 @@ use App\Models\Site;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
-use Database\Seeders\RolePermissionSeeder;
 use Livewire\Livewire;
-use Spatie\Permission\PermissionRegistrar;
 
 afterEach(function (): void {
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 });
 
 function bootSearchScene(): array
@@ -23,10 +20,8 @@ function bootSearchScene(): array
     $tenant = Tenant::factory()->create();
     /** @var User $user */
     $user = User::factory()->create();
-    $user->tenants()->attach($tenant, ['role' => 'admin']);
-    test()->seed(RolePermissionSeeder::class);
-    app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
-    $user->syncRoles(['admin']);
+    $user->forceFill(['role' => 'admin'])->save();
+    $user->tenants()->attach($tenant);
     actingAsInTenant($user, $tenant);
 
     return [$tenant, $user];

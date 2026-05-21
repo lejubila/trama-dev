@@ -12,13 +12,10 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\TopologyService;
 use App\Support\Tenancy\TenantContext;
-use Database\Seeders\RolePermissionSeeder;
 use Livewire\Livewire;
-use Spatie\Permission\PermissionRegistrar;
 
 afterEach(function (): void {
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 });
 
 function bootTopologyScene(string $role): array
@@ -26,11 +23,9 @@ function bootTopologyScene(string $role): array
     $tenant = Tenant::factory()->create();
     /** @var User $user */
     $user = User::factory()->create();
-    $user->tenants()->attach($tenant, ['role' => $role]);
+    $user->forceFill(['role' => $role])->save();
+    $user->tenants()->attach($tenant);
     $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
-    test()->seed(RolePermissionSeeder::class);
-    app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
-    $user->syncRoles([$role]);
     actingAsInTenant($user, $tenant);
 
     $site = Site::factory()->create();

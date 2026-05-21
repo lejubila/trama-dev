@@ -6,11 +6,9 @@ use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
 use App\Support\Tenancy\TenantContext;
-use Spatie\Permission\PermissionRegistrar;
 
 afterEach(function (): void {
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 });
 
 function bootIfPair(array $u): array

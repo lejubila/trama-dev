@@ -8,11 +8,9 @@ use App\Models\Rack;
 use App\Models\Room;
 use App\Models\Site;
 use App\Support\Tenancy\TenantContext;
-use Spatie\Permission\PermissionRegistrar;
 
 afterEach(function (): void {
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 });
 
 it('returns nodes and edges scoped to current tenant', function (): void {

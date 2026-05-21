@@ -106,7 +106,7 @@ class GlobalSearch extends Component
                 ->get(['id', 'cable_label', 'cable_type'])
                 ->map(fn ($c): array => [
                     'id' => $c->id,
-                    'label' => $c->cable_label ?? '(senza etichetta)',
+                    'label' => $c->cable_label ?? __('search.unlabeled'),
                     'meta' => $c->cable_type,
                     'url' => route('connections.index'),
                 ]);

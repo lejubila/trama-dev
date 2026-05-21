@@ -19,6 +19,8 @@ class RackRules
             'depth_mm' => 'nullable|integer|min:100|max:2000',
             'numbering' => 'nullable|in:bottom_up,top_down',
             'notes' => 'nullable|string|max:5000',
+            'position_x' => 'nullable|numeric|min:0|max:999.99',
+            'position_y' => 'nullable|numeric|min:0|max:999.99',
         ];
     }
 }

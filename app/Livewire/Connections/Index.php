@@ -6,6 +6,7 @@ namespace App\Livewire\Connections;
 
 use App\Enums\ConnectionStatus;
 use App\Models\Connection;
+use App\Models\Equipment;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -23,6 +24,12 @@ class Index extends Component
     #[Url(except: '')]
     public string $statusFilter = '';
 
+    #[Url(except: 0)]
+    public int $equipmentFilter = 0;
+
+    #[Url(except: '')]
+    public string $portFilter = '';
+
     public function updatingSearch(): void
     {
         $this->resetPage();
@@ -30,6 +37,22 @@ class Index extends Component
 
     public function updatingStatusFilter(): void
     {
+        $this->resetPage();
+    }
+
+    public function updatingEquipmentFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPortFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['search', 'statusFilter', 'equipmentFilter', 'portFilter']);
         $this->resetPage();
     }
 
@@ -55,12 +78,21 @@ class Index extends Component
             ->with(['fromInterface.equipment', 'toInterface.equipment'])
             ->when($this->search !== '', fn ($q) => $q->where('cable_label', 'ilike', "%{$this->search}%"))
             ->when($this->statusFilter !== '', fn ($q) => $q->where('status', $this->statusFilter))
+            ->when($this->equipmentFilter > 0, fn ($q) => $q->where(function ($qq): void {
+                $qq->whereHas('fromInterface', fn ($qi) => $qi->where('equipment_id', $this->equipmentFilter))
+                    ->orWhereHas('toInterface', fn ($qi) => $qi->where('equipment_id', $this->equipmentFilter));
+            }))
+            ->when($this->portFilter !== '', fn ($q) => $q->where(function ($qq): void {
+                $qq->whereHas('fromInterface', fn ($qi) => $qi->where('name', 'ilike', "%{$this->portFilter}%"))
+                    ->orWhereHas('toInterface', fn ($qi) => $qi->where('name', 'ilike', "%{$this->portFilter}%"));
+            }))
             ->orderByDesc('id')
             ->paginate(20);
 
         return view('livewire.connections.index', [
             'connections' => $connections,
             'statuses' => ConnectionStatus::cases(),
+            'equipmentList' => Equipment::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 }

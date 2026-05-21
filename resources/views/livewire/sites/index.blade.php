@@ -1,5 +1,5 @@
 <div>
-    <x-page-header title="Sedi" subtitle="Tutte le sedi del cliente attivo">
+    <x-page-header :title="__('sites.title')" :subtitle="__('sites.subtitle')">
         @can('create', App\Models\Site::class)
             <button
                 type="button"
@@ -7,7 +7,7 @@
                 class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
             >
                 <x-icon name="plus" class="h-4 w-4" />
-                Nuova sede
+                {{ __('sites.new') }}
             </button>
         @endcan
     </x-page-header>
@@ -16,7 +16,7 @@
         <input
             type="text"
             wire:model.live.debounce.300ms="search"
-            placeholder="Cerca sede…"
+            placeholder="{{ __('sites.search_placeholder') }}"
             class="block w-64 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
         />
     </div>
@@ -25,10 +25,10 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Indirizzo</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Locali</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('sites.col_name') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('sites.col_address') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('sites.col_rooms') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">{{ __('sites.col_actions') }}</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200 text-sm">
@@ -46,14 +46,14 @@
                                 </button>
                             @endcan
                             @can('delete', $site)
-                                <button wire:click="delete({{ $site->id }})" wire:confirm="Eliminare la sede {{ $site->name }}?" class="text-red-600 hover:text-red-800">
+                                <button wire:click="delete({{ $site->id }})" wire:confirm="{{ __('sites.delete_confirm', ['name' => $site->name]) }}" class="text-red-600 hover:text-red-800">
                                     <x-icon name="trash" class="h-4 w-4 inline" />
                                 </button>
                             @endcan
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">Nessuna sede trovata.</td></tr>
+                    <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">{{ __('sites.empty') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -62,28 +62,28 @@
     <div class="mt-4">{{ $sites->links() }}</div>
 
     @if ($showForm)
-        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" wire:click.self="$set('showForm', false)">
+        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
             <div class="bg-white rounded-md shadow-lg w-full max-w-md p-6">
-                <h2 class="text-lg font-semibold mb-4">{{ $editingId ? 'Modifica sede' : 'Nuova sede' }}</h2>
+                <h2 class="text-lg font-semibold mb-4">{{ $editingId ? __('sites.form_edit') : __('sites.form_new') }}</h2>
                 <form wire:submit="save" class="space-y-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Nome</label>
+                        <label class="block text-sm font-medium text-gray-700">{{ __('sites.label_name') }}</label>
                         <input type="text" wire:model="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                         @error('name')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Indirizzo</label>
+                        <label class="block text-sm font-medium text-gray-700">{{ __('sites.label_address') }}</label>
                         <input type="text" wire:model="address" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                         @error('address')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Note</label>
+                        <label class="block text-sm font-medium text-gray-700">{{ __('sites.label_notes') }}</label>
                         <textarea wire:model="notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
                         @error('notes')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div class="flex justify-end gap-x-2 pt-2">
-                        <button type="button" wire:click="$set('showForm', false)" class="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Annulla</button>
-                        <button type="submit" class="px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Salva</button>
+                        <button type="button" wire:click="$set('showForm', false)" class="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">{{ __('common.cancel') }}</button>
+                        <button type="submit" class="px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">{{ __('common.save') }}</button>
                     </div>
                 </form>
             </div>

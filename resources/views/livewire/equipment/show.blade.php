@@ -1,11 +1,14 @@
 <div>
     <x-page-header :title="$equipment->name" :subtitle="($equipment->vendor ?? '') . ' ' . ($equipment->model ?? '')">
         <a href="{{ route('equipment.index') }}" wire:navigate class="text-sm text-gray-600 hover:text-gray-800">← Torna ai dispositivi</a>
+        @can('update', $equipment)
+            <a href="{{ route('equipment.index', ['edit' => $equipment->id]) }}" wire:navigate class="text-sm text-indigo-700 hover:text-indigo-900">✎ Modifica</a>
+        @endcan
     </x-page-header>
 
     <div class="border-b border-gray-200 mb-6">
         <nav class="flex gap-x-4 text-sm">
-            @php $tabs = ['general' => 'Generale', 'interfaces' => 'Interfacce', 'audit' => 'Audit']; @endphp
+            @php $tabs = ['general' => 'Generale', 'interfaces' => 'Interfacce', 'connections' => 'Connessioni', 'audit' => 'Audit']; @endphp
             @foreach ($tabs as $key => $label)
                 <button
                     wire:click="setTab('{{ $key }}')"
@@ -87,6 +90,77 @@
         </div>
     @endif
 
+    @if ($activeTab === 'connections')
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-semibold">Connessioni ({{ $connections->count() }})</h3>
+            @can('create', App\Models\Connection::class)
+                <a href="{{ route('connections.create', ['from_equipment' => $equipment->id]) }}" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+                    <x-icon name="plus" class="h-4 w-4" /> Nuova connessione
+                </a>
+            @endcan
+        </div>
+
+        <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Porta locale</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dispositivo remoto</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Porta remota</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cavo</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Colore</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Etichetta</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                    @forelse ($connections as $c)
+                        @php
+                            $isFromHere = $c->fromInterface?->equipment_id === $equipment->id;
+                            $local = $isFromHere ? $c->fromInterface : $c->toInterface;
+                            $remote = $isFromHere ? $c->toInterface : $c->fromInterface;
+                        @endphp
+                        <tr wire:key="cn-{{ $c->id }}">
+                            <td class="px-4 py-3 font-mono text-gray-900">{{ $local?->name ?? '—' }}</td>
+                            <td class="px-4 py-3">
+                                @if ($remote?->equipment)
+                                    <a href="{{ route('equipment.show', $remote->equipment) }}" wire:navigate class="text-indigo-700 hover:underline">{{ $remote->equipment->name }}</a>
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 font-mono text-gray-700">{{ $remote?->name ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $c->cable_type }} {{ $c->cable_length_m ? '· '.$c->cable_length_m.' m' : '' }}</td>
+                            <td class="px-4 py-3 text-gray-600">
+                                @if ($c->color)
+                                    <span class="inline-flex items-center gap-x-1.5">
+                                        <span class="inline-block h-4 w-4 rounded border border-gray-300" style="background-color: {{ $c->color }}" title="{{ $c->color }}"></span>
+                                        <span class="font-mono text-xs">{{ strtoupper($c->color) }}</span>
+                                    </span>
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-gray-600">{{ $c->cable_label ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $c->status?->value }}</td>
+                            <td class="px-4 py-3 text-right space-x-2">
+                                @can('update', $c)
+                                    <a href="{{ route('connections.edit', ['connection' => $c, 'from_equipment' => $equipment->id]) }}" wire:navigate class="text-indigo-600 hover:text-indigo-800 text-xs">Modifica</a>
+                                @endcan
+                                @can('delete', $c)
+                                    <button wire:click="deleteConnection({{ $c->id }})" wire:confirm="Eliminare la connessione {{ $local?->name }} ↔ {{ $remote?->equipment?->name }} · {{ $remote?->name }}?" class="text-red-600 hover:text-red-800"><x-icon name="trash" class="h-4 w-4 inline" /></button>
+                                @endcan
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" class="px-4 py-6 text-center text-gray-500">Nessuna connessione per questo dispositivo.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    @endif
+
     @if ($activeTab === 'audit')
         <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
             <table class="min-w-full divide-y divide-gray-200">
@@ -120,7 +194,7 @@
     @endif
 
     @if ($showIfForm)
-        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4 overflow-y-auto" wire:click.self="$set('showIfForm', false)">
+        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
             <div class="bg-white rounded-md shadow-lg w-full max-w-2xl p-6 my-8">
                 <h2 class="text-lg font-semibold mb-4">{{ $editingIfId ? 'Modifica interfaccia' : 'Nuova interfaccia' }}</h2>
                 <form wire:submit="saveIf" class="space-y-3">
@@ -209,10 +283,14 @@
                         <label class="block text-sm font-medium text-gray-700">Descrizione</label>
                         <input type="text" wire:model="ifDescription" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                     </div>
+                    @php
+                        $bulkInvalid = $ifBulk && $editingIfId === null
+                            && ($ifBulkQuantity === null || $ifBulkStartFrom === null);
+                    @endphp
                     <div class="flex justify-end gap-x-2 pt-2">
                         <button type="button" wire:click="$set('showIfForm', false)" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Annulla</button>
-                        <button type="submit" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
-                            {{ $ifBulk && $editingIfId === null ? 'Crea '.$ifBulkQuantity.' interfacce' : 'Salva' }}
+                        <button type="submit" @disabled($bulkInvalid) class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {{ $ifBulk && $editingIfId === null ? 'Crea '.($ifBulkQuantity ?? 0).' interfacce' : 'Salva' }}
                         </button>
                     </div>
                 </form>

@@ -84,9 +84,12 @@ class Index extends Component
     public function render(): View
     {
         $user = auth()->user();
-        $tenants = $user
-            ? $user->tenants()->orderBy('name')->get()
-            : collect();
+        // Admins and tecnici see every tenant; clienti only their assigned ones.
+        $tenants = match (true) {
+            $user === null => collect(),
+            $user->canManageData() => Tenant::query()->orderBy('name')->get(),
+            default => $user->tenants()->orderBy('name')->get(),
+        };
 
         return view('livewire.tenants.index', [
             'tenants' => $tenants,

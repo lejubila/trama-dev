@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Rack</title>
+  <desc>Rack/armadio di rete con unità installate</desc>
+  <!-- Ombra -->
+  <ellipse cx="64" cy="120" rx="38" ry="4" fill="#2C2C2A" opacity="0.12"/>
+
+  <!-- Case Rack: armadio verticale alto -->
+  <g transform="translate(64, 64)">
+    <!-- TOP face -->
+    <path d="M -32 -44 L 0 -60 L 32 -44 L 0 -28 Z" fill="#E8E6DE" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- FRONT face (alto) -->
+    <path d="M -32 -44 L 0 -28 L 0 52 L -32 36 Z" fill="#B4B2A9" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- SIDE face -->
+    <path d="M 0 -28 L 32 -44 L 32 36 L 0 52 Z" fill="#888780" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- Unità installate dentro il rack (con porta-vetro semi aperta) -->
+    <g transform="translate(-32, -44) skewY(28.5)">
+      <!-- Cornice porta -->
+      <rect x="2" y="2" width="28" height="78" fill="none" stroke="#2C2C2A" stroke-width="0.6" rx="0.5"/>
+
+      <!-- Unità 1: 1U (router/switch) -->
+      <rect x="4" y="6" width="24" height="6" fill="#444441" stroke="#2C2C2A" stroke-width="0.4" rx="0.3"/>
+      <rect x="6" y="8" width="14" height="2" fill="#1D9E75"/>
+      <circle cx="25" cy="9" r="0.7" fill="#FFC107"/>
+
+      <!-- Spazio vuoto -->
+
+      <!-- Unità 2: 2U (server) -->
+      <rect x="4" y="18" width="24" height="12" fill="#5F5E5A" stroke="#2C2C2A" stroke-width="0.4" rx="0.3"/>
+      <rect x="6" y="20" width="10" height="3" fill="#E8E6DE"/>
+      <rect x="6" y="25" width="10" height="3" fill="#E8E6DE"/>
+      <circle cx="22" cy="22" r="0.7" fill="#1D9E75"/>
+      <circle cx="25" cy="22" r="0.7" fill="#1D9E75"/>
+
+      <!-- Unità 3: 1U (switch) -->
+      <rect x="4" y="34" width="24" height="6" fill="#444441" stroke="#2C2C2A" stroke-width="0.4" rx="0.3"/>
+      <g fill="#FFFFFF">
+        <rect x="6" y="36" width="1.5" height="2"/>
+        <rect x="8" y="36" width="1.5" height="2"/>
+        <rect x="10" y="36" width="1.5" height="2"/>
+        <rect x="12" y="36" width="1.5" height="2"/>
+        <rect x="14" y="36" width="1.5" height="2"/>
+        <rect x="16" y="36" width="1.5" height="2"/>
+        <rect x="18" y="36" width="1.5" height="2"/>
+        <rect x="20" y="36" width="1.5" height="2"/>
+      </g>
+
+      <!-- Unità 4: patch panel -->
+      <rect x="4" y="44" width="24" height="6" fill="#888780" stroke="#2C2C2A" stroke-width="0.4" rx="0.3"/>
+      <g fill="#FFFFFF">
+        <rect x="6" y="46" width="1.2" height="2"/>
+        <rect x="8" y="46" width="1.2" height="2"/>
+        <rect x="10" y="46" width="1.2" height="2"/>
+        <rect x="12" y="46" width="1.2" height="2"/>
+        <rect x="14" y="46" width="1.2" height="2"/>
+        <rect x="16" y="46" width="1.2" height="2"/>
+        <rect x="18" y="46" width="1.2" height="2"/>
+        <rect x="20" y="46" width="1.2" height="2"/>
+        <rect x="22" y="46" width="1.2" height="2"/>
+      </g>
+
+      <!-- UPS in basso -->
+      <rect x="4" y="58" width="24" height="14" fill="#5F5E5A" stroke="#2C2C2A" stroke-width="0.4" rx="0.3"/>
+      <rect x="6" y="61" width="10" height="4" fill="#04342C"/>
+      <circle cx="22" cy="63" r="0.8" fill="#FFC107"/>
+      <circle cx="25" cy="63" r="0.8" fill="#FFC107"/>
+    </g>
+
+    <!-- Rotelle alla base -->
+    <ellipse cx="-26" cy="38" rx="2.5" ry="1.5" fill="#2C2C2A"/>
+    <ellipse cx="-6" cy="48" rx="2.5" ry="1.5" fill="#2C2C2A"/>
+  </g>
+</svg>

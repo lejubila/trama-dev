@@ -9,76 +9,56 @@ use App\Models\Room;
 use App\Models\Site;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\PermissionRegistrar;
 
 afterEach(function (): void {
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 });
 
-it('creates a tenant and attaches the creator as admin', function (): void {
+it('creates a tenant and lands the creator inside it', function (): void {
     /** @var User $user */
-    $user = User::factory()->create();
+    $user = User::factory()->admin()->create();
 
     $tenant = app(CreateTenant::class)->execute($user, [
         'name' => 'New Workspace Inc.',
     ]);
 
     expect($tenant->slug)->toBe('new-workspace-inc')
-        ->and($user->fresh()->belongsToTenant($tenant))->toBeTrue()
-        ->and($user->fresh()->roleInTenant($tenant))->toBe('admin');
-});
-
-it('bootstraps the three spatie roles inside the new tenant', function (): void {
-    /** @var User $user */
-    $user = User::factory()->create();
-
-    $tenant = app(CreateTenant::class)->execute($user, ['name' => 'Roles Test']);
-
-    $roleNames = Role::query()
-        ->where('tenant_id', $tenant->getKey())
-        ->pluck('name')
-        ->sort()
-        ->values()
-        ->all();
-
-    expect($roleNames)->toBe(['admin', 'cliente', 'tecnico']);
+        ->and((int) $user->fresh()->current_tenant_id)->toBe($tenant->getKey());
 });
 
 it('auto-switches current_tenant_id to the new tenant', function (): void {
     /** @var User $user */
-    $user = User::factory()->create();
+    $user = User::factory()->tecnico()->create();
 
     $tenant = app(CreateTenant::class)->execute($user, ['name' => 'Auto Switch']);
 
     expect((int) $user->fresh()->current_tenant_id)->toBe($tenant->getKey());
 });
 
-it('lets a tenant admin update the tenant via policy', function (): void {
-    /** @var User $user */
-    $user = User::factory()->create();
-    $tenant = app(CreateTenant::class)->execute($user, ['name' => 'Editable']);
+it('lets admin and tecnico update any tenant via policy', function (): void {
+    $admin = User::factory()->admin()->create();
+    $tecnico = User::factory()->tecnico()->create();
+    $tenant = app(CreateTenant::class)->execute($admin, ['name' => 'Editable']);
 
-    expect($user->fresh()->can('update', $tenant->fresh()))->toBeTrue();
+    expect($admin->fresh()->can('update', $tenant->fresh()))->toBeTrue()
+        ->and($tecnico->fresh()->can('update', $tenant->fresh()))->toBeTrue();
 });
 
-it('forbids non-admin members from updating someone else\'s tenant', function (): void {
-    /** @var User $admin */
-    $admin = User::factory()->create();
+it('forbids a cliente from updating or deleting a tenant', function (): void {
+    $admin = User::factory()->admin()->create();
     $tenant = app(CreateTenant::class)->execute($admin, ['name' => 'Locked']);
 
-    /** @var User $tecnico */
-    $tecnico = User::factory()->create();
-    $tecnico->tenants()->attach($tenant->getKey(), ['role' => 'tecnico']);
+    /** @var User $cliente */
+    $cliente = User::factory()->cliente()->create();
+    $cliente->tenants()->attach($tenant->getKey());
 
-    expect($tecnico->fresh()->can('update', $tenant->fresh()))->toBeFalse()
-        ->and($tecnico->fresh()->can('delete', $tenant->fresh()))->toBeFalse();
+    expect($cliente->fresh()->can('update', $tenant->fresh()))->toBeFalse()
+        ->and($cliente->fresh()->can('delete', $tenant->fresh()))->toBeFalse();
 });
 
 it('cascades cleanup on tenant delete', function (): void {
     /** @var User $user */
-    $user = User::factory()->create();
+    $user = User::factory()->admin()->create();
     $tenant = app(CreateTenant::class)->execute($user, ['name' => 'Doomed']);
 
     TenantContext::setId($tenant->getKey());
@@ -98,8 +78,9 @@ it('cascades cleanup on tenant delete', function (): void {
 
 it('resets current_tenant_id of members when the tenant is deleted', function (): void {
     /** @var User $user */
-    $user = User::factory()->create();
+    $user = User::factory()->cliente()->create();
     $tenant = app(CreateTenant::class)->execute($user, ['name' => 'About to vanish']);
+    $user->tenants()->attach($tenant->getKey());
 
     expect((int) $user->fresh()->current_tenant_id)->toBe($tenant->getKey());
 

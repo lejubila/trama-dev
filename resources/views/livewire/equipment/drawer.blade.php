@@ -40,6 +40,10 @@
                             @if ($equipment->mounted)
                                 <div class="col-span-2"><dt class="text-gray-500 inline">Posizione:</dt> {{ $equipment->rack?->name }} · U{{ $equipment->position_u_start }}–{{ $equipment->position_u_start + $equipment->position_u_height - 1 }} {{ $equipment->locked ? '🔒' : '' }}</div>
                             @endif
+                            @php $roomName = $equipment->rack?->room?->name ?? $equipment->room?->name; @endphp
+                            @if ($roomName)
+                                <div class="col-span-2"><dt class="text-gray-500 inline">Locale:</dt> {{ $roomName }}</div>
+                            @endif
                             @if ($equipment->description)
                                 <div class="col-span-2 mt-2"><dt class="text-gray-500 mb-1">Descrizione:</dt><dd class="whitespace-pre-line">{{ $equipment->description }}</dd></div>
                             @endif

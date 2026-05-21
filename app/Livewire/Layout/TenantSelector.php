@@ -16,9 +16,12 @@ class TenantSelector extends Component
         $user = auth()->user();
 
         /** @var Collection<int, Tenant> $tenants */
-        $tenants = $user
-            ? $user->tenants()->orderBy('name')->get()
-            : new Collection;
+        $tenants = match (true) {
+            $user === null => new Collection,
+            // Admins and tecnici can switch to any tenant; clienti only theirs.
+            $user->canManageData() => Tenant::query()->orderBy('name')->get(),
+            default => $user->tenants()->orderBy('name')->get(),
+        };
 
         return view('livewire.layout.tenant-selector', [
             'tenants' => $tenants,

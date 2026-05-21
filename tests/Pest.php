@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
-use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /*
@@ -37,9 +36,9 @@ expect()->extend('toBeOne', function () {
 */
 
 /**
- * Authenticate as $user with $tenant active in both Laravel auth state
- * and the TenantContext + spatie permission team scope, mirroring what
- * SetCurrentTenant middleware does in production requests.
+ * Authenticate as $user with $tenant active in both Laravel auth state and the
+ * TenantContext, mirroring what SetCurrentTenant does in production requests.
+ * The user's capabilities derive from its global `role`.
  */
 function actingAsInTenant(User $user, Tenant $tenant): User
 {
@@ -48,20 +47,13 @@ function actingAsInTenant(User $user, Tenant $tenant): User
     test()->actingAs($user);
 
     TenantContext::setId($tenant->getKey());
-    app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
 
     return $user;
 }
 
-function something(): void
-{
-    // ..
-}
-
 /**
- * Bootstrap an API user with a Sanctum token. Returns the tenant, user, and
- * a Bearer-ready plain-text token. Intentionally separate from
- * `actingAsInTenant` because API tests rely on token auth, not session.
+ * Bootstrap an API user with the given global role and a Sanctum token.
+ * Clienti are assigned to the tenant; admins/tecnici access any tenant.
  *
  * @return array{tenant: Tenant, user: User, token: string}
  */
@@ -69,18 +61,17 @@ function apiUser(string $role = 'admin'): array
 {
     $tenant = Tenant::factory()->create();
     /** @var User $user */
-    $user = User::factory()->create();
-    $user->tenants()->attach($tenant, ['role' => $role]);
-    $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
+    $user = User::factory()->create(['role' => UserRole::from($role)]);
 
-    test()->seed(RolePermissionSeeder::class);
-    app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
-    $user->syncRoles([$role]);
+    if ($role === UserRole::Cliente->value) {
+        $user->tenants()->attach($tenant);
+    }
+
+    $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
 
     $token = $user->createToken('api-test', ['read', 'write'])->plainTextToken;
 
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 
     return ['tenant' => $tenant, 'user' => $user, 'token' => $token];
 }

@@ -27,33 +27,33 @@ it('rejects placement that overflows rack height', function (): void {
     expect($this->svc->canPlace($this->rack, 11, 3))->toBeFalse();
 });
 
-it('rejects overlap with already mounted equipment', function (): void {
+it('allows overlap with already mounted equipment (multi-device per U is supported)', function (): void {
     Equipment::factory()->mountedAt(3, 2)->create([
         'rack_id' => $this->rack->getKey(),
     ]);
 
-    expect($this->svc->canPlace($this->rack, 4, 1))->toBeFalse()
-        ->and($this->svc->canPlace($this->rack, 2, 2))->toBeFalse()
-        ->and($this->svc->canPlace($this->rack, 1, 2))->toBeTrue()
+    // Overlap is now permitted; only bounds matter.
+    expect($this->svc->canPlace($this->rack, 4, 1))->toBeTrue()
+        ->and($this->svc->canPlace($this->rack, 2, 2))->toBeTrue()
+        ->and($this->svc->canPlace($this->rack, 3, 2))->toBeTrue()
         ->and($this->svc->canPlace($this->rack, 5, 8))->toBeTrue();
 });
 
-it('ignores the equipment we are relocating', function (): void {
-    $eq = Equipment::factory()->mountedAt(3, 2)->create([
+it('still rejects placements that overflow the rack', function (): void {
+    Equipment::factory()->mountedAt(3, 2)->create([
         'rack_id' => $this->rack->getKey(),
     ]);
 
-    // Without exclusion the slot is occupied; with it, free.
-    expect($this->svc->canPlace($this->rack, 3, 2))->toBeFalse()
-        ->and($this->svc->canPlace($this->rack, 3, 2, $eq))->toBeTrue();
+    expect($this->svc->canPlace($this->rack, 11, 3))->toBeFalse() // 11..13 in a 12U rack
+        ->and($this->svc->canPlace($this->rack, 0, 1))->toBeFalse(); // startU < 1
 });
 
-it('lists available start-U positions for a given height', function (): void {
+it('lists every in-bounds start-U position as available', function (): void {
     Equipment::factory()->mountedAt(3, 2)->create(['rack_id' => $this->rack->getKey()]);
     Equipment::factory()->mountedAt(8, 1)->create(['rack_id' => $this->rack->getKey()]);
 
     $slots = $this->svc->findAvailableSlots($this->rack, 1);
 
-    expect($slots)->toContain(1, 2, 5, 6, 7, 9, 10, 11, 12)
-        ->and($slots)->not->toContain(3, 4, 8);
+    // With multi-device-per-U allowed, every U from 1..12 is a valid start.
+    expect($slots)->toEqualCanonicalizing(range(1, 12));
 });

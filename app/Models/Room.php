@@ -22,8 +22,23 @@ class Room extends Model
         'site_id',
         'name',
         'floor',
+        'width_m',
+        'depth_m',
+        'floor_plan_path',
+        'rack_icon_size_px',
         'notes',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'width_m' => 'decimal:2',
+            'depth_m' => 'decimal:2',
+        ];
+    }
 
     /**
      * @return BelongsTo<Site, $this>

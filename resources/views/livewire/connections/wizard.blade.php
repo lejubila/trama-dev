@@ -1,6 +1,11 @@
 <div>
+    @php
+        $cancelUrl = $fromEquipmentId
+            ? route('equipment.show', ['equipment' => $fromEquipmentId, 'tab' => 'connections'])
+            : route('connections.index');
+    @endphp
     <x-page-header title="Nuova connessione" subtitle="Step {{ $step }} di 3">
-        <a href="{{ route('connections.index') }}" wire:navigate class="text-sm text-gray-600 hover:text-gray-800">← Annulla</a>
+        <a href="{{ $cancelUrl }}" wire:navigate class="text-sm text-gray-600 hover:text-gray-800">← Annulla</a>
     </x-page-header>
 
     <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md p-6 max-w-3xl">
@@ -19,10 +24,15 @@
                  selected option from step 1 would bleed into step 2's
                  toInterfaceId via the deferred wire:model sync. --}}
             <div wire:key="step-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Interfaccia di partenza</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Interfaccia di partenza
+                    @if ($fromEquipmentId)
+                        <span class="text-xs text-gray-500 font-normal">— filtrato sul dispositivo selezionato</span>
+                    @endif
+                </label>
                 <select wire:model="fromInterfaceId" class="block w-full rounded-md border-gray-300 shadow-sm text-sm">
                     <option value="">Seleziona…</option>
-                    @foreach ($equipment as $eq)
+                    @foreach ($equipmentStep1 as $eq)
                         <optgroup label="{{ $eq->name }}">
                             @foreach ($eq->interfaces as $if)
                                 <option value="{{ $if->id }}" @disabled(in_array($if->id, $busyIds, true))>{{ $if->name }} — {{ $if->type?->value }}@if (in_array($if->id, $busyIds, true)) (occupata) @endif</option>
@@ -31,6 +41,11 @@
                     @endforeach
                 </select>
                 @error('fromInterfaceId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                @if ($fromEquipmentId)
+                    <p class="text-xs text-gray-500 mt-1">
+                        <a href="{{ route('connections.create') }}" wire:navigate class="text-indigo-600 hover:underline">Mostra tutti i dispositivi</a>
+                    </p>
+                @endif
             </div>
         @elseif ($step === 2)
             <div wire:key="step-2">

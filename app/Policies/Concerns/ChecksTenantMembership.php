@@ -8,12 +8,13 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Default authorization rules for tenant-scoped resources:
- *  - viewAny  → any logged-in user
- *  - view     → user is member of the model's tenant
- *  - create   → user has admin or tecnico role in the *current* tenant
- *  - update   → admin/tecnico in current tenant AND member of model's tenant
- *  - delete   → admin only, AND member of model's tenant
+ * Default authorization rules for tenant-scoped resources, based on the global
+ * user role (admin bypasses everything via Gate::before):
+ *  - viewAny  → any logged-in user with an active tenant
+ *  - view     → model belongs to the user's current tenant
+ *  - create   → tecnico (manages data of every tenant); clienti are read-only
+ *  - update   → tecnico AND model belongs to the current tenant
+ *  - delete   → tecnico AND model belongs to the current tenant
  *
  * Concrete policies can override single methods (e.g. TagPolicy lets clienti
  * view-only) without rewriting the whole thing.
@@ -32,19 +33,19 @@ trait ChecksTenantMembership
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRoleInCurrentTenant(['admin', 'tecnico']);
+        return $user->canManageData();
     }
 
     public function update(User $user, Model $model): bool
     {
         return (int) $user->current_tenant_id === (int) $model->getAttribute('tenant_id')
-            && $user->hasAnyRoleInCurrentTenant(['admin', 'tecnico']);
+            && $user->canManageData();
     }
 
     public function delete(User $user, Model $model): bool
     {
         return (int) $user->current_tenant_id === (int) $model->getAttribute('tenant_id')
-            && $user->hasRoleInCurrentTenant('admin');
+            && $user->canManageData();
     }
 
     public function restore(User $user, Model $model): bool

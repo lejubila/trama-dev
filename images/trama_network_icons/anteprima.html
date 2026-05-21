@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Trama Network — Set Icone</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #F1EFE8;
+    color: #2C2C2A;
+    margin: 0;
+    padding: 40px 20px;
+  }
+  h1 {
+    text-align: center;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #5F5E5A;
+    margin-bottom: 40px;
+    font-size: 14px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .icon-card {
+    background: #FFFFFF;
+    border: 0.5px solid #D3D1C7;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.15s;
+  }
+  .icon-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  .icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 140px;
+    margin-bottom: 12px;
+  }
+  .icon-wrapper img {
+    width: 128px;
+    height: 128px;
+  }
+  .icon-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: #2C2C2A;
+    margin-bottom: 4px;
+  }
+  .icon-file {
+    font-size: 12px;
+    color: #888780;
+    font-family: monospace;
+  }
+  .size-controls {
+    text-align: center;
+    margin: 30px 0;
+    padding: 16px;
+    background: #FFFFFF;
+    border-radius: 12px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 0.5px solid #D3D1C7;
+  }
+  .size-controls label {
+    margin-right: 12px;
+    font-size: 13px;
+    color: #5F5E5A;
+  }
+  .size-controls input {
+    width: 200px;
+  }
+  .size-controls span {
+    font-weight: 500;
+    margin-left: 8px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Trama Network — Set Icone</h1>
+<p class="subtitle">14 icone isometriche per oggetti di rete · SVG vettoriali · 128×128 px</p>
+
+<div class="size-controls">
+  <label for="sizeSlider">Anteprima dimensione:</label>
+  <input type="range" id="sizeSlider" min="24" max="160" value="128" step="8">
+  <span id="sizeValue">128 px</span>
+</div>
+
+<div class="grid" id="grid">
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="rack.svg" alt="Rack"></div>
+    <div class="icon-name">Rack</div>
+    <div class="icon-file">rack.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="switch.svg" alt="Switch"></div>
+    <div class="icon-name">Switch</div>
+    <div class="icon-file">switch.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="router.svg" alt="Router"></div>
+    <div class="icon-name">Router</div>
+    <div class="icon-file">router.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="firewall.svg" alt="Firewall"></div>
+    <div class="icon-name">Firewall</div>
+    <div class="icon-file">firewall.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="access_point.svg" alt="Access Point"></div>
+    <div class="icon-name">Access Point</div>
+    <div class="icon-file">access_point.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="controller.svg" alt="Controller"></div>
+    <div class="icon-name">Controller</div>
+    <div class="icon-file">controller.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="patch_panel.svg" alt="Patch Panel"></div>
+    <div class="icon-name">Patch Panel</div>
+    <div class="icon-file">patch_panel.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="server.svg" alt="Server"></div>
+    <div class="icon-name">Server</div>
+    <div class="icon-file">server.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="ups.svg" alt="UPS"></div>
+    <div class="icon-name">UPS</div>
+    <div class="icon-file">ups.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="pdu.svg" alt="PDU"></div>
+    <div class="icon-name">PDU</div>
+    <div class="icon-file">pdu.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="media_converter.svg" alt="Media Converter"></div>
+    <div class="icon-name">Media Converter</div>
+    <div class="icon-file">media_converter.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="nas.svg" alt="NAS"></div>
+    <div class="icon-name">NAS</div>
+    <div class="icon-file">nas.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="kvm.svg" alt="KVM"></div>
+    <div class="icon-name">KVM</div>
+    <div class="icon-file">kvm.svg</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-wrapper"><img src="generica.svg" alt="Generica"></div>
+    <div class="icon-name">Generica</div>
+    <div class="icon-file">generica.svg</div>
+  </div>
+</div>
+
+<script>
+  const slider = document.getElementById('sizeSlider');
+  const sizeValue = document.getElementById('sizeValue');
+  const images = document.querySelectorAll('.icon-wrapper img');
+
+  slider.addEventListener('input', () => {
+    const size = slider.value;
+    sizeValue.textContent = size + ' px';
+    images.forEach(img => {
+      img.style.width = size + 'px';
+      img.style.height = size + 'px';
+    });
+  });
+</script>
+
+</body>
+</html>

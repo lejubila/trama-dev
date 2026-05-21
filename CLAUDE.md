@@ -28,7 +28,7 @@ e logiche tra di essi.
 - **Vista rack:** SVG renderizzato lato server con interazioni Alpine.js
 - **PDF export:** Spatie Browsershot (Puppeteer headless)
 - **Multi-tenancy:** stancl/tenancy v3 (single-database, foreign-key based) — vedi sezione Multi-tenancy
-- **Autorizzazione:** spatie/laravel-permission
+- **Autorizzazione:** ruolo globale per utente (colonna `users.role`, enum `App\Enums\UserRole`) + Policy Laravel. NB: spatie/laravel-permission è stato rimosso.
 - **Audit:** owen-it/laravel-auditing
 - **Test:** Pest
 
@@ -77,13 +77,21 @@ icone custom per ogni tipo di nodo. Perfetta per il caso d'uso.
 - Tutte le tabelle "domain" hanno una colonna `tenant_id` con foreign key + global scope
 
 ### Utenti e ruoli
-- `users`: id, name, email, password, current_tenant_id
-- `users_tenants` (pivot): user_id, tenant_id, role (admin / tecnico / cliente)
-- Un utente può appartenere a più tenant (es. un tecnico interno gestisce 30 clienti)
-- Ruoli (via spatie/laravel-permission, scoped per tenant):
-  - **admin**: tutto, anche gestione utenti del tenant
-  - **tecnico**: CRUD su impianti, dispositivi, connessioni
-  - **cliente**: solo lettura sui propri impianti
+- `users`: id, name, email, password, **role** (admin / tecnico / cliente), current_tenant_id
+- Il **ruolo è globale** (uno per utente, valido in tutta l'installazione), NON per-tenant.
+- `tenant_user` (pivot): user_id, tenant_id — **senza colonna role**. Serve solo ad assegnare
+  i **clienti** ai tenant; admin e tecnici accedono a tutti i tenant senza assegnazione.
+- Ruoli (enum `App\Enums\UserRole`, fatti rispettare dalle Policy):
+  - **admin**: superuser globale — gestisce tutti gli utenti (cross-tenant), tutti i tenant
+    e i loro dati, e le icone globali. Bypassa ogni Policy via `Gate::before` in
+    `AppServiceProvider`.
+  - **tecnico**: gestisce i dati di tutti i tenant + le icone tenant; **non** gestisce utenti
+    né le icone globali. (`User::canManageData()` = admin || tecnico.)
+  - **cliente**: sola lettura, e solo sui tenant a cui è esplicitamente assegnato.
+- Helper su `User`: `isAdmin()`, `isTecnico()`, `isCliente()`, `canManageData()`,
+  `canAccessTenant()`. Gestione utenti centralizzata e cross-tenant in
+  `App\Livewire\Users\Index` (admin only); assegnazione clienti↔tenant via
+  `App\Actions\Tenancy\AssignTenant` (anche dalla tab "Clienti assegnati" di Tenants/Manage).
 
 ### Strutturali
 - `sites`: id, tenant_id, name, address, notes — una sede fisica del cliente

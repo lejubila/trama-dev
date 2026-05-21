@@ -79,7 +79,7 @@ it('keeps valid rows when ignoreErrors=true even if other rows fail', function (
         ->and(Equipment::query()->where('name', 'SW-OK')->exists())->toBeTrue();
 });
 
-it('refuses to import a mounted equipment with a U conflict', function (): void {
+it('allows importing a mounted equipment that overlaps another (multi-device per U)', function (): void {
     $tenant = Tenant::factory()->create();
     TenantContext::setId($tenant->getKey());
 
@@ -89,11 +89,11 @@ it('refuses to import a mounted equipment with a U conflict', function (): void 
     Equipment::factory()->mountedAt(3, 2)->create(['rack_id' => $rack->getKey()]);
 
     $csv = "name,type,vendor,model,serial,firmware,asset_tag,site,room,rack,mounted,position_u_start,position_u_height,status,management_ip,description\n"
-        ."CONFLICT,switch,X,X,,,,Sede X,Room X,Rack X,true,4,1,active,,\n";
+        ."STACKED,switch,X,X,,,,Sede X,Room X,Rack X,true,4,1,active,,\n";
 
     $path = writeFixtureCsv($csv);
     $import = app(ImportEquipmentCsv::class)->execute($path);
 
-    expect($import->status)->toBe('failed')
-        ->and(Equipment::query()->where('name', 'CONFLICT')->exists())->toBeFalse();
+    expect($import->status)->toBe('completed')
+        ->and(Equipment::query()->where('name', 'STACKED')->exists())->toBeTrue();
 });

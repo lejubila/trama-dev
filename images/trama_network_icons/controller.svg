@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Controller</title>
+  <desc>Network Controller con simbolo ingranaggio (management)</desc>
+  <!-- Ombra -->
+  <ellipse cx="64" cy="104" rx="42" ry="4" fill="#2C2C2A" opacity="0.12"/>
+
+  <!-- Ingranaggio meccanico realistico -->
+  <g transform="translate(64, 32)">
+    <!-- Denti ortogonali -->
+    <g fill="#7F77DD" stroke="#3C3489" stroke-width="1" stroke-linejoin="round">
+      <rect x="-4" y="-26" width="8" height="8" rx="0.5"/>
+      <rect x="-4" y="18" width="8" height="8" rx="0.5"/>
+      <rect x="-26" y="-4" width="8" height="8" rx="0.5"/>
+      <rect x="18" y="-4" width="8" height="8" rx="0.5"/>
+      <!-- Denti diagonali -->
+      <g transform="rotate(45)">
+        <rect x="-4" y="-26" width="8" height="8" rx="0.5"/>
+        <rect x="-4" y="18" width="8" height="8" rx="0.5"/>
+        <rect x="-26" y="-4" width="8" height="8" rx="0.5"/>
+        <rect x="18" y="-4" width="8" height="8" rx="0.5"/>
+      </g>
+    </g>
+    <!-- Corpo circolare -->
+    <circle cx="0" cy="0" r="18" fill="#7F77DD" stroke="#3C3489" stroke-width="1.5"/>
+    <!-- Cerchio decorativo interno -->
+    <circle cx="0" cy="0" r="13" fill="none" stroke="#3C3489" stroke-width="0.8" opacity="0.5"/>
+    <!-- Foro centrale esagonale -->
+    <polygon points="-5,-2.9 0,-5.8 5,-2.9 5,2.9 0,5.8 -5,2.9"
+             fill="#FFFFFF" stroke="#3C3489" stroke-width="1.2" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Linea connessione -->
+  <line x1="64" y1="64" x2="64" y2="76" stroke="#888780" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Case Controller: 1U sottile -->
+  <g transform="translate(64, 84)">
+    <path d="M -40 -6 L 0 -24 L 40 -6 L 0 12 Z" fill="#E8E6DE" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M -40 -6 L 0 12 L 0 26 L -40 8 Z" fill="#B4B2A9" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M 0 12 L 40 -6 L 40 8 L 0 26 Z" fill="#888780" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- Dettaglio frontale -->
+    <g transform="translate(-40, -6) skewY(26.5)">
+      <rect x="6" y="10" width="14" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.5" rx="0.3"/>
+      <circle cx="24" cy="15" r="1" fill="#1D9E75"/>
+      <circle cx="28" cy="17" r="1" fill="#1D9E75"/>
+      <circle cx="32" cy="19" r="1" fill="#FAC775"/>
+    </g>
+  </g>
+</svg>

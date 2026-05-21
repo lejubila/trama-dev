@@ -37,6 +37,8 @@ class Rack extends Model
         'position_y',
         'numbering',
         'notes',
+        'icon_path',
+        'icon_size_px',
     ];
 
     protected function casts(): array
@@ -65,5 +67,13 @@ class Rack extends Model
     public function equipment(): HasMany
     {
         return $this->hasMany(Equipment::class);
+    }
+
+    /**
+     * @return HasMany<RackPhoto, $this>
+     */
+    public function photos(): HasMany
+    {
+        return $this->hasMany(RackPhoto::class)->orderByDesc('id');
     }
 }

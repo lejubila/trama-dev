@@ -7,24 +7,19 @@ use App\Models\Site;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
-use Database\Seeders\RolePermissionSeeder;
 use Livewire\Livewire;
-use Spatie\Permission\PermissionRegistrar;
 
 afterEach(function (): void {
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 });
 
 function makeUser(Tenant $tenant, string $role): User
 {
     /** @var User $user */
     $user = User::factory()->create();
-    $user->tenants()->attach($tenant, ['role' => $role]);
+    $user->forceFill(['role' => $role])->save();
+    $user->tenants()->attach($tenant);
     $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
-    test()->seed(RolePermissionSeeder::class);
-    app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
-    $user->syncRoles([$role]);
 
     return $user;
 }

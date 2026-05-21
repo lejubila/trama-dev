@@ -8,13 +8,10 @@ use App\Models\Tenant;
 use App\Models\User;
 
 /**
- * Workspace-style authorization:
- *  - any authenticated user can list / create tenants;
- *  - members can view a tenant they belong to;
- *  - only admins of a tenant can update or delete it.
- *
- * Membership management (add/remove/role-change) reuses `update` since
- * those operations are admin-scoped too.
+ * Tenant (cliente) authorization with global roles (admin bypasses via
+ * Gate::before):
+ *  - admin/tecnico manage every tenant (list, create, update, delete);
+ *  - clienti may only view the tenants they are explicitly assigned to.
  */
 class TenantPolicy
 {
@@ -25,29 +22,21 @@ class TenantPolicy
 
     public function view(User $user, Tenant $tenant): bool
     {
-        return $user->belongsToTenant($tenant);
+        return $user->canAccessTenant($tenant);
     }
 
     public function create(User $user): bool
     {
-        return true;
+        return $user->canManageData();
     }
 
     public function update(User $user, Tenant $tenant): bool
     {
-        return $this->isAdminOf($user, $tenant);
+        return $user->canManageData();
     }
 
     public function delete(User $user, Tenant $tenant): bool
     {
-        return $this->isAdminOf($user, $tenant);
-    }
-
-    private function isAdminOf(User $user, Tenant $tenant): bool
-    {
-        return $user->tenants()
-            ->whereKey($tenant->getKey())
-            ->wherePivot('role', 'admin')
-            ->exists();
+        return $user->canManageData();
     }
 }

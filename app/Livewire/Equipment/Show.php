@@ -9,12 +9,14 @@ use App\Enums\InterfacePoe;
 use App\Enums\InterfaceStatus;
 use App\Enums\InterfaceType;
 use App\Enums\InterfaceVlanMode;
+use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
@@ -22,6 +24,7 @@ class Show extends Component
 {
     public Equipment $equipment;
 
+    #[Url(as: 'tab', except: 'general')]
     public string $activeTab = 'general';
 
     // Interface form state
@@ -54,9 +57,11 @@ class Show extends Component
     // ── Bulk creation (visible only when creating, not editing) ──────────
     public bool $ifBulk = false;
 
-    public int $ifBulkQuantity = 12;
+    // Nullable so clearing the field (Livewire sends "") doesn't leave the
+    // typed property uninitialized and crash the live preview.
+    public ?int $ifBulkQuantity = 12;
 
-    public int $ifBulkStartFrom = 1;
+    public ?int $ifBulkStartFrom = 1;
 
     /**
      * @return array<string, mixed>
@@ -109,6 +114,11 @@ class Show extends Component
     {
         $this->authorize('view', $equipment);
         $this->equipment = $equipment->load('rack.room.site');
+
+        // Sanitize tab param coming from the URL.
+        if (! in_array($this->activeTab, ['general', 'interfaces', 'connections', 'audit'], true)) {
+            $this->activeTab = 'general';
+        }
     }
 
     public function setTab(string $tab): void
@@ -249,8 +259,8 @@ class Show extends Component
      */
     private function generateBulkNames(): array
     {
-        $start = max(0, $this->ifBulkStartFrom);
-        $quantity = max(1, min(256, $this->ifBulkQuantity));
+        $start = max(0, (int) $this->ifBulkStartFrom);
+        $quantity = max(1, min(256, (int) $this->ifBulkQuantity));
         $max = $start + $quantity - 1;
         $padLen = strlen((string) $max);
 
@@ -289,10 +299,33 @@ class Show extends Component
         $this->dispatch('toast', type: 'success', message: 'Interfaccia rimossa.');
     }
 
+    public function deleteConnection(int $id): void
+    {
+        $c = Connection::query()->findOrFail($id);
+        $this->authorize('delete', $c);
+        $c->delete();
+        $this->dispatch('toast', type: 'success', message: 'Connessione rimossa.');
+    }
+
     public function render(): View
     {
+        $interfaceIds = $this->equipment->interfaces()->pluck('id');
+
+        $connections = Connection::query()
+            ->with([
+                'fromInterface.equipment',
+                'toInterface.equipment',
+            ])
+            ->where(function ($q) use ($interfaceIds): void {
+                $q->whereIn('from_interface_id', $interfaceIds)
+                    ->orWhereIn('to_interface_id', $interfaceIds);
+            })
+            ->orderByDesc('id')
+            ->get();
+
         return view('livewire.equipment.show', [
             'interfaces' => $this->equipment->interfaces()->orderBy('index')->orderBy('name')->get(),
+            'connections' => $connections,
             'audits' => $this->equipment->audits()->latest()->limit(50)->get(),
         ]);
     }

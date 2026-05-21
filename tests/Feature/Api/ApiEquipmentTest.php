@@ -9,11 +9,9 @@ use App\Models\Room;
 use App\Models\Site;
 use App\Models\Tenant;
 use App\Support\Tenancy\TenantContext;
-use Spatie\Permission\PermissionRegistrar;
 
 afterEach(function (): void {
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 });
 
 function bootRackFor(array $u, int $units = 12): Rack
@@ -68,7 +66,7 @@ it('creates a non-mounted equipment', function (): void {
     expect(Equipment::query()->where('name', 'NEW-EQ')->exists())->toBeTrue();
 });
 
-it('refuses to create a mounted equipment that overlaps another in the same rack', function (): void {
+it('allows creating a mounted equipment overlapping another (multi-device per U)', function (): void {
     $u = apiUser('admin');
     $rack = bootRackFor($u, 12);
     TenantContext::setId($u['tenant']->getKey());
@@ -76,15 +74,16 @@ it('refuses to create a mounted equipment that overlaps another in the same rack
 
     $this->withHeaders(apiHeaders($u['token'], $u['tenant']->getKey()))
         ->postJson('/api/v1/equipment', [
-            'name' => 'CONFLICT',
+            'name' => 'STACKED',
             'type' => 'switch',
             'mounted' => true,
             'rack_id' => $rack->id,
             'position_u_start' => 4,
             'position_u_height' => 1,
         ])
-        ->assertStatus(422)
-        ->assertJsonValidationErrors(['position_u_start']);
+        ->assertStatus(201);
+
+    expect(Equipment::query()->where('name', 'STACKED')->exists())->toBeTrue();
 });
 
 it('updates an equipment', function (): void {

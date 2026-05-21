@@ -80,43 +80,6 @@ services:
     networks:
       - trama
 
-  scheduler:
-    build:
-      context: .
-      dockerfile: docker/app/Dockerfile
-      args:
-        UID: "${TRAMA_UID:-1000}"
-        GID: "${TRAMA_GID:-1000}"
-    container_name: trama-scheduler
-    restart: unless-stopped
-    working_dir: /var/www/html
-    volumes:
-      - ./:/var/www/html
-    command: ["php", "artisan", "schedule:work"]
-    depends_on:
-      - app
-    networks:
-      - trama
-
-  queue:
-    build:
-      context: .
-      dockerfile: docker/app/Dockerfile
-      args:
-        UID: "${TRAMA_UID:-1000}"
-        GID: "${TRAMA_GID:-1000}"
-    container_name: trama-queue
-    restart: unless-stopped
-    working_dir: /var/www/html
-    volumes:
-      - ./:/var/www/html
-    command: ["php", "artisan", "queue:work", "--tries=3", "--timeout=120"]
-    depends_on:
-      - app
-      - redis
-    networks:
-      - trama
-
 volumes:
   postgres-data:
   redis-data:

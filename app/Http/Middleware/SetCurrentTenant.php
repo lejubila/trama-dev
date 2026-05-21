@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Models\Tenant;
 use App\Support\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
@@ -19,34 +20,27 @@ class SetCurrentTenant
             return $next($request);
         }
 
-        $currentTenantId = $user->current_tenant_id;
+        // Resolve the set of tenants the user may operate in: admins/tecnici can
+        // access every tenant; clienti only the ones they are assigned to.
+        $accessibleQuery = $user->canManageData()
+            ? Tenant::query()
+            : $user->tenants();
 
-        if ($currentTenantId === null) {
-            // No tenant chosen yet — bootstrap with the first one the user belongs to,
-            // if any. Avoids forcing a "pick a tenant" screen for users with one tenant.
-            $first = $user->tenants()->first();
+        $current = $user->current_tenant_id;
 
-            if ($first !== null) {
-                $user->forceFill(['current_tenant_id' => $first->getKey()])->save();
-                TenantContext::setId($first->getKey());
-                setPermissionsTeamId($first->getKey());
-            }
+        $valid = $current !== null
+            && (clone $accessibleQuery)->whereKey($current)->exists();
 
-            return $next($request);
+        if (! $valid) {
+            // Bootstrap (or repair) the current tenant with the first accessible one.
+            $first = (clone $accessibleQuery)->orderBy('tenants.id')->first();
+            $current = $first?->getKey();
+            $user->forceFill(['current_tenant_id' => $current])->save();
         }
 
-        // Defense in depth: if the saved current_tenant_id no longer matches a tenant
-        // the user belongs to (membership revoked, tenant deleted), reset it.
-        $stillMember = $user->tenants()->whereKey($currentTenantId)->exists();
-
-        if (! $stillMember) {
-            $user->forceFill(['current_tenant_id' => null])->save();
-
-            return $next($request);
+        if ($current !== null) {
+            TenantContext::setId($current);
         }
-
-        TenantContext::setId($currentTenantId);
-        setPermissionsTeamId($currentTenantId);
 
         return $next($request);
     }

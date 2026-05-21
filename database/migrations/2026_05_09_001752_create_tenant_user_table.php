@@ -13,7 +13,6 @@ return new class extends Migration
         Schema::create('tenant_user', function (Blueprint $table) {
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('role', 20);
             $table->timestamp('created_at')->useCurrent();
 
             $table->primary(['tenant_id', 'user_id']);

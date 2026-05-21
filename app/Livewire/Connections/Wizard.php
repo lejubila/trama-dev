@@ -12,6 +12,7 @@ use App\Support\CableColors;
 use Illuminate\Contracts\View\View;
 use InvalidArgumentException;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
@@ -34,6 +35,11 @@ class Wizard extends Component
     public string $notes = '';
 
     public ?string $establishedAt = null;
+
+    /** When ?from_equipment=<id> lands on the page, scope step 1 (Estremo A)
+     *  to only the interfaces of that equipment. Step 2 stays unrestricted. */
+    #[Url(as: 'from_equipment')]
+    public ?int $fromEquipmentId = null;
 
     public function mount(): void
     {
@@ -109,6 +115,25 @@ class Wizard extends Component
         }
 
         $this->dispatch('toast', type: 'success', message: 'Connessione creata.');
+        $this->redirectAfterExit();
+    }
+
+    /**
+     * Where to send the browser after save/cancel: back to the originating
+     * equipment's Connessioni tab when the wizard was opened from a device,
+     * otherwise to the global connections list.
+     */
+    private function redirectAfterExit(): void
+    {
+        if ($this->fromEquipmentId !== null) {
+            $this->redirectRoute('equipment.show', [
+                'equipment' => $this->fromEquipmentId,
+                'tab' => 'connections',
+            ], navigate: true);
+
+            return;
+        }
+
         $this->redirectRoute('connections.index', navigate: true);
     }
 
@@ -134,8 +159,16 @@ class Wizard extends Component
             ? NetworkInterface::query()->with('equipment')->find($this->toInterfaceId)
             : null;
 
+        // When the wizard was launched from a device page (?from_equipment=ID)
+        // restrict the step-1 select to that device's interfaces. Step 2 keeps
+        // the full list so the user can wire the other end to anything.
+        $equipmentStep1 = $this->fromEquipmentId !== null
+            ? $equipment->where('id', $this->fromEquipmentId)->values()
+            : $equipment;
+
         return view('livewire.connections.wizard', [
             'equipment' => $equipment,
+            'equipmentStep1' => $equipmentStep1,
             'busyIds' => $busyIds,
             'fromInterface' => $fromInterface,
             'toInterface' => $toInterface,

@@ -39,6 +39,7 @@ class Equipment extends Model implements AuditableContract
     protected $fillable = [
         'tenant_id',
         'rack_id',
+        'room_id',
         'name',
         'type',
         'vendor',
@@ -51,10 +52,14 @@ class Equipment extends Model implements AuditableContract
         'position_u_start',
         'position_u_height',
         'position_orient',
+        'on_top',
+        'hidden_in_topology',
         'status',
         'management_ip',
         'description',
         'custom_fields',
+        'icon_path',
+        'icon_size_px',
     ];
 
     protected function casts(): array
@@ -64,6 +69,8 @@ class Equipment extends Model implements AuditableContract
             'status' => EquipmentStatus::class,
             'mounted' => 'boolean',
             'locked' => 'boolean',
+            'on_top' => 'boolean',
+            'hidden_in_topology' => 'boolean',
             'custom_fields' => 'array',
             'position_u_start' => 'integer',
             'position_u_height' => 'integer',
@@ -76,6 +83,18 @@ class Equipment extends Model implements AuditableContract
     public function rack(): BelongsTo
     {
         return $this->belongsTo(Rack::class);
+    }
+
+    /**
+     * Direct room reference for unracked equipment (and a redundant pointer
+     * for racked ones — kept in sync at save time so a single column always
+     * answers "in which room does this device live?").
+     *
+     * @return BelongsTo<Room, $this>
+     */
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
     }
 
     /**

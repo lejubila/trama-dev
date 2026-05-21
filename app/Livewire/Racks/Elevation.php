@@ -25,6 +25,8 @@ class Elevation extends Component
 
     public ?int $selectedU = null;
 
+    public bool $onTop = false;
+
     public int $positionUHeight = 1;
 
     public string $name = '';
@@ -56,19 +58,20 @@ class Elevation extends Component
         $this->authorize('update', $eq);
 
         if ($eq->rack_id !== $this->rack->getKey()) {
-            $this->dispatch('toast', type: 'error', message: 'Il dispositivo non appartiene a questo rack.');
+            $this->dispatch('toast', type: 'error', message: __('racks.toast_not_in_rack'));
 
             return;
         }
 
         if ($eq->locked) {
-            $this->dispatch('toast', type: 'error', message: 'Dispositivo bloccato: sblocca per riposizionarlo.');
+            $this->dispatch('toast', type: 'error', message: __('racks.toast_locked'));
 
             return;
         }
 
-        if (! $placement->canPlace($this->rack, $newStartU, (int) $eq->position_u_height, $eq)) {
-            $this->dispatch('toast', type: 'error', message: 'Posizione occupata o fuori dal rack.');
+        $eqOrient = $eq->position_orient ?: 'front';
+        if (! $placement->canPlace($this->rack, $newStartU, (int) $eq->position_u_height, $eq, $eqOrient)) {
+            $this->dispatch('toast', type: 'error', message: 'Posizione occupata o fuori dal rack su questo lato.');
 
             return;
         }
@@ -84,12 +87,37 @@ class Elevation extends Component
      * and the slot is unoccupied.
      */
     #[On('slot-clicked')]
-    public function slotClicked(int $u): void
+    public function slotClicked(int $u, ?string $orient = null): void
     {
         $this->authorize('create', Equipment::class);
 
         $this->reset(['name', 'vendor', 'modelName']);
         $this->selectedU = $u;
+        // The slot belongs to the side the user is currently viewing.
+        // Falling back to component state keeps backwards-compat with
+        // old payloads that didn't include the orient.
+        if ($orient !== null && in_array($orient, ['front', 'rear'], true)) {
+            $this->orient = $orient;
+        }
+        $this->onTop = false;
+        $this->positionUHeight = 1;
+        $this->type = 'switch';
+        $this->resetErrorBag();
+        $this->showForm = true;
+    }
+
+    /**
+     * "+" button on the on-top strip → open the prefilled create form for a
+     * device sitting on top of the rack (no U slot).
+     */
+    #[On('on-top-clicked')]
+    public function onTopClicked(): void
+    {
+        $this->authorize('create', Equipment::class);
+
+        $this->reset(['name', 'vendor', 'modelName']);
+        $this->selectedU = null;
+        $this->onTop = true;
         $this->positionUHeight = 1;
         $this->type = 'switch';
         $this->resetErrorBag();
@@ -100,26 +128,30 @@ class Elevation extends Component
     {
         $this->showForm = false;
         $this->selectedU = null;
+        $this->onTop = false;
     }
 
     public function saveEquipment(RackPlacementService $placement): void
     {
         $this->authorize('create', Equipment::class);
 
-        if ($this->selectedU === null) {
+        if (! $this->onTop && $this->selectedU === null) {
             return;
         }
 
-        $this->validate([
+        $rules = [
             'name' => 'required|string|max:150',
             'type' => ['required', Rule::in(array_column(EquipmentType::cases(), 'value'))],
-            'positionUHeight' => 'required|integer|min:1|max:60',
             'vendor' => 'nullable|string|max:80',
             'modelName' => 'nullable|string|max:120',
-        ]);
+        ];
+        if (! $this->onTop) {
+            $rules['positionUHeight'] = 'required|integer|min:1|max:60';
+        }
+        $this->validate($rules);
 
-        if (! $placement->canPlace($this->rack, $this->selectedU, $this->positionUHeight)) {
-            $this->addError('positionUHeight', 'Posizione occupata o fuori dal rack.');
+        if (! $this->onTop && ! $placement->canPlace($this->rack, $this->selectedU, $this->positionUHeight, null, $this->orient)) {
+            $this->addError('positionUHeight', 'Posizione occupata sul lato '.($this->orient === 'rear' ? 'posteriore' : 'anteriore').' o fuori dal rack.');
 
             return;
         }
@@ -132,12 +164,16 @@ class Elevation extends Component
             'model' => $this->modelName !== '' ? $this->modelName : null,
             'mounted' => true,
             'locked' => false,
-            'position_u_start' => $this->selectedU,
-            'position_u_height' => $this->positionUHeight,
+            'on_top' => $this->onTop,
+            'position_u_start' => $this->onTop ? null : $this->selectedU,
+            'position_u_height' => $this->onTop ? null : $this->positionUHeight,
+            'position_orient' => $this->onTop ? null : $this->orient,
             'status' => EquipmentStatus::Active,
         ]);
 
-        $this->dispatch('toast', type: 'success', message: "Dispositivo \"{$this->name}\" creato in U{$this->selectedU}.");
+        $sideLabel = $this->orient === 'rear' ? ' (posteriore)' : ' (anteriore)';
+        $location = $this->onTop ? 'sopra il rack' : "in U{$this->selectedU}{$sideLabel}";
+        $this->dispatch('toast', type: 'success', message: "Dispositivo \"{$this->name}\" creato {$location}.");
         $this->closeForm();
     }
 

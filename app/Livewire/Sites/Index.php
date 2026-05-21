@@ -67,11 +67,11 @@ class Index extends Component
             $site = Site::query()->findOrFail($this->editingId);
             $this->authorize('update', $site);
             $site->update($this->payload());
-            $message = 'Sede aggiornata.';
+            $message = __('sites.toast_updated');
         } else {
             $this->authorize('create', Site::class);
             Site::create($this->payload());
-            $message = 'Sede creata.';
+            $message = __('sites.toast_created');
         }
 
         $this->showForm = false;
@@ -84,7 +84,7 @@ class Index extends Component
         $site = Site::query()->findOrFail($id);
         $this->authorize('delete', $site);
         $site->delete();
-        $this->dispatch('toast', type: 'success', message: 'Sede rimossa.');
+        $this->dispatch('toast', type: 'success', message: __('sites.toast_deleted'));
     }
 
     /**

@@ -5,7 +5,7 @@
 
     <div class="border-b border-gray-200 dark:border-slate-700 mb-6">
         <nav class="flex gap-x-4 text-sm">
-            @foreach (['general' => 'Generale', 'members' => 'Membri'] as $key => $label)
+            @foreach (['general' => 'Generale', 'members' => 'Clienti assegnati'] as $key => $label)
                 <button
                     wire:click="setTab('{{ $key }}')"
                     class="py-2 px-1 border-b-2 {{ $activeTab === $key ? 'border-indigo-600 text-indigo-700 dark:text-indigo-300 font-medium' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700' }}"
@@ -62,11 +62,12 @@
 
     @if ($activeTab === 'members')
         @can('update', $tenant)
-            <form wire:submit="addMember" class="bg-white dark:bg-slate-800 shadow ring-1 ring-black ring-opacity-5 dark:ring-slate-600 rounded-md p-4 mb-6 grid grid-cols-1 md:grid-cols-[1fr_10rem_auto] gap-3 items-end">
+            <p class="text-sm text-gray-500 dark:text-slate-400 mb-3">Solo gli utenti di tipo <strong>cliente</strong> vanno assegnati: admin e tecnici vedono tutti i clienti senza assegnazione.</p>
+            <form wire:submit="addMember" class="bg-white dark:bg-slate-800 shadow ring-1 ring-black ring-opacity-5 dark:ring-slate-600 rounded-md p-4 mb-6 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Utente</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Cliente</label>
                     @if ($candidates->isEmpty())
-                        <p class="mt-1 text-sm text-gray-500 dark:text-slate-400 italic">Tutti gli utenti registrati sono già membri.</p>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-slate-400 italic">Nessun cliente da assegnare.</p>
                     @else
                         <select wire:model="newUserId" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm text-sm">
                             <option value="">Seleziona…</option>
@@ -77,15 +78,7 @@
                     @endif
                     @error('newUserId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Ruolo</label>
-                    <select wire:model="newRole" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm text-sm">
-                        <option value="admin">Admin</option>
-                        <option value="tecnico">Tecnico</option>
-                        <option value="cliente">Cliente</option>
-                    </select>
-                </div>
-                <button type="submit" @disabled($candidates->isEmpty()) class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">Aggiungi</button>
+                <button type="submit" @disabled($candidates->isEmpty()) class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">Assegna</button>
             </form>
         @endcan
 
@@ -95,42 +88,26 @@
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Nome</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Email</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Ruolo</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Azioni</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700 text-sm">
                     @forelse ($members as $m)
-                        @php $role = $m->getRelationValue('pivot')?->getAttribute('role') ?? '?'; @endphp
                         <tr wire:key="m-{{ $m->id }}">
                             <td class="px-4 py-3 font-medium text-gray-900 dark:text-slate-100">{{ $m->name }}</td>
                             <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ $m->email }}</td>
-                            <td class="px-4 py-3">
-                                @can('update', $tenant)
-                                    <select
-                                        wire:change="changeRole({{ $m->id }}, $event.target.value)"
-                                        class="rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm text-xs"
-                                    >
-                                        <option value="admin" @selected($role === 'admin')>admin</option>
-                                        <option value="tecnico" @selected($role === 'tecnico')>tecnico</option>
-                                        <option value="cliente" @selected($role === 'cliente')>cliente</option>
-                                    </select>
-                                @else
-                                    <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200">{{ $role }}</span>
-                                @endcan
-                            </td>
                             <td class="px-4 py-3 text-right">
                                 @can('update', $tenant)
                                     <button
                                         wire:click="removeMember({{ $m->id }})"
-                                        wire:confirm="Rimuovere {{ $m->name }} dal cliente?"
+                                        wire:confirm="Rimuovere l'assegnazione di {{ $m->name }} da questo cliente?"
                                         class="text-xs text-red-600 hover:text-red-800"
                                     >Rimuovi</button>
                                 @endcan
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500 dark:text-slate-400">Nessun membro.</td></tr>
+                        <tr><td colspan="3" class="px-4 py-6 text-center text-gray-500 dark:text-slate-400">Nessun cliente assegnato.</td></tr>
                     @endforelse
                 </tbody>
             </table>

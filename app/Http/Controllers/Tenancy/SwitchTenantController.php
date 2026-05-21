@@ -18,8 +18,8 @@ class SwitchTenantController extends Controller
 
         abort_if($user === null, 401);
 
-        if (! $user->belongsToTenant($tenant)) {
-            throw new AccessDeniedHttpException('Non sei membro di questo tenant.');
+        if (! $user->canAccessTenant($tenant)) {
+            throw new AccessDeniedHttpException('Non puoi accedere a questo cliente.');
         }
 
         $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();

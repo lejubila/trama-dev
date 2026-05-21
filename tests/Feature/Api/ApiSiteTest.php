@@ -5,11 +5,9 @@ declare(strict_types=1);
 use App\Models\Site;
 use App\Models\Tenant;
 use App\Support\Tenancy\TenantContext;
-use Spatie\Permission\PermissionRegistrar;
 
 afterEach(function (): void {
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 });
 
 it('lists sites of the active tenant only', function (): void {

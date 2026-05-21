@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Tenants;
 
-use App\Actions\Tenancy\AddMember;
-use App\Actions\Tenancy\ChangeMemberRole;
+use App\Actions\Tenancy\AssignTenant;
 use App\Actions\Tenancy\RemoveMember;
+use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
@@ -30,10 +30,8 @@ class Manage extends Component
 
     public string $domain = '';
 
-    // Members tab state
+    // Members tab state: clienti assigned to this tenant (no role).
     public ?int $newUserId = null;
-
-    public string $newRole = 'tecnico';
 
     public function mount(Tenant $tenant): void
     {
@@ -84,20 +82,19 @@ class Manage extends Component
         $this->redirectRoute('tenants.index', navigate: true);
     }
 
-    public function addMember(AddMember $action): void
+    public function addMember(AssignTenant $action): void
     {
         $this->authorize('update', $this->tenant);
 
         $this->validate([
             'newUserId' => 'required|integer|exists:users,id',
-            'newRole' => 'required|in:admin,tecnico,cliente',
         ]);
 
         /** @var User $user */
         $user = User::query()->findOrFail($this->newUserId);
 
         try {
-            $action->execute($this->tenant, $user, $this->newRole);
+            $action->execute($this->tenant, $user);
         } catch (InvalidArgumentException $e) {
             $this->addError('newUserId', $e->getMessage());
 
@@ -105,25 +102,7 @@ class Manage extends Component
         }
 
         $this->reset(['newUserId']);
-        $this->newRole = 'tecnico';
-        $this->dispatch('toast', type: 'success', message: 'Membro aggiunto.');
-    }
-
-    public function changeRole(int $userId, string $role, ChangeMemberRole $action): void
-    {
-        $this->authorize('update', $this->tenant);
-
-        $member = User::query()->findOrFail($userId);
-
-        try {
-            $action->execute($this->tenant, $member, $role);
-        } catch (InvalidArgumentException $e) {
-            $this->dispatch('toast', type: 'error', message: $e->getMessage());
-
-            return;
-        }
-
-        $this->dispatch('toast', type: 'success', message: 'Ruolo aggiornato.');
+        $this->dispatch('toast', type: 'success', message: 'Cliente assegnato.');
     }
 
     public function removeMember(int $userId, RemoveMember $action): void
@@ -140,7 +119,7 @@ class Manage extends Component
             return;
         }
 
-        $this->dispatch('toast', type: 'success', message: 'Membro rimosso.');
+        $this->dispatch('toast', type: 'success', message: 'Assegnazione rimossa.');
     }
 
     public function render(): View
@@ -151,11 +130,10 @@ class Manage extends Component
             'members' => $this->tenant->users()
                 ->orderBy('name')
                 ->get(['users.id', 'users.name', 'users.email']),
-            // Candidates for the "add member" picker: every registered user
-            // who isn't already in this tenant. With teams of dozens this is
-            // a plain <select>; with thousands we'd swap for a searchable
-            // combobox.
+            // Only clienti can be assigned to a tenant (admins/tecnici see all).
+            // Candidates = cliente users not yet assigned here.
             'candidates' => User::query()
+                ->where('role', UserRole::Cliente)
                 ->whereNotIn('id', $memberIds)
                 ->orderBy('name')
                 ->get(['id', 'name', 'email']),

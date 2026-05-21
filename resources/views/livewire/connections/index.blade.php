@@ -7,14 +7,24 @@
         @endcan
     </x-page-header>
 
-    <div class="flex flex-wrap gap-3 mb-4">
+    <div class="flex flex-wrap gap-3 mb-4 items-center">
         <input type="text" wire:model.live.debounce.300ms="search" placeholder="Cerca per etichetta…" class="rounded-md border-gray-300 shadow-sm text-sm w-64" />
+        <select wire:model.live="equipmentFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
+            <option value="0">Tutti i dispositivi</option>
+            @foreach ($equipmentList as $eq)
+                <option value="{{ $eq->id }}">{{ $eq->name }}</option>
+            @endforeach
+        </select>
+        <input type="text" wire:model.live.debounce.300ms="portFilter" placeholder="Nome porta (es. Gi0/1)…" class="rounded-md border-gray-300 shadow-sm text-sm w-56 font-mono" />
         <select wire:model.live="statusFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
             <option value="">Tutti gli stati</option>
             @foreach ($statuses as $s)
                 <option value="{{ $s->value }}">{{ $s->value }}</option>
             @endforeach
         </select>
+        @if ($search !== '' || $statusFilter !== '' || $equipmentFilter > 0 || $portFilter !== '')
+            <button wire:click="clearFilters" type="button" class="text-xs text-gray-500 hover:text-gray-700 underline">Reset filtri</button>
+        @endif
     </div>
 
     <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">

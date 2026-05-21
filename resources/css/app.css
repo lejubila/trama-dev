@@ -1,3 +1,33 @@
+/* Cytoscape mini-map (cytoscape-navigator). Package CSS pins the panel as
+   position:fixed; 400×400 in the bottom-right of the viewport — we want it
+   scoped to the topology panel instead (overrides below). PostCSS requires
+   @import to come before any other statement, hence above @tailwind. */
+@import "cytoscape-navigator/cytoscape.js-navigator.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.topology-navigator {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    /* Responsive: scales with the window, clamped between a usable minimum
+       and a sensible maximum so it never dominates the canvas. */
+    width: clamp(14rem, 28vw, 30rem);
+    height: clamp(10rem, 22vh, 22rem);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #e5e7eb;
+    border-radius: 0.25rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.cytoscape-navigator.topology-navigator,
+.topology-navigator.cytoscape-navigator {
+    position: absolute !important;
+    inset: auto 0.5rem 0.5rem auto !important;
+    width: clamp(14rem, 28vw, 30rem) !important;
+    height: clamp(10rem, 22vh, 22rem) !important;
+    z-index: 5;
+}

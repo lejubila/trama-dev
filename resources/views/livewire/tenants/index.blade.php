@@ -57,7 +57,7 @@
     </div>
 
     @if ($showForm)
-        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" wire:click.self="$set('showForm', false)">
+        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
             <div class="bg-white dark:bg-slate-800 rounded-md shadow-lg w-full max-w-md p-6">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Nuovo cliente</h2>
                 <form wire:submit="save" class="space-y-3">

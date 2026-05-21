@@ -7,19 +7,17 @@ use App\Models\Site;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
-use Database\Seeders\RolePermissionSeeder;
-use Spatie\Permission\PermissionRegistrar;
 
 afterEach(function (): void {
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 });
 
 function makeMember(Tenant $tenant, string $role): User
 {
     /** @var User $user */
     $user = User::factory()->create();
-    $user->tenants()->attach($tenant, ['role' => $role]);
+    $user->forceFill(['role' => $role])->save();
+    $user->tenants()->attach($tenant);
     $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
 
     return $user;
@@ -27,7 +25,6 @@ function makeMember(Tenant $tenant, string $role): User
 
 it('lets admin and tecnico create equipment, but blocks cliente', function (): void {
     $tenant = Tenant::factory()->create();
-    test()->seed(RolePermissionSeeder::class);
 
     $admin = makeMember($tenant, 'admin');
     $tecnico = makeMember($tenant, 'tecnico');
@@ -38,37 +35,36 @@ it('lets admin and tecnico create equipment, but blocks cliente', function (): v
         ->and($cliente->can('create', Equipment::class))->toBeFalse();
 });
 
-it('only admin can delete equipment', function (): void {
+it('lets admin and tecnico delete equipment, but blocks cliente', function (): void {
     $tenant = Tenant::factory()->create();
-    test()->seed(RolePermissionSeeder::class);
 
     TenantContext::setId($tenant->getKey());
     $eq = Equipment::factory()->create();
 
     $admin = makeMember($tenant, 'admin');
     $tecnico = makeMember($tenant, 'tecnico');
+    $cliente = makeMember($tenant, 'cliente');
 
     expect($admin->can('delete', $eq))->toBeTrue()
-        ->and($tecnico->can('delete', $eq))->toBeFalse();
+        ->and($tecnico->can('delete', $eq))->toBeTrue()
+        ->and($cliente->can('delete', $eq))->toBeFalse();
 });
 
-it('blocks view across tenants', function (): void {
+it('blocks a cliente from viewing another tenant\'s data', function (): void {
     $tenantA = Tenant::factory()->create();
     $tenantB = Tenant::factory()->create();
-    test()->seed(RolePermissionSeeder::class);
 
     TenantContext::setId($tenantA->getKey());
     $siteA = Site::factory()->create();
 
-    // user belongs only to tenant B with admin role; they should NOT see tenant A's site
-    $userB = makeMember($tenantB, 'admin');
+    // A cliente assigned only to tenant B must NOT see tenant A's site.
+    $userB = makeMember($tenantB, 'cliente');
 
     expect($userB->can('view', $siteA))->toBeFalse();
 });
 
 it('lets a member view sites of their current tenant regardless of role', function (): void {
     $tenant = Tenant::factory()->create();
-    test()->seed(RolePermissionSeeder::class);
 
     TenantContext::setId($tenant->getKey());
     $site = Site::factory()->create();

@@ -13,13 +13,10 @@ use App\Models\Site;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
-use Database\Seeders\RolePermissionSeeder;
 use Livewire\Livewire;
-use Spatie\Permission\PermissionRegistrar;
 
 afterEach(function (): void {
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 });
 
 function bootEquipmentScene(string $role): array
@@ -27,11 +24,9 @@ function bootEquipmentScene(string $role): array
     $tenant = Tenant::factory()->create();
     /** @var User $user */
     $user = User::factory()->create();
-    $user->tenants()->attach($tenant, ['role' => $role]);
+    $user->forceFill(['role' => $role])->save();
+    $user->tenants()->attach($tenant);
     $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
-    test()->seed(RolePermissionSeeder::class);
-    app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
-    $user->syncRoles([$role]);
     actingAsInTenant($user, $tenant);
 
     $site = Site::factory()->create();
@@ -48,6 +43,24 @@ it('renders equipment index', function (): void {
     Livewire::test(EquipmentIndex::class)->assertOk()->assertSee('SW-Test');
 });
 
+it('persists and reloads the hidden_in_topology flag via the edit form', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create(['name' => 'PDU-Hidden']);
+
+    Livewire::test(EquipmentIndex::class)
+        ->call('openEdit', $eq->getKey())
+        ->assertSet('hiddenInTopology', false)
+        ->set('hiddenInTopology', true)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($eq->fresh()->hidden_in_topology)->toBeTrue();
+
+    Livewire::test(EquipmentIndex::class)
+        ->call('openEdit', $eq->getKey())
+        ->assertSet('hiddenInTopology', true);
+});
+
 it('creates a non-mounted equipment', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
 
@@ -62,22 +75,22 @@ it('creates a non-mounted equipment', function (): void {
     expect(Equipment::query()->where('name', 'AP-Test')->exists())->toBeTrue();
 });
 
-it('refuses to create a mounted equipment that overlaps another', function (): void {
+it('allows creating a mounted equipment overlapping another (multi-device per U)', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
     Equipment::factory()->mountedAt(3, 2)->create(['rack_id' => $rack->getKey()]);
 
     Livewire::test(EquipmentIndex::class)
         ->call('openCreate')
-        ->set('name', 'Conflict')
+        ->set('name', 'Stacked')
         ->set('type', 'switch')
         ->set('mounted', true)
         ->set('rackId', $rack->getKey())
         ->set('positionUStart', 4)
         ->set('positionUHeight', 1)
         ->call('save')
-        ->assertHasErrors(['positionUStart']);
+        ->assertHasNoErrors();
 
-    expect(Equipment::query()->where('name', 'Conflict')->exists())->toBeFalse();
+    expect(Equipment::query()->where('name', 'Stacked')->exists())->toBeTrue();
 });
 
 it('updates equipment', function (): void {
@@ -110,10 +123,8 @@ it('isolates equipment between tenants', function (): void {
 
     /** @var User $userB */
     $userB = User::factory()->create();
-    $userB->tenants()->attach($tenantB, ['role' => 'admin']);
-    test()->seed(RolePermissionSeeder::class);
-    app(PermissionRegistrar::class)->setPermissionsTeamId($tenantB->getKey());
-    $userB->syncRoles(['admin']);
+    $userB->forceFill(['role' => 'admin'])->save();
+    $userB->tenants()->attach($tenantB);
     actingAsInTenant($userB, $tenantB);
 
     Livewire::test(EquipmentIndex::class)->assertSee('Eq-B')->assertDontSee('Eq-A');
@@ -254,4 +265,42 @@ it('rolls back bulk creation when any generated name conflicts', function (): vo
 
     expect($eq->interfaces()->count())->toBe(1)
         ->and($eq->interfaces()->pluck('name')->all())->toBe(['Port05']);
+});
+
+it('auto-syncs room_id from rack when rack is selected via the form', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+
+    Livewire::test(EquipmentIndex::class)
+        ->call('openCreate')
+        ->set('name', 'SW-Sync')
+        ->set('type', 'switch')
+        ->set('mounted', true)
+        ->set('rackId', $rack->getKey())
+        ->set('positionUStart', 1)
+        ->set('positionUHeight', 1)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $eq = Equipment::query()->where('name', 'SW-Sync')->first();
+    expect($eq->room_id)->toBe($rack->room_id);
+});
+
+it('stores room_id directly for unracked equipment', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+
+    $otherSite = Site::factory()->create();
+    $otherRoom = Room::factory()->create(['site_id' => $otherSite->getKey()]);
+
+    Livewire::test(EquipmentIndex::class)
+        ->call('openCreate')
+        ->set('name', 'AP-Ceiling')
+        ->set('type', 'access_point')
+        ->set('mounted', false)
+        ->set('roomId', $otherRoom->getKey())
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $eq = Equipment::query()->where('name', 'AP-Ceiling')->first();
+    expect($eq->room_id)->toBe($otherRoom->getKey())
+        ->and($eq->rack_id)->toBeNull();
 });

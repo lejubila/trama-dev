@@ -9,6 +9,7 @@ use App\Models\Connection;
 use App\Support\CableColors;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
@@ -29,6 +30,11 @@ class Edit extends Component
     public ?string $establishedAt = null;
 
     public string $status = '';
+
+    /** When ?from_equipment=<id> lands on the page, save/cancel returns to
+     *  that equipment's Connessioni tab instead of the global list. */
+    #[Url(as: 'from_equipment')]
+    public ?int $fromEquipmentId = null;
 
     public function mount(Connection $connection): void
     {
@@ -69,6 +75,25 @@ class Edit extends Component
         ]);
 
         $this->dispatch('toast', type: 'success', message: 'Connessione aggiornata.');
+        $this->redirectAfterExit();
+    }
+
+    /**
+     * Where to send the browser after save/cancel: back to the originating
+     * equipment's Connessioni tab when the edit was opened from a device,
+     * otherwise to the global connections list.
+     */
+    private function redirectAfterExit(): void
+    {
+        if ($this->fromEquipmentId !== null) {
+            $this->redirectRoute('equipment.show', [
+                'equipment' => $this->fromEquipmentId,
+                'tab' => 'connections',
+            ], navigate: true);
+
+            return;
+        }
+
         $this->redirectRoute('connections.index', navigate: true);
     }
 

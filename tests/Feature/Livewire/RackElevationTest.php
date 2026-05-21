@@ -12,13 +12,10 @@ use App\Models\Site;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
-use Database\Seeders\RolePermissionSeeder;
 use Livewire\Livewire;
-use Spatie\Permission\PermissionRegistrar;
 
 afterEach(function (): void {
     TenantContext::clear();
-    app(PermissionRegistrar::class)->setPermissionsTeamId(null);
 });
 
 function bootRackScene(string $role): array
@@ -26,11 +23,9 @@ function bootRackScene(string $role): array
     $tenant = Tenant::factory()->create();
     /** @var User $user */
     $user = User::factory()->create();
-    $user->tenants()->attach($tenant, ['role' => $role]);
+    $user->forceFill(['role' => $role])->save();
+    $user->tenants()->attach($tenant);
     $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
-    test()->seed(RolePermissionSeeder::class);
-    app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->getKey());
-    $user->syncRoles([$role]);
     actingAsInTenant($user, $tenant);
 
     $site = Site::factory()->create();
@@ -64,7 +59,7 @@ it('moves equipment to a free U as admin', function (): void {
     expect($eq->fresh()->position_u_start)->toBe(7);
 });
 
-it('refuses move that would overlap another equipment', function (): void {
+it('allows move into the same U as another equipment (multi-device per U)', function (): void {
     [$tenant, $user, $rack] = bootRackScene('admin');
 
     $eq = Equipment::factory()->mountedAt(3, 1)->create(['rack_id' => $rack->getKey()]);
@@ -72,9 +67,9 @@ it('refuses move that would overlap another equipment', function (): void {
 
     Livewire::test(Elevation::class, ['rack' => $rack])
         ->call('moveEquipment', $eq->getKey(), 5)
-        ->assertDispatched('toast', type: 'error');
+        ->assertDispatched('toast', type: 'success');
 
-    expect($eq->fresh()->position_u_start)->toBe(3);
+    expect($eq->fresh()->position_u_start)->toBe(5);
 });
 
 it('refuses move on a locked equipment', function (): void {
@@ -170,18 +165,18 @@ it('creates a mounted equipment at the clicked U', function (): void {
     )->toBeTrue();
 });
 
-it('refuses to create when the requested height overlaps a neighbor', function (): void {
+it('allows creating a device that overlaps a neighbor (multi-device per U)', function (): void {
     [$tenant, $user, $rack] = bootRackScene('admin');
     Equipment::factory()->mountedAt(4, 2)->create(['rack_id' => $rack->getKey()]); // occupies U4-U5
 
     Livewire::test(Elevation::class, ['rack' => $rack])
         ->dispatch('slot-clicked', u: 3)
-        ->set('name', 'CONFLICT')
-        ->set('positionUHeight', 3) // would cover U3-U4-U5, overlapping U4-U5
+        ->set('name', 'STACKED')
+        ->set('positionUHeight', 3) // U3-U4-U5; visually rendered side-by-side on overlap
         ->call('saveEquipment')
-        ->assertHasErrors(['positionUHeight']);
+        ->assertHasNoErrors();
 
-    expect(Equipment::query()->where('name', 'CONFLICT')->exists())->toBeFalse();
+    expect(Equipment::query()->where('name', 'STACKED')->exists())->toBeTrue();
 });
 
 it('forbids cliente from opening the create form via slot-clicked', function (): void {

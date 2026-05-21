@@ -1,6 +1,11 @@
 <div>
+    @php
+        $cancelUrl = $fromEquipmentId
+            ? route('equipment.show', ['equipment' => $fromEquipmentId, 'tab' => 'connections'])
+            : route('connections.index');
+    @endphp
     <x-page-header title="Modifica connessione" subtitle="Aggiorna i dati del cavo">
-        <a href="{{ route('connections.index') }}" wire:navigate class="text-sm text-gray-600 hover:text-gray-800">← Annulla</a>
+        <a href="{{ $cancelUrl }}" wire:navigate class="text-sm text-gray-600 hover:text-gray-800">← Annulla</a>
     </x-page-header>
 
     <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md p-6 max-w-3xl">
@@ -71,7 +76,7 @@
             </div>
 
             <div class="flex justify-between items-center mt-6">
-                <a href="{{ route('connections.index') }}" wire:navigate class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Annulla</a>
+                <a href="{{ $cancelUrl }}" wire:navigate class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Annulla</a>
                 <button type="submit" class="px-3 py-2 text-sm text-white bg-emerald-600 rounded-md hover:bg-emerald-700">Salva modifiche</button>
             </div>
         </form>
