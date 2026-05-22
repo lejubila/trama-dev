@@ -9,6 +9,7 @@ use App\Models\Equipment;
 use App\Models\Rack;
 use App\Models\Room;
 use App\Models\Site;
+use App\Models\Tag;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
@@ -163,6 +164,22 @@ it('creates a mounted equipment at the clicked U', function (): void {
         ->where('position_u_height', 1)
         ->exists()
     )->toBeTrue();
+});
+
+it('syncs tags when creating equipment from a rack slot', function (): void {
+    [$tenant, $user, $rack] = bootRackScene('admin');
+    $tag = Tag::create(['name' => 'core', 'color' => '#00ff00']);
+
+    Livewire::test(Elevation::class, ['rack' => $rack])
+        ->dispatch('slot-clicked', u: 6)
+        ->set('name', 'TAGGED-FROM-SLOT')
+        ->set('selectedTagIds', [$tag->getKey()])
+        ->call('saveEquipment')
+        ->assertHasNoErrors()
+        ->assertSet('showForm', false);
+
+    $eq = Equipment::query()->where('name', 'TAGGED-FROM-SLOT')->firstOrFail();
+    expect($eq->tags->pluck('id')->all())->toBe([$tag->getKey()]);
 });
 
 it('allows creating a device that overlaps a neighbor (multi-device per U)', function (): void {

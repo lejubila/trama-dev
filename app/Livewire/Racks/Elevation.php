@@ -8,6 +8,7 @@ use App\Enums\EquipmentStatus;
 use App\Enums\EquipmentType;
 use App\Models\Equipment;
 use App\Models\Rack;
+use App\Models\Tag;
 use App\Services\RackPlacementService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
@@ -58,6 +59,9 @@ class Elevation extends Component
     public string $description = '';
 
     public $iconUpload = null;
+
+    /** @var array<int, int|string> */
+    public array $selectedTagIds = [];
 
     public function mount(Rack $rack): void
     {
@@ -113,7 +117,7 @@ class Elevation extends Component
     {
         $this->authorize('create', Equipment::class);
 
-        $this->reset(['name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'locked', 'hiddenInTopology', 'description', 'iconUpload']);
+        $this->reset(['name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'locked', 'hiddenInTopology', 'description', 'iconUpload', 'selectedTagIds']);
         $this->status = 'active';
         $this->selectedU = $u;
         // The slot belongs to the side the user is currently viewing.
@@ -138,7 +142,7 @@ class Elevation extends Component
     {
         $this->authorize('create', Equipment::class);
 
-        $this->reset(['name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'locked', 'hiddenInTopology', 'description', 'iconUpload']);
+        $this->reset(['name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'locked', 'hiddenInTopology', 'description', 'iconUpload', 'selectedTagIds']);
         $this->status = 'active';
         $this->selectedU = null;
         $this->onTop = true;
@@ -177,6 +181,8 @@ class Elevation extends Component
             'hiddenInTopology' => 'boolean',
             'description' => 'nullable|string|max:5000',
             'iconUpload' => 'nullable|image|max:5120',
+            'selectedTagIds' => 'array',
+            'selectedTagIds.*' => 'integer|exists:tags,id',
         ];
         if (! $this->onTop) {
             $rules['positionUHeight'] = 'required|integer|min:1|max:60';
@@ -216,6 +222,8 @@ class Elevation extends Component
             ]);
         }
 
+        $equipment->tags()->sync($this->selectedTagIds);
+
         $sideLabel = $this->orient === 'rear' ? ' (posteriore)' : ' (anteriore)';
         $location = $this->onTop ? 'sopra il rack' : "in U{$this->selectedU}{$sideLabel}";
         $this->dispatch('toast', type: 'success', message: "Dispositivo \"{$this->name}\" creato {$location}.");
@@ -227,6 +235,7 @@ class Elevation extends Component
         return view('livewire.racks.elevation', [
             'types' => EquipmentType::cases(),
             'statuses' => EquipmentStatus::cases(),
+            'allTags' => Tag::query()->orderBy('name')->get(),
             'canEdit' => auth()->user()?->can('create', Equipment::class) ?? false,
         ]);
     }
