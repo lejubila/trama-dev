@@ -122,6 +122,11 @@
                         <textarea wire:model="notes" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                         @error('notes')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tag</label>
+                        <x-tag-selector :tags="$allTags" model="selectedTagIds" />
+                        @error('selectedTagIds')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
                 </div>
 
                 <div class="flex justify-between items-center mt-6">

@@ -9,6 +9,7 @@ use App\Enums\EquipmentType;
 use App\Models\Equipment;
 use App\Models\Rack;
 use App\Models\Room;
+use App\Models\Tag;
 use App\Services\RackPlacementService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Storage;
@@ -59,6 +60,12 @@ class Index extends Component
 
     public string $serial = '';
 
+    public string $firmware = '';
+
+    public string $assetTag = '';
+
+    public string $managementIp = '';
+
     public bool $mounted = false;
 
     public bool $locked = false;
@@ -81,6 +88,9 @@ class Index extends Component
 
     public ?string $existingIconPath = null;
 
+    /** @var array<int, int|string> */
+    public array $selectedTagIds = [];
+
     /**
      * @return array<string, mixed>
      */
@@ -94,6 +104,9 @@ class Index extends Component
             'vendor' => 'nullable|string|max:80',
             'modelName' => 'nullable|string|max:120',
             'serial' => 'nullable|string|max:120',
+            'firmware' => 'nullable|string|max:80',
+            'assetTag' => 'nullable|string|max:80',
+            'managementIp' => 'nullable|ip',
             'mounted' => 'boolean',
             'locked' => 'boolean',
             'positionUStart' => 'nullable|integer|min:1|max:60',
@@ -104,6 +117,8 @@ class Index extends Component
             'status' => ['required', Rule::in(array_column(EquipmentStatus::cases(), 'value'))],
             'description' => 'nullable|string|max:5000',
             'iconUpload' => 'nullable|image|max:5120',
+            'selectedTagIds' => 'array',
+            'selectedTagIds.*' => 'integer|exists:tags,id',
         ];
     }
 
@@ -157,7 +172,7 @@ class Index extends Component
     public function openCreate(): void
     {
         $this->authorize('create', Equipment::class);
-        $this->reset(['editingId', 'rackId', 'roomId', 'name', 'vendor', 'modelName', 'serial', 'mounted', 'locked', 'positionUStart', 'description', 'iconUpload', 'existingIconPath', 'onTop', 'hiddenInTopology']);
+        $this->reset(['editingId', 'rackId', 'roomId', 'name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'mounted', 'locked', 'positionUStart', 'description', 'iconUpload', 'existingIconPath', 'onTop', 'hiddenInTopology', 'selectedTagIds']);
         $this->type = 'switch';
         $this->status = 'active';
         $this->positionUHeight = 1;
@@ -179,6 +194,9 @@ class Index extends Component
         $this->vendor = (string) ($eq->vendor ?? '');
         $this->modelName = (string) ($eq->model ?? '');
         $this->serial = (string) ($eq->serial ?? '');
+        $this->firmware = (string) ($eq->firmware ?? '');
+        $this->assetTag = (string) ($eq->asset_tag ?? '');
+        $this->managementIp = (string) ($eq->management_ip ?? '');
         $this->mounted = (bool) $eq->mounted;
         $this->locked = (bool) $eq->locked;
         $this->positionUStart = $eq->position_u_start;
@@ -190,6 +208,7 @@ class Index extends Component
         $this->description = (string) ($eq->description ?? '');
         $this->iconUpload = null;
         $this->existingIconPath = $eq->icon_path;
+        $this->selectedTagIds = $eq->tags()->pluck('tags.id')->all();
         $this->resetErrorBag();
         $this->showForm = true;
     }
@@ -246,6 +265,9 @@ class Index extends Component
             'vendor' => $this->vendor !== '' ? $this->vendor : null,
             'model' => $this->modelName !== '' ? $this->modelName : null,
             'serial' => $this->serial !== '' ? $this->serial : null,
+            'firmware' => $this->firmware !== '' ? $this->firmware : null,
+            'asset_tag' => $this->assetTag !== '' ? $this->assetTag : null,
+            'management_ip' => $this->managementIp !== '' ? $this->managementIp : null,
             'mounted' => $this->mounted,
             'locked' => $this->locked,
             'on_top' => $this->mounted ? $this->onTop : false,
@@ -277,6 +299,8 @@ class Index extends Component
 
             $this->dispatch('toast', type: 'success', message: 'Dispositivo creato.');
         }
+
+        $eq->tags()->sync($this->selectedTagIds);
 
         $this->showForm = false;
     }
@@ -329,7 +353,7 @@ class Index extends Component
     public function render(): View
     {
         $equipment = Equipment::query()
-            ->with(['rack.room.site', 'room.site'])
+            ->with(['rack.room.site', 'room.site', 'tags'])
             ->withCount('interfaces')
             ->when($this->search !== '', fn ($q) => $q->where(function ($qq) {
                 $qq->where('name', 'ilike', "%{$this->search}%")
@@ -348,6 +372,7 @@ class Index extends Component
             'rooms' => Room::query()->with('site')->orderBy('name')->get(),
             'types' => EquipmentType::cases(),
             'statuses' => EquipmentStatus::cases(),
+            'allTags' => Tag::query()->orderBy('name')->get(),
         ]);
     }
 }

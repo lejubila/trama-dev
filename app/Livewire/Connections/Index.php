@@ -75,7 +75,7 @@ class Index extends Component
     public function render(): View
     {
         $connections = Connection::query()
-            ->with(['fromInterface.equipment', 'toInterface.equipment'])
+            ->with(['fromInterface.equipment', 'toInterface.equipment', 'tags'])
             ->when($this->search !== '', fn ($q) => $q->where('cable_label', 'ilike', "%{$this->search}%"))
             ->when($this->statusFilter !== '', fn ($q) => $q->where('status', $this->statusFilter))
             ->when($this->equipmentFilter > 0, fn ($q) => $q->where(function ($qq): void {

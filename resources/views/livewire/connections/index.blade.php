@@ -64,7 +64,12 @@
                                 <span class="text-gray-400">—</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-gray-600">{{ $c->cable_label ?? '—' }}</td>
+                        <td class="px-4 py-3 text-gray-600">
+                            {{ $c->cable_label ?? '—' }}
+                            @if ($c->tags->isNotEmpty())
+                                <div class="mt-1"><x-tag-chips :tags="$c->tags" /></div>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-gray-600">{{ $c->status?->value }}</td>
                         <td class="px-4 py-3 text-right space-x-2">
                             @can('update', $c)

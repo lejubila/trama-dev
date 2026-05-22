@@ -38,6 +38,9 @@
             @if ($equipment->description)
                 <div class="col-span-2"><span class="text-gray-500">Descrizione:</span><br>{{ $equipment->description }}</div>
             @endif
+            @if ($equipment->tags->isNotEmpty())
+                <div class="col-span-2"><span class="text-gray-500">Tag:</span> <x-tag-chips :tags="$equipment->tags" /></div>
+            @endif
         </div>
     @endif
 

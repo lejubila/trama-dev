@@ -29,7 +29,7 @@ class Drawer extends Component
     public function load(int $id): void
     {
         $eq = Equipment::query()
-            ->with(['rack.room.site', 'interfaces'])
+            ->with(['rack.room.site', 'interfaces', 'tags'])
             ->findOrFail($id);
 
         $this->authorize('view', $eq);

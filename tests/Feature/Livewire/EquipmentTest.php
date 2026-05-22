@@ -10,6 +10,7 @@ use App\Models\NetworkInterface;
 use App\Models\Rack;
 use App\Models\Room;
 use App\Models\Site;
+use App\Models\Tag;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
@@ -303,4 +304,24 @@ it('stores room_id directly for unracked equipment', function (): void {
     $eq = Equipment::query()->where('name', 'AP-Ceiling')->first();
     expect($eq->room_id)->toBe($otherRoom->getKey())
         ->and($eq->rack_id)->toBeNull();
+});
+
+it('syncs tags on equipment via the edit form', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create(['name' => 'SW-Tagged']);
+    $tag = Tag::create(['name' => 'critico', 'color' => '#ff0000']);
+
+    Livewire::test(EquipmentIndex::class)
+        ->call('openEdit', $eq->getKey())
+        ->assertSet('selectedTagIds', [])
+        ->set('selectedTagIds', [$tag->getKey()])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($eq->fresh()->tags->pluck('id')->all())->toBe([$tag->getKey()]);
+
+    // Reopening reflects the persisted association.
+    Livewire::test(EquipmentIndex::class)
+        ->call('openEdit', $eq->getKey())
+        ->assertSet('selectedTagIds', [$tag->getKey()]);
 });

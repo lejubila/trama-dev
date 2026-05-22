@@ -55,6 +55,9 @@
                                     </span>
                                 @endif
                             </span>
+                            @if ($eq->tags->isNotEmpty())
+                                <div class="mt-1"><x-tag-chips :tags="$eq->tags" /></div>
+                            @endif
                         </td>
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">{{ $eq->type?->label() }}</span>
@@ -130,6 +133,24 @@
                                     <option value="{{ $s->value }}">{{ $s->label() }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Firmware</label>
+                            <input type="text" wire:model="firmware" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                            @error('firmware')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Asset tag</label>
+                            <input type="text" wire:model="assetTag" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                            @error('assetTag')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Mgmt IP</label>
+                            <input type="text" wire:model="managementIp" placeholder="es. 192.168.1.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                            @error('managementIp')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                     </div>
 
@@ -238,6 +259,12 @@
                         <p class="text-xs text-gray-500 mt-1">Sostituisce per questo dispositivo l'icona globale/cliente. Lascia vuoto per usare il default.</p>
                         @error('iconUpload')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         <div wire:loading wire:target="iconUpload" class="text-xs text-indigo-600 mt-1">Caricamento…</div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tag</label>
+                        <x-tag-selector :tags="$allTags" model="selectedTagIds" />
+                        @error('selectedTagIds')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div class="flex justify-end gap-x-2 pt-2">

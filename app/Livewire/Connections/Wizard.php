@@ -7,6 +7,7 @@ namespace App\Livewire\Connections;
 use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
+use App\Models\Tag;
 use App\Services\ConnectionService;
 use App\Support\CableColors;
 use Illuminate\Contracts\View\View;
@@ -35,6 +36,9 @@ class Wizard extends Component
     public string $notes = '';
 
     public ?string $establishedAt = null;
+
+    /** @var array<int, int|string> */
+    public array $selectedTagIds = [];
 
     /** When ?from_equipment=<id> lands on the page, scope step 1 (Estremo A)
      *  to only the interfaces of that equipment. Step 2 stays unrestricted. */
@@ -94,6 +98,8 @@ class Wizard extends Component
             'color' => ['nullable', 'string', 'regex:'.CableColors::HEX_REGEX],
             'notes' => 'nullable|string|max:2000',
             'establishedAt' => 'nullable|date',
+            'selectedTagIds' => 'array',
+            'selectedTagIds.*' => 'integer|exists:tags,id',
         ]);
 
         $a = NetworkInterface::query()->findOrFail($this->fromInterfaceId);
@@ -113,6 +119,8 @@ class Wizard extends Component
 
             return;
         }
+
+        $conn->tags()->sync($this->selectedTagIds);
 
         $this->dispatch('toast', type: 'success', message: 'Connessione creata.');
         $this->redirectAfterExit();
@@ -173,6 +181,7 @@ class Wizard extends Component
             'fromInterface' => $fromInterface,
             'toInterface' => $toInterface,
             'colorPresets' => CableColors::presets(),
+            'allTags' => Tag::query()->orderBy('name')->get(),
         ]);
     }
 }

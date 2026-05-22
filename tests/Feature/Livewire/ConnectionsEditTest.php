@@ -6,6 +6,7 @@ use App\Livewire\Connections\Edit;
 use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
+use App\Models\Tag;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
@@ -83,4 +84,17 @@ it('forbids cliente from editing connections', function (): void {
     [$tenant, $user, $conn] = setupEditScene('cliente');
 
     Livewire::test(Edit::class, ['connection' => $conn])->assertForbidden();
+});
+
+it('syncs tags on a connection via the edit form', function (): void {
+    [$tenant, $user, $conn] = setupEditScene('admin');
+    $tag = Tag::create(['name' => 'backbone', 'color' => '#00ff00']);
+
+    Livewire::test(Edit::class, ['connection' => $conn])
+        ->assertSet('selectedTagIds', [])
+        ->set('selectedTagIds', [$tag->getKey()])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($conn->fresh()->tags->pluck('id')->all())->toBe([$tag->getKey()]);
 });

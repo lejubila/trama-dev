@@ -36,6 +36,8 @@
                             <div><dt class="text-gray-500 inline">Vendor:</dt> {{ $equipment->vendor ?? '—' }}</div>
                             <div><dt class="text-gray-500 inline">Modello:</dt> {{ $equipment->model ?? '—' }}</div>
                             <div><dt class="text-gray-500 inline">Seriale:</dt> {{ $equipment->serial ?? '—' }}</div>
+                            <div><dt class="text-gray-500 inline">Firmware:</dt> {{ $equipment->firmware ?? '—' }}</div>
+                            <div><dt class="text-gray-500 inline">Asset tag:</dt> {{ $equipment->asset_tag ?? '—' }}</div>
                             <div><dt class="text-gray-500 inline">Mgmt IP:</dt> {{ $equipment->management_ip ?? '—' }}</div>
                             @if ($equipment->mounted)
                                 <div class="col-span-2"><dt class="text-gray-500 inline">Posizione:</dt> {{ $equipment->rack?->name }} · U{{ $equipment->position_u_start }}–{{ $equipment->position_u_start + $equipment->position_u_height - 1 }} {{ $equipment->locked ? '🔒' : '' }}</div>
@@ -46,6 +48,9 @@
                             @endif
                             @if ($equipment->description)
                                 <div class="col-span-2 mt-2"><dt class="text-gray-500 mb-1">Descrizione:</dt><dd class="whitespace-pre-line">{{ $equipment->description }}</dd></div>
+                            @endif
+                            @if ($equipment->tags->isNotEmpty())
+                                <div class="col-span-2 mt-2"><dt class="text-gray-500 inline">Tag:</dt> <x-tag-chips :tags="$equipment->tags" /></div>
                             @endif
                         </dl>
                     @elseif ($activeTab === 'interfaces')

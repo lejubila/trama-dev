@@ -91,6 +91,21 @@
                             </select>
                             @error('status')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">{{ __('racks.label_firmware') }}</label>
+                            <input type="text" wire:model="firmware" placeholder="{{ __('racks.optional_placeholder') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm text-sm" />
+                            @error('firmware')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">{{ __('racks.label_asset_tag') }}</label>
+                            <input type="text" wire:model="assetTag" placeholder="{{ __('racks.optional_placeholder') }}" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm text-sm" />
+                            @error('assetTag')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">{{ __('racks.label_mgmt_ip') }}</label>
+                            <input type="text" wire:model="managementIp" placeholder="192.168.1.1" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm text-sm" />
+                            @error('managementIp')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
                     </div>
 
                     <div class="flex items-center gap-x-6 gap-y-2 flex-wrap pt-1">

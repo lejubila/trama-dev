@@ -10,7 +10,6 @@ use App\Models\Equipment;
 use App\Models\Rack;
 use App\Services\RackPlacementService;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -43,6 +42,12 @@ class Elevation extends Component
     public string $modelName = '';
 
     public string $serial = '';
+
+    public string $firmware = '';
+
+    public string $assetTag = '';
+
+    public string $managementIp = '';
 
     public string $status = 'active';
 
@@ -108,7 +113,7 @@ class Elevation extends Component
     {
         $this->authorize('create', Equipment::class);
 
-        $this->reset(['name', 'vendor', 'modelName', 'serial', 'locked', 'hiddenInTopology', 'description', 'iconUpload']);
+        $this->reset(['name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'locked', 'hiddenInTopology', 'description', 'iconUpload']);
         $this->status = 'active';
         $this->selectedU = $u;
         // The slot belongs to the side the user is currently viewing.
@@ -133,7 +138,7 @@ class Elevation extends Component
     {
         $this->authorize('create', Equipment::class);
 
-        $this->reset(['name', 'vendor', 'modelName', 'serial', 'locked', 'hiddenInTopology', 'description', 'iconUpload']);
+        $this->reset(['name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'locked', 'hiddenInTopology', 'description', 'iconUpload']);
         $this->status = 'active';
         $this->selectedU = null;
         $this->onTop = true;
@@ -164,6 +169,9 @@ class Elevation extends Component
             'vendor' => 'nullable|string|max:80',
             'modelName' => 'nullable|string|max:120',
             'serial' => 'nullable|string|max:120',
+            'firmware' => 'nullable|string|max:80',
+            'assetTag' => 'nullable|string|max:80',
+            'managementIp' => 'nullable|ip',
             'status' => ['required', Rule::in(array_column(EquipmentStatus::cases(), 'value'))],
             'locked' => 'boolean',
             'hiddenInTopology' => 'boolean',
@@ -188,6 +196,9 @@ class Elevation extends Component
             'vendor' => $this->vendor !== '' ? $this->vendor : null,
             'model' => $this->modelName !== '' ? $this->modelName : null,
             'serial' => $this->serial !== '' ? $this->serial : null,
+            'firmware' => $this->firmware !== '' ? $this->firmware : null,
+            'asset_tag' => $this->assetTag !== '' ? $this->assetTag : null,
+            'management_ip' => $this->managementIp !== '' ? $this->managementIp : null,
             'mounted' => true,
             'locked' => $this->locked,
             'hidden_in_topology' => $this->hiddenInTopology,

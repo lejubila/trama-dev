@@ -6,6 +6,7 @@ namespace App\Livewire\Connections;
 
 use App\Enums\ConnectionStatus;
 use App\Models\Connection;
+use App\Models\Tag;
 use App\Support\CableColors;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
@@ -31,6 +32,9 @@ class Edit extends Component
 
     public string $status = '';
 
+    /** @var array<int, int|string> */
+    public array $selectedTagIds = [];
+
     /** When ?from_equipment=<id> lands on the page, save/cancel returns to
      *  that equipment's Connessioni tab instead of the global list. */
     #[Url(as: 'from_equipment')]
@@ -48,6 +52,7 @@ class Edit extends Component
         $this->notes = $connection->notes ?? '';
         $this->establishedAt = $connection->established_at?->format('Y-m-d');
         $this->status = $connection->status?->value ?? ConnectionStatus::Active->value;
+        $this->selectedTagIds = $connection->tags()->pluck('tags.id')->all();
     }
 
     public function save(): void
@@ -62,6 +67,8 @@ class Edit extends Component
             'notes' => 'nullable|string|max:2000',
             'establishedAt' => 'nullable|date',
             'status' => 'required|in:'.implode(',', array_map(fn ($c) => $c->value, ConnectionStatus::cases())),
+            'selectedTagIds' => 'array',
+            'selectedTagIds.*' => 'integer|exists:tags,id',
         ]);
 
         $this->connection->update([
@@ -73,6 +80,8 @@ class Edit extends Component
             'established_at' => $this->establishedAt !== null && $this->establishedAt !== '' ? $this->establishedAt : null,
             'status' => $this->status,
         ]);
+
+        $this->connection->tags()->sync($this->selectedTagIds);
 
         $this->dispatch('toast', type: 'success', message: 'Connessione aggiornata.');
         $this->redirectAfterExit();
@@ -104,6 +113,7 @@ class Edit extends Component
         return view('livewire.connections.edit', [
             'colorPresets' => CableColors::presets(),
             'statuses' => ConnectionStatus::cases(),
+            'allTags' => Tag::query()->orderBy('name')->get(),
         ]);
     }
 }
