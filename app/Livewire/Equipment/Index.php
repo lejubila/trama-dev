@@ -6,6 +6,7 @@ namespace App\Livewire\Equipment;
 
 use App\Enums\EquipmentStatus;
 use App\Enums\EquipmentType;
+use App\Livewire\Concerns\RemembersFilters;
 use App\Models\Equipment;
 use App\Models\Rack;
 use App\Models\Room;
@@ -24,7 +25,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    use WithFileUploads, WithPagination;
+    use RemembersFilters, WithFileUploads, WithPagination;
 
     #[Url(except: '')]
     public string $search = '';
@@ -37,6 +38,9 @@ class Index extends Component
 
     #[Url(except: '')]
     public string $statusFilter = '';
+
+    #[Url(except: 0)]
+    public int $tagFilter = 0;
 
     /** When ?edit=<equipmentId> lands on the page, auto-open the edit modal. */
     #[Url(as: 'edit')]
@@ -150,6 +154,26 @@ class Index extends Component
 
     public function updatingStatusFilter(): void
     {
+        $this->resetPage();
+    }
+
+    public function updatingTagFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function rememberedFilters(): array
+    {
+        return ['search', 'typeFilter', 'rackFilter', 'statusFilter', 'tagFilter'];
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['search', 'typeFilter', 'rackFilter', 'statusFilter', 'tagFilter']);
+        $this->persistFilters();
         $this->resetPage();
     }
 
@@ -363,6 +387,7 @@ class Index extends Component
             ->when($this->typeFilter !== '', fn ($q) => $q->where('type', $this->typeFilter))
             ->when($this->rackFilter > 0, fn ($q) => $q->where('rack_id', $this->rackFilter))
             ->when($this->statusFilter !== '', fn ($q) => $q->where('status', $this->statusFilter))
+            ->when($this->tagFilter > 0, fn ($q) => $q->whereHas('tags', fn ($qt) => $qt->where('tags.id', $this->tagFilter)))
             ->orderBy('name')
             ->paginate(20);
 

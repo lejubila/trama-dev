@@ -22,7 +22,13 @@
                 <option value="{{ $s->value }}">{{ $s->value }}</option>
             @endforeach
         </select>
-        @if ($search !== '' || $statusFilter !== '' || $equipmentFilter > 0 || $portFilter !== '')
+        <select wire:model.live="tagFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
+            <option value="0">Tutti i tag</option>
+            @foreach ($allTags as $tag)
+                <option value="{{ $tag->id }}">{{ $tag->name }}</option>
+            @endforeach
+        </select>
+        @if ($search !== '' || $statusFilter !== '' || $equipmentFilter > 0 || $portFilter !== '' || $tagFilter > 0)
             <button wire:click="clearFilters" type="button" class="text-xs text-gray-500 hover:text-gray-700 underline">Reset filtri</button>
         @endif
     </div>
@@ -36,6 +42,7 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cavo</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Colore</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Etichetta</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tag</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
                 </tr>
@@ -64,10 +71,12 @@
                                 <span class="text-gray-400">—</span>
                             @endif
                         </td>
+                        <td class="px-4 py-3 text-gray-600">{{ $c->cable_label ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">
-                            {{ $c->cable_label ?? '—' }}
                             @if ($c->tags->isNotEmpty())
-                                <div class="mt-1"><x-tag-chips :tags="$c->tags" /></div>
+                                <x-tag-chips :tags="$c->tags" />
+                            @else
+                                <span class="text-gray-400">—</span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $c->status?->value }}</td>
@@ -84,7 +93,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">Nessuna connessione.</td></tr>
+                    <tr><td colspan="8" class="px-4 py-6 text-center text-gray-500">Nessuna connessione.</td></tr>
                 @endforelse
             </tbody>
         </table>

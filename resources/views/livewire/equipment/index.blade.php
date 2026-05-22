@@ -9,7 +9,7 @@
         @endcan
     </x-page-header>
 
-    <div class="flex flex-wrap gap-3 mb-4">
+    <div class="flex flex-wrap gap-3 mb-4 items-center">
         <input type="text" wire:model.live.debounce.300ms="search" placeholder="Nome, modello, seriale…" class="rounded-md border-gray-300 shadow-sm text-sm w-64" />
         <select wire:model.live="typeFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
             <option value="">Tutti i tipi</option>
@@ -29,6 +29,15 @@
                 <option value="{{ $s->value }}">{{ $s->label() }}</option>
             @endforeach
         </select>
+        <select wire:model.live="tagFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
+            <option value="0">Tutti i tag</option>
+            @foreach ($allTags as $tag)
+                <option value="{{ $tag->id }}">{{ $tag->name }}</option>
+            @endforeach
+        </select>
+        @if ($search !== '' || $typeFilter !== '' || $rackFilter > 0 || $statusFilter !== '' || $tagFilter > 0)
+            <button wire:click="clearFilters" type="button" class="text-xs text-gray-500 hover:text-gray-700 underline">Reset filtri</button>
+        @endif
     </div>
 
     <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">

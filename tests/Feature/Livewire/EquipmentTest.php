@@ -325,3 +325,29 @@ it('syncs tags on equipment via the edit form', function (): void {
         ->call('openEdit', $eq->getKey())
         ->assertSet('selectedTagIds', [$tag->getKey()]);
 });
+
+it('filters equipment by tag', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $tag = Tag::create(['name' => 'core', 'color' => '#00ff00']);
+    $tagged = Equipment::factory()->create(['name' => 'SW-Core']);
+    $other = Equipment::factory()->create(['name' => 'SW-Edge']);
+    $tagged->tags()->sync([$tag->getKey()]);
+
+    Livewire::test(EquipmentIndex::class)
+        ->set('tagFilter', $tag->getKey())
+        ->assertSee('SW-Core')
+        ->assertDontSee('SW-Edge');
+});
+
+it('remembers the last filter in session across visits', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+
+    Livewire::test(EquipmentIndex::class)
+        ->set('typeFilter', 'router')
+        ->set('search', 'border');
+
+    // A fresh component instance restores the filters from the session.
+    Livewire::test(EquipmentIndex::class)
+        ->assertSet('typeFilter', 'router')
+        ->assertSet('search', 'border');
+});

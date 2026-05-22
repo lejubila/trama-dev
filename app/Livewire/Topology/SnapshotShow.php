@@ -57,6 +57,9 @@ class SnapshotShow extends Component
         if (! empty($state['filterTypes']) && is_array($state['filterTypes'])) {
             $params['filterTypes'] = array_values($state['filterTypes']);
         }
+        if (! empty($state['tagFilters']) && is_array($state['tagFilters'])) {
+            $params['tagFilters'] = array_values(array_map('intval', $state['tagFilters']));
+        }
         if (! empty($state['includeHidden'])) {
             $params['includeHidden'] = true;
         }
@@ -65,6 +68,9 @@ class SnapshotShow extends Component
         }
         if (! empty($state['groupBySite'])) {
             $params['groupBySite'] = true;
+        }
+        if (! empty($state['groupByRoom'])) {
+            $params['groupByRoom'] = true;
         }
         if (! empty($state['roomFilter'])) {
             $params['roomFilter'] = (int) $state['roomFilter'];

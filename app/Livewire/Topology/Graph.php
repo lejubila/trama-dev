@@ -9,6 +9,7 @@ use App\Enums\EquipmentType;
 use App\Models\DeviceIcon;
 use App\Models\Room;
 use App\Models\Site;
+use App\Models\Tag;
 use App\Models\Tenant;
 use App\Models\TopologySnapshot;
 use App\Services\TopologyService;
@@ -33,6 +34,14 @@ class Graph extends Component
 
     #[Url(except: 0)]
     public int $vlanFilter = 0;
+
+    /**
+     * Selected tag ids; a device shows if it has at least one (OR).
+     *
+     * @var list<int|string>
+     */
+    #[Url(except: [])]
+    public array $tagFilters = [];
 
     #[Url(except: 'cose-bilkent')]
     public string $layout = 'cose-bilkent';
@@ -74,7 +83,7 @@ class Graph extends Component
 
     public function clearFilters(): void
     {
-        $this->reset(['siteId', 'statusFilter', 'vlanFilter', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom', 'roomFilter']);
+        $this->reset(['siteId', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom', 'roomFilter']);
     }
 
     /**
@@ -128,6 +137,7 @@ class Graph extends Component
             roomId: $this->roomFilter > 0 ? $this->roomFilter : null,
             groupBySite: $this->groupBySite,
             groupByRoom: $this->groupByRoom,
+            tagIds: $this->tagFilters !== [] ? array_map('intval', $this->tagFilters) : null,
         );
     }
 
@@ -165,6 +175,7 @@ class Graph extends Component
             'rooms' => $rooms,
             'types' => EquipmentType::cases(),
             'statuses' => EquipmentStatus::cases(),
+            'allTags' => Tag::query()->orderBy('name')->get(),
             'graph' => $this->graphData($svc),
             'canEdit' => $canEdit,
             'minIconPx' => TopologyService::MIN_ICON_SIZE_PX,

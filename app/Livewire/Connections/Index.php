@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Livewire\Connections;
 
 use App\Enums\ConnectionStatus;
+use App\Livewire\Concerns\RemembersFilters;
 use App\Models\Connection;
 use App\Models\Equipment;
+use App\Models\Tag;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -16,7 +18,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    use WithPagination;
+    use RemembersFilters, WithPagination;
 
     #[Url(except: '')]
     public string $search = '';
@@ -29,6 +31,9 @@ class Index extends Component
 
     #[Url(except: '')]
     public string $portFilter = '';
+
+    #[Url(except: 0)]
+    public int $tagFilter = 0;
 
     public function updatingSearch(): void
     {
@@ -50,9 +55,23 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatingTagFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function rememberedFilters(): array
+    {
+        return ['search', 'statusFilter', 'equipmentFilter', 'portFilter', 'tagFilter'];
+    }
+
     public function clearFilters(): void
     {
-        $this->reset(['search', 'statusFilter', 'equipmentFilter', 'portFilter']);
+        $this->reset(['search', 'statusFilter', 'equipmentFilter', 'portFilter', 'tagFilter']);
+        $this->persistFilters();
         $this->resetPage();
     }
 
@@ -86,6 +105,7 @@ class Index extends Component
                 $qq->whereHas('fromInterface', fn ($qi) => $qi->where('name', 'ilike', "%{$this->portFilter}%"))
                     ->orWhereHas('toInterface', fn ($qi) => $qi->where('name', 'ilike', "%{$this->portFilter}%"));
             }))
+            ->when($this->tagFilter > 0, fn ($q) => $q->whereHas('tags', fn ($qt) => $qt->where('tags.id', $this->tagFilter)))
             ->orderByDesc('id')
             ->paginate(20);
 
@@ -93,6 +113,7 @@ class Index extends Component
             'connections' => $connections,
             'statuses' => ConnectionStatus::cases(),
             'equipmentList' => Equipment::query()->orderBy('name')->get(['id', 'name']),
+            'allTags' => Tag::query()->orderBy('name')->get(),
         ]);
     }
 }

@@ -113,6 +113,7 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cavo</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Colore</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Etichetta</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tag</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
                     </tr>
@@ -146,6 +147,13 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $c->cable_label ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600">
+                                @if ($c->tags->isNotEmpty())
+                                    <x-tag-chips :tags="$c->tags" />
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-gray-600">{{ $c->status?->value }}</td>
                             <td class="px-4 py-3 text-right space-x-2">
                                 @can('update', $c)
@@ -157,7 +165,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="px-4 py-6 text-center text-gray-500">Nessuna connessione per questo dispositivo.</td></tr>
+                        <tr><td colspan="9" class="px-4 py-6 text-center text-gray-500">Nessuna connessione per questo dispositivo.</td></tr>
                     @endforelse
                 </tbody>
             </table>

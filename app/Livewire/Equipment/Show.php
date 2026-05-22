@@ -315,6 +315,7 @@ class Show extends Component
             ->with([
                 'fromInterface.equipment',
                 'toInterface.equipment',
+                'tags',
             ])
             ->where(function ($q) use ($interfaceIds): void {
                 $q->whereIn('from_interface_id', $interfaceIds)

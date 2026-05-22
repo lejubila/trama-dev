@@ -9,6 +9,7 @@ use App\Models\NetworkInterface;
 use App\Models\Rack;
 use App\Models\Room;
 use App\Models\Site;
+use App\Models\Tag;
 use App\Models\Tenant;
 use App\Services\TopologyService;
 use App\Support\Tenancy\TenantContext;
@@ -71,6 +72,33 @@ it('returns nodes and edges for the active tenant only', function (): void {
     expect($labels)->toContain('SW-X', 'RTR-X')
         ->and($labels)->not->toContain('SW-OTHER-TENANT')
         ->and($graph['edges'])->toHaveCount(1);
+});
+
+it('filters by tags in OR', function (): void {
+    [$tenant, $site, $sw, $rt] = makeWiredScene();
+
+    // SW-X → tag A, RTR-X → tag B, a third device → no tag.
+    $tagA = Tag::create(['name' => 'core', 'color' => '#00ff00']);
+    $tagB = Tag::create(['name' => 'backbone', 'color' => '#0000ff']);
+    $sw->tags()->sync([$tagA->getKey()]);
+    $rt->tags()->sync([$tagB->getKey()]);
+    Equipment::factory()->mountedAt(3, 1)->create([
+        'rack_id' => $sw->rack_id,
+        'name' => 'SW-UNTAGGED',
+    ]);
+
+    $svc = app(TopologyService::class);
+
+    // Single tag → only its device.
+    $onlyA = collect($svc->buildGraph(tagIds: [$tagA->getKey()])['nodes'])->pluck('data.label')->all();
+    expect($onlyA)->toContain('SW-X')
+        ->and($onlyA)->not->toContain('RTR-X')
+        ->and($onlyA)->not->toContain('SW-UNTAGGED');
+
+    // Both tags → OR union, never the untagged device.
+    $both = collect($svc->buildGraph(tagIds: [$tagA->getKey(), $tagB->getKey()])['nodes'])->pluck('data.label')->all();
+    expect($both)->toContain('SW-X', 'RTR-X')
+        ->and($both)->not->toContain('SW-UNTAGGED');
 });
 
 it('filters by site', function (): void {

@@ -88,6 +88,9 @@
                                             <span class="font-mono">{{ $remote->name }}</span>
                                         </div>
                                         <div class="text-xs text-gray-500">{{ $c->cable_type }} {{ $c->cable_label ? '· '.$c->cable_label : '' }}</div>
+                                        @if ($c->tags->isNotEmpty())
+                                            <div class="mt-1"><x-tag-chips :tags="$c->tags" /></div>
+                                        @endif
                                     </li>
                                 @endforeach
                             </ul>

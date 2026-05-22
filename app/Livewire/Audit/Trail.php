@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Audit;
 
+use App\Livewire\Concerns\RemembersFilters;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
@@ -15,7 +16,7 @@ use OwenIt\Auditing\Models\Audit;
 #[Layout('layouts.app')]
 class Trail extends Component
 {
-    use WithPagination;
+    use RemembersFilters, WithPagination;
 
     #[Url(except: '')]
     public string $modelFilter = '';
@@ -31,6 +32,14 @@ class Trail extends Component
     public function updatingEventFilter(): void
     {
         $this->resetPage();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function rememberedFilters(): array
+    {
+        return ['modelFilter', 'eventFilter'];
     }
 
     public function render(): View

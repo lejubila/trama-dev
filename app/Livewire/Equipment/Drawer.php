@@ -60,7 +60,7 @@ class Drawer extends Component
 
         $connections = $this->equipment !== null && $this->activeTab === 'connections'
             ? Connection::query()
-                ->with(['fromInterface.equipment', 'toInterface.equipment'])
+                ->with(['fromInterface.equipment', 'toInterface.equipment', 'tags'])
                 ->where(function ($q): void {
                     $ifIds = $this->equipment->interfaces->pluck('id')->all();
                     $q->whereIn('from_interface_id', $ifIds)

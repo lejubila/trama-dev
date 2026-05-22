@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Racks;
 
 use App\Enums\RackNumbering;
+use App\Livewire\Concerns\RemembersFilters;
 use App\Models\Rack;
 use App\Models\Room;
 use Illuminate\Contracts\View\View;
@@ -20,7 +21,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    use WithFileUploads, WithPagination;
+    use RemembersFilters, WithFileUploads, WithPagination;
 
     #[Url(except: '')]
     public string $search = '';
@@ -87,6 +88,14 @@ class Index extends Component
     public function updatingRoomFilter(): void
     {
         $this->resetPage();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function rememberedFilters(): array
+    {
+        return ['search', 'roomFilter'];
     }
 
     public function openCreate(): void

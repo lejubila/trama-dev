@@ -49,6 +49,26 @@
             @endforeach
         </select>
 
+        <div x-data="{ open: false }" @click.away="open = false" class="relative">
+            <button type="button" @click="open = !open"
+                class="rounded-md border border-gray-300 shadow-sm text-sm px-3 py-2 bg-white inline-flex items-center gap-1">
+                Tag @if (count($tagFilters)) <span class="text-indigo-600 font-medium">({{ count($tagFilters) }})</span> @endif
+                <span class="text-gray-400">▾</span>
+            </button>
+            <div x-show="open" x-cloak class="absolute z-20 mt-1 max-h-60 overflow-auto rounded-md bg-white p-2 shadow-lg ring-1 ring-black/5 min-w-[12rem]">
+                @forelse ($allTags as $tag)
+                    <label class="flex items-center gap-2 px-2 py-1 text-sm cursor-pointer hover:bg-gray-50">
+                        <input type="checkbox" value="{{ $tag->id }}" wire:model.live="tagFilters"
+                            class="rounded border-gray-300 text-indigo-600" />
+                        <span class="inline-block h-2.5 w-2.5 rounded-full" style="background-color: {{ $tag->color }}"></span>
+                        {{ $tag->name }}
+                    </label>
+                @empty
+                    <span class="block px-2 py-1 text-xs text-gray-400">Nessun tag</span>
+                @endforelse
+            </div>
+        </div>
+
         <label class="inline-flex items-center gap-1.5 text-sm text-gray-700">
             <span class="font-medium">VLAN</span>
             <input
@@ -111,6 +131,7 @@
                         roomFilter: $wire.roomFilter,
                         statusFilter: $wire.statusFilter,
                         vlanFilter: $wire.vlanFilter,
+                        tagFilters: $wire.tagFilters,
                         layout: $wire.layout,
                         filterTypes: $wire.filterTypes,
                         includeHidden: $wire.includeHidden,

@@ -125,13 +125,18 @@ it('builds a live-topology URL from view_state on openLive', function (): void {
             'vlanFilter' => 0,
             'layout' => 'dagre',
             'filterTypes' => ['switch'],
+            'tagFilters' => [7, 9],
+            'groupByRack' => true,
+            'groupByRoom' => true,
+            'groupBySite' => true,
         ],
     ]);
 
     Livewire::test(SnapshotShow::class, ['snapshot' => $snap])
         ->call('openLive')
         ->assertRedirect(route('topology.index', [
-            'siteId' => 3, 'layout' => 'dagre', 'filterTypes' => ['switch'],
+            'siteId' => 3, 'layout' => 'dagre', 'filterTypes' => ['switch'], 'tagFilters' => [7, 9],
+            'groupByRack' => true, 'groupBySite' => true, 'groupByRoom' => true,
         ]));
 });
 

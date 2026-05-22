@@ -145,7 +145,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             // event the server can dispatch, plus poll on filter changes via
             // $wire helpers. Simpler: re-query the API whenever filters change.
             const refresh = () => this._refresh();
-            ['siteId', 'roomFilter', 'statusFilter', 'vlanFilter', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom']
+            ['siteId', 'roomFilter', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom']
                 .forEach((k) => this.$watch('$wire.' + k, refresh));
         },
 
@@ -311,8 +311,12 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             if (knownIds.length === 0) return false;
 
             const known = new Set(knownIds);
-            // 1) place known nodes at saved coordinates.
+            // 1) place known leaf nodes at saved coordinates. Skip compound
+            // parents (rack/room/site groups): their box is derived from their
+            // children, and setting a parent's position would drag the children
+            // off their restored coordinates.
             this.cy.nodes().forEach((n) => {
+                if (n.isParent()) return;
                 const p = positions[n.id()];
                 if (p && Array.isArray(p) && p.length === 2) {
                     n.position({ x: Number(p[0]), y: Number(p[1]) });
@@ -329,7 +333,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             // possible, else near bbox center with a small grid jitter.
             let unknownIdx = 0;
             this.cy.nodes().forEach((n) => {
-                if (known.has(n.id())) return;
+                if (n.isParent() || known.has(n.id())) return;
                 const neighbor = n.neighborhood('node').filter((x) => known.has(x.id())).first();
                 if (neighbor && neighbor.length) {
                     const np = neighbor.position();
@@ -343,51 +347,22 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                 }
             });
 
-            // 4) Compound (group-by-rack) compression: saved snapshots can
-            // have rack-compounds spaced very far apart (legacy wide-layout
-            // values). Without changing the layout inside each compound,
-            // pull every compound's children toward the overall centre by a
-            // fixed factor so racks visually nest closer together.
-            const compounds = this.cy.nodes(':parent');
-            if (compounds.length >= 2) {
-                const COMPRESS = 0.4; // 1 = no change, < 1 = bring closer
-                const centroids = {};
-                compounds.forEach((c) => {
-                    const ch = c.children();
-                    if (ch.length === 0) return;
-                    let sx = 0, sy = 0;
-                    ch.forEach((k) => { const p = k.position(); sx += p.x; sy += p.y; });
-                    centroids[c.id()] = { x: sx / ch.length, y: sy / ch.length };
+            // 4) restore viewport faithfully. Children are kept at their exact
+            // saved coordinates (no compression), so the saved zoom + pan
+            // reproduce the original framing — including when group-by-rack is
+            // active and the canvas holds compound parents. Fall back to fit()
+            // only for legacy snapshots that stored neither zoom nor pan.
+            const hasZoom = typeof restore.zoom === 'number' && isFinite(restore.zoom) && restore.zoom > 0;
+            const hasPan = Array.isArray(restore.pan) && restore.pan.length === 2;
+            if (hasZoom && hasPan) {
+                this.cy.viewport({
+                    zoom: restore.zoom,
+                    pan: { x: Number(restore.pan[0]), y: Number(restore.pan[1]) },
                 });
-                const ids = Object.keys(centroids);
-                if (ids.length >= 2) {
-                    let ox = 0, oy = 0;
-                    ids.forEach((id) => { ox += centroids[id].x; oy += centroids[id].y; });
-                    ox /= ids.length; oy /= ids.length;
-                    compounds.forEach((c) => {
-                        const cent = centroids[c.id()];
-                        if (!cent) return;
-                        const dx = (cent.x - ox) * (COMPRESS - 1);
-                        const dy = (cent.y - oy) * (COMPRESS - 1);
-                        c.children().forEach((k) => {
-                            const p = k.position();
-                            k.position({ x: p.x + dx, y: p.y + dy });
-                        });
-                    });
-                }
-            }
-
-            // 5) restore viewport — done LAST so it accounts for any
-            // compression we just applied. If the saved zoom was for the
-            // wider pre-compression layout, scale it up slightly so the
-            // newly-compressed graph still fills the viewport pleasantly.
-            if (typeof restore.zoom === 'number' && isFinite(restore.zoom)) {
-                // After compression the bbox shrank; let cy refit so the
-                // user sees the whole graph at a comfortable zoom rather
-                // than the old saved zoom around a now-too-small area.
-                this.cy.fit(undefined, 40);
-            } else if (Array.isArray(restore.pan) && restore.pan.length === 2) {
+            } else if (hasPan) {
                 this.cy.pan({ x: Number(restore.pan[0]), y: Number(restore.pan[1]) });
+            } else {
+                this.cy.fit(undefined, 40);
             }
             return true;
         },

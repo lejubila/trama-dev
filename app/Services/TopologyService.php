@@ -62,6 +62,7 @@ class TopologyService
         ?int $roomId = null,
         bool $groupBySite = false,
         bool $groupByRoom = false,
+        ?array $tagIds = null,
     ): array {
         $equipmentQuery = Equipment::query()->with(['rack.room.site', 'room.site']);
 
@@ -94,6 +95,12 @@ class TopologyService
 
         if ($status !== null && $status !== '') {
             $equipmentQuery->where('status', $status);
+        }
+
+        if ($tagIds !== null && $tagIds !== []) {
+            // whereIn within a single whereHas ⇒ OR semantics across tags:
+            // a device matches if it carries at least one of the selected tags.
+            $equipmentQuery->whereHas('tags', fn ($q) => $q->whereIn('tags.id', $tagIds));
         }
 
         if ($vlan !== null) {

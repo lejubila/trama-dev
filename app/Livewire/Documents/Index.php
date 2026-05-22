@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Documents;
 
+use App\Livewire\Concerns\RemembersFilters;
 use App\Models\Document;
 use App\Services\Export\DocumentPdfBuilder;
 use Illuminate\Contracts\View\View;
@@ -16,7 +17,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    use WithPagination;
+    use RemembersFilters, WithPagination;
 
     #[Url(except: '')]
     public string $search = '';
@@ -47,9 +48,18 @@ class Index extends Component
         $this->resetPage();
     }
 
+    /**
+     * @return array<int, string>
+     */
+    protected function rememberedFilters(): array
+    {
+        return ['search', 'dateFrom', 'dateTo'];
+    }
+
     public function clearFilters(): void
     {
         $this->reset(['search', 'dateFrom', 'dateTo']);
+        $this->persistFilters();
         $this->resetPage();
     }
 
