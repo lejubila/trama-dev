@@ -67,3 +67,16 @@ it('deletes a tag as admin', function (): void {
 
     expect(Tag::query()->whereKey($tag->getKey())->exists())->toBeFalse();
 });
+
+it('rejects a duplicate tag name within the same tenant', function (): void {
+    [$tenant, $user] = setupTagsScene('admin');
+    Tag::factory()->create(['name' => 'Ospiti']);
+
+    Livewire::test(Manager::class)
+        ->set('name', 'Ospiti')
+        ->set('color', '#4472c4')
+        ->call('save')
+        ->assertHasErrors(['name' => 'unique']);
+
+    expect(Tag::query()->where('name', 'Ospiti')->count())->toBe(1);
+});

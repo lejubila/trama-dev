@@ -5,24 +5,33 @@ declare(strict_types=1);
 namespace App\Livewire\Tags;
 
 use App\Models\Tag;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\View\View;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Validate;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
 class Manager extends Component
 {
-    #[Validate('required|string|max:50')]
     public string $name = '';
 
-    #[Validate('required|regex:/^#[0-9a-fA-F]{6}$/')]
     public string $color = '#4f46e5';
 
     public function save(): void
     {
         $this->authorize('create', Tag::class);
-        $this->validate();
+
+        $this->validate([
+            'name' => [
+                'required', 'string', 'max:50',
+                Rule::unique('tags', 'name')
+                    ->where(fn ($q) => $q->where('tenant_id', TenantContext::id())),
+            ],
+            'color' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
+        ], [
+            'name.unique' => 'Esiste già un tag con questo nome.',
+        ]);
 
         Tag::create([
             'name' => $this->name,
