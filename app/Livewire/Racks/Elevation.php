@@ -10,12 +10,17 @@ use App\Models\Equipment;
 use App\Models\Rack;
 use App\Services\RackPlacementService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 class Elevation extends Component
 {
+    use WithFileUploads;
+
     public Rack $rack;
 
     public string $orient = 'front';
@@ -36,6 +41,18 @@ class Elevation extends Component
     public string $vendor = '';
 
     public string $modelName = '';
+
+    public string $serial = '';
+
+    public string $status = 'active';
+
+    public bool $locked = false;
+
+    public bool $hiddenInTopology = false;
+
+    public string $description = '';
+
+    public $iconUpload = null;
 
     public function mount(Rack $rack): void
     {
@@ -91,7 +108,8 @@ class Elevation extends Component
     {
         $this->authorize('create', Equipment::class);
 
-        $this->reset(['name', 'vendor', 'modelName']);
+        $this->reset(['name', 'vendor', 'modelName', 'serial', 'locked', 'hiddenInTopology', 'description', 'iconUpload']);
+        $this->status = 'active';
         $this->selectedU = $u;
         // The slot belongs to the side the user is currently viewing.
         // Falling back to component state keeps backwards-compat with
@@ -115,7 +133,8 @@ class Elevation extends Component
     {
         $this->authorize('create', Equipment::class);
 
-        $this->reset(['name', 'vendor', 'modelName']);
+        $this->reset(['name', 'vendor', 'modelName', 'serial', 'locked', 'hiddenInTopology', 'description', 'iconUpload']);
+        $this->status = 'active';
         $this->selectedU = null;
         $this->onTop = true;
         $this->positionUHeight = 1;
@@ -144,6 +163,12 @@ class Elevation extends Component
             'type' => ['required', Rule::in(array_column(EquipmentType::cases(), 'value'))],
             'vendor' => 'nullable|string|max:80',
             'modelName' => 'nullable|string|max:120',
+            'serial' => 'nullable|string|max:120',
+            'status' => ['required', Rule::in(array_column(EquipmentStatus::cases(), 'value'))],
+            'locked' => 'boolean',
+            'hiddenInTopology' => 'boolean',
+            'description' => 'nullable|string|max:5000',
+            'iconUpload' => 'nullable|image|max:5120',
         ];
         if (! $this->onTop) {
             $rules['positionUHeight'] = 'required|integer|min:1|max:60';
@@ -156,20 +181,29 @@ class Elevation extends Component
             return;
         }
 
-        Equipment::create([
+        $equipment = Equipment::create([
             'rack_id' => $this->rack->getKey(),
             'name' => $this->name,
             'type' => EquipmentType::from($this->type),
             'vendor' => $this->vendor !== '' ? $this->vendor : null,
             'model' => $this->modelName !== '' ? $this->modelName : null,
+            'serial' => $this->serial !== '' ? $this->serial : null,
             'mounted' => true,
-            'locked' => false,
+            'locked' => $this->locked,
+            'hidden_in_topology' => $this->hiddenInTopology,
             'on_top' => $this->onTop,
             'position_u_start' => $this->onTop ? null : $this->selectedU,
             'position_u_height' => $this->onTop ? null : $this->positionUHeight,
             'position_orient' => $this->onTop ? null : $this->orient,
-            'status' => EquipmentStatus::Active,
+            'status' => EquipmentStatus::from($this->status),
+            'description' => $this->description !== '' ? $this->description : null,
         ]);
+
+        if ($this->iconUpload instanceof TemporaryUploadedFile) {
+            $equipment->update([
+                'icon_path' => $this->iconUpload->store("icons/{$equipment->tenant_id}/equipment", 'public'),
+            ]);
+        }
 
         $sideLabel = $this->orient === 'rear' ? ' (posteriore)' : ' (anteriore)';
         $location = $this->onTop ? 'sopra il rack' : "in U{$this->selectedU}{$sideLabel}";
@@ -181,6 +215,7 @@ class Elevation extends Component
     {
         return view('livewire.racks.elevation', [
             'types' => EquipmentType::cases(),
+            'statuses' => EquipmentStatus::cases(),
             'canEdit' => auth()->user()?->can('create', Equipment::class) ?? false,
         ]);
     }
