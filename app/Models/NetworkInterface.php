@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\InterfaceMedia;
 use App\Enums\InterfacePoe;
+use App\Enums\InterfaceSide;
 use App\Enums\InterfaceStatus;
 use App\Enums\InterfaceType;
 use App\Enums\InterfaceVlanMode;
@@ -47,6 +48,8 @@ class NetworkInterface extends Model implements AuditableContract
         'equipment_id',
         'name',
         'type',
+        'side',
+        'paired_interface_id',
         'index',
         'speed_mbps',
         'media',
@@ -66,6 +69,7 @@ class NetworkInterface extends Model implements AuditableContract
     {
         return [
             'type' => InterfaceType::class,
+            'side' => InterfaceSide::class,
             'media' => InterfaceMedia::class,
             'vlan_mode' => InterfaceVlanMode::class,
             'status' => InterfaceStatus::class,
@@ -104,6 +108,37 @@ class NetworkInterface extends Model implements AuditableContract
     public function incomingConnections(): HasMany
     {
         return $this->hasMany(Connection::class, 'to_interface_id');
+    }
+
+    /**
+     * The matching half of a keystone port. Always null for non-keystone
+     * interfaces; for keystone interfaces it points to the opposite side
+     * (front ↔ rear) created together via CreateKeystonePair.
+     *
+     * @return BelongsTo<NetworkInterface, $this>
+     */
+    public function paired(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'paired_interface_id');
+    }
+
+    /**
+     * True when this interface participates in the front/rear pairing
+     * machinery: keystone ports on patch panels and wall outlets.
+     */
+    public function requiresSide(): bool
+    {
+        return $this->type === InterfaceType::Keystone;
+    }
+
+    public function isFront(): bool
+    {
+        return $this->side === InterfaceSide::Front;
+    }
+
+    public function isRear(): bool
+    {
+        return $this->side === InterfaceSide::Rear;
     }
 
     /**

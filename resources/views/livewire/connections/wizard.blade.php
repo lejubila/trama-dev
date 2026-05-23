@@ -35,7 +35,7 @@
                     @foreach ($equipmentStep1 as $eq)
                         <optgroup label="{{ $eq->name }}">
                             @foreach ($eq->interfaces as $if)
-                                <option value="{{ $if->id }}" @disabled(in_array($if->id, $busyIds, true))>{{ $if->name }} — {{ $if->type?->value }}@if (in_array($if->id, $busyIds, true)) (occupata) @endif</option>
+                                <option value="{{ $if->id }}" @disabled(in_array($if->id, $busyIds, true))>{{ $if->name }}@if ($if->side) ({{ $if->side->value }})@endif — {{ $if->type?->value }}@if (in_array($if->id, $busyIds, true)) (occupata) @endif</option>
                             @endforeach
                         </optgroup>
                     @endforeach
@@ -49,18 +49,40 @@
             </div>
         @elseif ($step === 2)
             <div wire:key="step-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Interfaccia di destinazione</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Interfaccia di destinazione
+                    @if ($targetsFiltered)
+                        <span class="text-xs text-gray-500 font-normal">— solo porte compatibili</span>
+                    @endif
+                </label>
                 <select wire:model="toInterfaceId" class="block w-full rounded-md border-gray-300 shadow-sm text-sm">
                     <option value="">Seleziona…</option>
-                    @foreach ($equipment as $eq)
+                    @foreach ($equipmentStep2 as $eq)
                         <optgroup label="{{ $eq->name }}">
                             @foreach ($eq->interfaces as $if)
-                                <option value="{{ $if->id }}" @disabled(in_array($if->id, $busyIds, true) || $if->id === $fromInterfaceId)>{{ $if->name }} — {{ $if->type?->value }}@if (in_array($if->id, $busyIds, true)) (occupata) @endif</option>
+                                <option value="{{ $if->id }}" @disabled(in_array($if->id, $busyIds, true) || $if->id === $fromInterfaceId)>{{ $if->name }}@if ($if->side) ({{ $if->side->value }})@endif — {{ $if->type?->value }}@if (in_array($if->id, $busyIds, true)) (occupata) @endif</option>
                             @endforeach
                         </optgroup>
                     @endforeach
                 </select>
                 @error('toInterfaceId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                @if ($targetsFiltered)
+                    <p class="text-xs text-gray-500 mt-1">
+                        @if ($fromInterface?->isRear() && $fromInterface->equipment?->type?->value === 'patch_panel')
+                            Solo lati rear · stesso rack o stesso locale (senza rack) ·
+                        @elseif ($fromInterface?->isRear())
+                            Solo lati rear (dorsali) ·
+                        @else
+                            Stesso media · esclude i lati rear · stesso rack o stesso locale (senza rack) ·
+                        @endif
+                        <a href="#" wire:click.prevent="$set('showAllTargets', true)" class="text-indigo-600 hover:underline">Mostra tutte le porte</a>
+                    </p>
+                @elseif ($showAllTargets && $fromInterface)
+                    <p class="text-xs text-gray-500 mt-1">
+                        Filtro disattivato ·
+                        <a href="#" wire:click.prevent="$set('showAllTargets', false)" class="text-indigo-600 hover:underline">Riapplica filtro</a>
+                    </p>
+                @endif
             </div>
         @else
             <form wire:submit="save" wire:key="step-3">
@@ -72,13 +94,13 @@
                         <span class="text-gray-500">Da:</span>
                         {{ $fromInterface?->equipment?->name ?? '—' }}
                         ·
-                        <span class="font-mono">{{ $fromInterface?->name ?? '—' }}</span>
+                        <span class="font-mono">{{ $fromInterface?->name ?? '—' }}@if ($fromInterface?->side) <span class="text-xs text-gray-500">({{ $fromInterface->side->value }})</span>@endif</span>
                     </div>
                     <div>
                         <span class="text-gray-500">A:</span>
                         {{ $toInterface?->equipment?->name ?? '—' }}
                         ·
-                        <span class="font-mono">{{ $toInterface?->name ?? '—' }}</span>
+                        <span class="font-mono">{{ $toInterface?->name ?? '—' }}@if ($toInterface?->side) <span class="text-xs text-gray-500">({{ $toInterface->side->value }})</span>@endif</span>
                     </div>
                     @error('fromInterfaceId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     @error('toInterfaceId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror

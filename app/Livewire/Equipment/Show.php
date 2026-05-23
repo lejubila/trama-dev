@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Livewire\Equipment;
 
+use App\Actions\Interfaces\CreateKeystonePair;
+use App\Enums\EquipmentType;
 use App\Enums\InterfaceMedia;
 use App\Enums\InterfacePoe;
+use App\Enums\InterfaceSide;
 use App\Enums\InterfaceStatus;
 use App\Enums\InterfaceType;
 use App\Enums\InterfaceVlanMode;
@@ -37,6 +40,8 @@ class Show extends Component
     public string $ifType = 'ethernet';
 
     public string $ifMedia = 'copper';
+
+    public string $ifConnector = '';
 
     public ?int $ifSpeedMbps = 1000;
 
@@ -71,6 +76,7 @@ class Show extends Component
         $base = [
             'ifType' => ['required', Rule::in(array_column(InterfaceType::cases(), 'value'))],
             'ifMedia' => ['required', Rule::in(array_column(InterfaceMedia::cases(), 'value'))],
+            'ifConnector' => 'nullable|string|max:20',
             'ifSpeedMbps' => 'nullable|integer|min:1',
             'ifVlanMode' => ['nullable', Rule::in(array_column(InterfaceVlanMode::cases(), 'value'))],
             'ifVlanDefault' => 'nullable|integer|min:1|max:4094',
@@ -132,9 +138,15 @@ class Show extends Component
         $this->reset(['editingIfId', 'ifName', 'ifIpAddress', 'ifMacAddress', 'ifDescription', 'ifBulk']);
         $this->ifBulkQuantity = 12;
         $this->ifBulkStartFrom = 1;
-        $this->ifType = 'ethernet';
+        $isPatchLike = in_array(
+            $this->equipment->type,
+            [EquipmentType::PatchPanel, EquipmentType::WallOutlet],
+            true,
+        );
+        $this->ifType = $isPatchLike ? 'keystone' : 'ethernet';
         $this->ifMedia = 'copper';
-        $this->ifSpeedMbps = 1000;
+        $this->ifConnector = $isPatchLike ? 'rj45' : '';
+        $this->ifSpeedMbps = $isPatchLike ? null : 1000;
         $this->ifVlanMode = 'access';
         $this->ifVlanDefault = 1;
         $this->ifStatus = 'unknown';
@@ -153,6 +165,7 @@ class Show extends Component
         $this->ifName = $if->name;
         $this->ifType = $if->type?->value ?? 'ethernet';
         $this->ifMedia = $if->media?->value ?? 'copper';
+        $this->ifConnector = (string) ($if->connector ?? '');
         $this->ifSpeedMbps = $if->speed_mbps;
         $this->ifVlanMode = $if->vlan_mode?->value ?? 'access';
         $this->ifVlanDefault = $if->vlan_default;
@@ -180,16 +193,29 @@ class Show extends Component
     {
         $this->validate();
 
-        $payload = array_merge($this->basePayload(), ['name' => $this->ifName]);
-
         if ($this->editingIfId !== null) {
             $if = NetworkInterface::query()->findOrFail($this->editingIfId);
             $this->authorize('update', $if);
+            $payload = array_merge($this->basePayload(), ['name' => $this->ifName]);
             $if->update($payload);
             $this->dispatch('toast', type: 'success', message: 'Interfaccia aggiornata.');
+            $this->showIfForm = false;
+
+            return;
+        }
+
+        $this->authorize('create', NetworkInterface::class);
+
+        if ($this->shouldCreateAsKeystonePair()) {
+            app(CreateKeystonePair::class)->execute($this->equipment, [
+                'name' => $this->ifName,
+                'connector' => $this->ifConnector !== '' ? $this->ifConnector : null,
+                'description' => $this->ifDescription !== '' ? $this->ifDescription : null,
+                'status' => $this->ifStatus,
+            ]);
+            $this->dispatch('toast', type: 'success', message: 'Porta creata (front + rear).');
         } else {
-            $this->authorize('create', NetworkInterface::class);
-            NetworkInterface::create($payload);
+            NetworkInterface::create(array_merge($this->basePayload(), ['name' => $this->ifName]));
             $this->dispatch('toast', type: 'success', message: 'Interfaccia creata.');
         }
 
@@ -218,15 +244,47 @@ class Show extends Component
             return;
         }
 
-        $base = $this->basePayload();
-        DB::transaction(function () use ($names, $base): void {
-            foreach ($names as $name) {
-                NetworkInterface::create(array_merge($base, ['name' => $name]));
-            }
-        });
+        if ($this->shouldCreateAsKeystonePair()) {
+            $action = app(CreateKeystonePair::class);
+            DB::transaction(function () use ($names, $action): void {
+                foreach ($names as $name) {
+                    $action->execute($this->equipment, [
+                        'name' => $name,
+                        'connector' => $this->ifConnector !== '' ? $this->ifConnector : null,
+                        'description' => $this->ifDescription !== '' ? $this->ifDescription : null,
+                        'status' => $this->ifStatus,
+                    ]);
+                }
+            });
+            $this->dispatch('toast', type: 'success', message: count($names).' porte create (front + rear).');
+        } else {
+            $base = $this->basePayload();
+            DB::transaction(function () use ($names, $base): void {
+                foreach ($names as $name) {
+                    NetworkInterface::create(array_merge($base, ['name' => $name]));
+                }
+            });
+            $this->dispatch('toast', type: 'success', message: count($names).' interfacce create.');
+        }
 
-        $this->dispatch('toast', type: 'success', message: count($names).' interfacce create.');
         $this->showIfForm = false;
+    }
+
+    /**
+     * Pair-creation is implicit for keystone ports on patch panels and wall
+     * outlets — every "port" is physically two endpoints (front + rear).
+     */
+    private function shouldCreateAsKeystonePair(): bool
+    {
+        if ($this->ifType !== InterfaceType::Keystone->value) {
+            return false;
+        }
+
+        return in_array(
+            $this->equipment->type,
+            [EquipmentType::PatchPanel, EquipmentType::WallOutlet],
+            true,
+        );
     }
 
     /**
@@ -238,6 +296,7 @@ class Show extends Component
             'equipment_id' => $this->equipment->getKey(),
             'type' => InterfaceType::from($this->ifType),
             'media' => InterfaceMedia::from($this->ifMedia),
+            'connector' => $this->ifConnector !== '' ? $this->ifConnector : null,
             'speed_mbps' => $this->ifSpeedMbps,
             'vlan_mode' => InterfaceVlanMode::from($this->ifVlanMode),
             'vlan_default' => $this->ifVlanDefault,
@@ -324,10 +383,27 @@ class Show extends Component
             ->orderByDesc('id')
             ->get();
 
+        // For patch panels and wall outlets the listing groups the two halves
+        // of each keystone port under the front row (the rear is reached via
+        // the `paired` relation in the view).
+        $interfaces = $this->equipment->interfaces()
+            ->with('paired')
+            ->where(function ($q): void {
+                $q->whereNull('side')->orWhere('side', InterfaceSide::Front->value);
+            })
+            ->orderBy('index')
+            ->orderBy('name')
+            ->get();
+
         return view('livewire.equipment.show', [
-            'interfaces' => $this->equipment->interfaces()->orderBy('index')->orderBy('name')->get(),
+            'interfaces' => $interfaces,
             'connections' => $connections,
             'audits' => $this->equipment->audits()->latest()->limit(50)->get(),
+            'isPatchLike' => in_array(
+                $this->equipment->type,
+                [EquipmentType::PatchPanel, EquipmentType::WallOutlet],
+                true,
+            ),
         ]);
     }
 }

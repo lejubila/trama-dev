@@ -52,6 +52,32 @@
         <div x-data="{ open: false }" @click.away="open = false" class="relative">
             <button type="button" @click="open = !open"
                 class="rounded-md border border-gray-300 shadow-sm text-sm px-3 py-2 bg-white inline-flex items-center gap-1">
+                Tipi @if (count($filterTypes)) <span class="text-indigo-600 font-medium">({{ count($filterTypes) }})</span> @endif
+                <span class="text-gray-400">▾</span>
+            </button>
+            <div x-show="open" x-cloak class="absolute z-20 mt-1 max-h-80 overflow-auto rounded-md bg-white p-2 shadow-lg ring-1 ring-black/5 w-56">
+                @if (count($filterTypes))
+                    <button type="button" wire:click="$set('filterTypes', [])"
+                        class="block w-full text-left px-2 py-1 text-xs text-indigo-600 hover:underline">Deseleziona tutto</button>
+                @endif
+                @foreach ($types as $t)
+                    @php $checked = in_array($t->value, $filterTypes, true); @endphp
+                    <button type="button" wire:click="toggleType('{{ $t->value }}')"
+                        wire:key="ft-{{ $t->value }}"
+                        class="w-full flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-50 text-left">
+                        <span class="inline-flex h-4 w-4 items-center justify-center rounded border {{ $checked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300 bg-white' }}">
+                            @if ($checked) <span class="text-xs leading-none">✓</span> @endif
+                        </span>
+                        <span class="inline-block h-2.5 w-2.5 rounded-full bg-{{ $t->color() }}-500"></span>
+                        {{ $t->label() }}
+                    </button>
+                @endforeach
+            </div>
+        </div>
+
+        <div x-data="{ open: false }" @click.away="open = false" class="relative">
+            <button type="button" @click="open = !open"
+                class="rounded-md border border-gray-300 shadow-sm text-sm px-3 py-2 bg-white inline-flex items-center gap-1">
                 Tag @if (count($tagFilters)) <span class="text-indigo-600 font-medium">({{ count($tagFilters) }})</span> @endif
                 <span class="text-gray-400">▾</span>
             </button>
@@ -80,18 +106,7 @@
         </label>
         </div>
 
-        {{-- Riga 2: tipologie di device --}}
-        <div class="flex flex-wrap items-center gap-1">
-            @foreach ($types as $t)
-                <button
-                    type="button"
-                    wire:click="toggleType('{{ $t->value }}')"
-                    class="text-xs px-2 py-1 rounded border {{ in_array($t->value, $filterTypes, true) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300' }}"
-                >{{ $t->label() }}</button>
-            @endforeach
-        </div>
-
-        {{-- Riga 3: flag a sinistra, azioni allineate a destra --}}
+        {{-- Riga 2: flag a sinistra, azioni allineate a destra --}}
         <div class="flex flex-wrap items-center gap-3">
         <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Includi gli apparati con il flag 'Nascosto nella topologia'">
             <input type="checkbox" wire:model.live="includeHidden" class="rounded border-gray-300 text-indigo-600" />

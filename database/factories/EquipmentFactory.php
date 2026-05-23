@@ -67,6 +67,7 @@ class EquipmentFactory extends Factory
             EquipmentType::AccessPoint => 'AP',
             EquipmentType::Controller => 'WLC',
             EquipmentType::PatchPanel => 'PP',
+            EquipmentType::WallOutlet => 'WO',
             EquipmentType::Server => 'SRV',
             EquipmentType::Ups => 'UPS',
             EquipmentType::Pdu => 'PDU',

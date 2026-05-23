@@ -81,11 +81,11 @@
                                         $local = $c->fromInterface->id === $localIfId ? $c->fromInterface : $c->toInterface;
                                     @endphp
                                     <li wire:key="d-cn-{{ $c->id }}" class="py-2">
-                                        <div><span class="font-mono">{{ $local->name }}</span>
+                                        <div><span class="font-mono">{{ $local->name }}@if ($local->side) <span class="text-xs text-gray-500">({{ $local->side->value }})</span>@endif</span>
                                             <span class="text-gray-400">↔</span>
                                             <a href="{{ route('equipment.show', $remote->equipment) }}" wire:navigate class="text-indigo-700 hover:underline">{{ $remote->equipment->name }}</a>
                                             <span class="text-gray-400">·</span>
-                                            <span class="font-mono">{{ $remote->name }}</span>
+                                            <span class="font-mono">{{ $remote->name }}@if ($remote->side) <span class="text-xs text-gray-500">({{ $remote->side->value }})</span>@endif</span>
                                         </div>
                                         <div class="text-xs text-gray-500">{{ $c->cable_type }} {{ $c->cable_label ? '· '.$c->cable_label : '' }}</div>
                                         @if ($c->tags->isNotEmpty())

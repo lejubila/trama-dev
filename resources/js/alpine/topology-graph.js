@@ -32,6 +32,7 @@ const TYPE_COLOR = {
     access_point: '#059669',
     controller: '#d97706',
     patch_panel: '#64748b',
+    wall_outlet: '#78716c',
     server: '#2563eb',
     ups: '#ca8a04',
     pdu: '#ca8a04',
@@ -59,6 +60,13 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
         nav: null,
         _layout: layout || 'cose-bilkent',
         _exportHandler: null,
+        // Persistent cache of node positions across refreshes. When a node
+        // is filtered out and later filtered back in, we restore it to its
+        // last known coordinates instead of treating it as a new node that
+        // needs to be placed near a neighbour. Without this, repeated
+        // filter toggles drift child positions inside compound (rack)
+        // parents, making the compound bboxes inflate over time.
+        _positionsCache: {},
         // Global per-tenant icon size for the topology view. Bound to the
         // slider in the toolbar; on input we apply live, on change we persist.
         globalIconSize: iconSize || 44,
@@ -231,6 +239,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             this.cy.nodes().forEach((n) => {
                 const p = n.position();
                 prevPositions[n.id()] = { x: p.x, y: p.y };
+                this._positionsCache[n.id()] = { x: p.x, y: p.y };
             });
 
             // 2) Swap elements.
@@ -238,14 +247,18 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             this.cy.add(this._toElements(data));
 
             // 3) Restore positions for nodes that were already on the canvas;
-            //    collect the "new" ones (e.g. previously-hidden equipment that
-            //    just appeared, or a brand-new device).
+            //    fall back to the persistent cache for nodes that were
+            //    visible at some earlier point (e.g. filtered out then back
+            //    in); only truly never-seen nodes go to the newNodes branch.
             const knownIds = new Set(Object.keys(prevPositions));
             const newNodes = [];
             this.cy.nodes().forEach((n) => {
-                const prev = prevPositions[n.id()];
+                const id = n.id();
+                const prev = prevPositions[id];
                 if (prev) {
                     n.position(prev);
+                } else if (this._positionsCache[id]) {
+                    n.position(this._positionsCache[id]);
                 } else {
                     newNodes.push(n);
                 }
@@ -292,6 +305,18 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                 // Mark layoutRanOnce so a manual layout-change later doesn't
                 // randomize from scratch.
                 this._layoutRanOnce = true;
+
+                // Re-fit ONLY when the filter trimmed the dataset hard and
+                // there are no new nodes appearing. Refitting on every
+                // additive change would re-zoom the viewport each click
+                // (bbox grows ⇒ zoom drops), giving the impression that
+                // rack compounds drift apart. Skip fit when adding nodes.
+                const prevCount = knownIds.size;
+                const removedCount = prevCount - (totalNodes - newNodes.length);
+                const dropRatio = prevCount > 0 ? removedCount / prevCount : 0;
+                if (newNodes.length === 0 && totalNodes > 0 && dropRatio >= 0.3) {
+                    this.cy.fit(undefined, 40);
+                }
             }
 
             this._applyIconSizes();
@@ -488,7 +513,17 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                 }, 50);
             };
             this.cy.on('zoom', scheduleRestyle);
-            this.cy.on('layoutstop', scheduleRestyle);
+            this.cy.on('layoutstop', () => {
+                // Refresh the persistent positions cache after every layout
+                // so a subsequent filter-then-refilter cycle restores nodes
+                // to their post-layout coordinates rather than stale ones.
+                this.cy.nodes().forEach((n) => {
+                    if (n.isParent()) return;
+                    const p = n.position();
+                    this._positionsCache[n.id()] = { x: p.x, y: p.y };
+                });
+                scheduleRestyle();
+            });
             this.cy.on('add remove data', 'edge', scheduleRestyle);
         },
 

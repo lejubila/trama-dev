@@ -12,6 +12,7 @@ enum EquipmentType: string
     case AccessPoint = 'access_point';
     case Controller = 'controller';
     case PatchPanel = 'patch_panel';
+    case WallOutlet = 'wall_outlet';
     case Server = 'server';
     case Ups = 'ups';
     case Pdu = 'pdu';
@@ -34,6 +35,7 @@ enum EquipmentType: string
             self::AccessPoint => 'Access Point',
             self::Controller => 'Controller',
             self::PatchPanel => 'Patch Panel',
+            self::WallOutlet => 'Presa a muro',
             self::Server => 'Server',
             self::Ups => 'UPS',
             self::Pdu => 'PDU',
@@ -58,6 +60,7 @@ enum EquipmentType: string
             self::AccessPoint => 'emerald',
             self::Controller => 'amber',
             self::PatchPanel => 'slate',
+            self::WallOutlet => 'stone',
             self::Server => 'blue',
             self::Ups, self::Pdu => 'yellow',
             self::MediaConverter => 'fuchsia',

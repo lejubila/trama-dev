@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Connections;
 
+use App\Enums\EquipmentType;
 use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
@@ -45,6 +46,11 @@ class Wizard extends Component
     #[Url(as: 'from_equipment')]
     public ?int $fromEquipmentId = null;
 
+    /** Volatile toggle for step 2: when true, the destination list ignores
+     *  the side/media compatibility filter and shows every interface. Reset
+     *  on back() so a different origin always starts from the filtered view. */
+    public bool $showAllTargets = false;
+
     public function mount(): void
     {
         $this->authorize('create', Connection::class);
@@ -81,6 +87,9 @@ class Wizard extends Component
     {
         if ($this->step > 1) {
             $this->step--;
+            // Reset the volatile target-filter override so changing the
+            // origin at step 1 always re-applies the compatibility filter.
+            $this->showAllTargets = false;
         }
     }
 
@@ -147,7 +156,10 @@ class Wizard extends Component
 
     public function render(): View
     {
-        $equipment = Equipment::query()->with('interfaces')->orderBy('name')->get();
+        $equipment = Equipment::query()
+            ->with(['interfaces', 'rack:id,room_id'])
+            ->orderBy('name')
+            ->get();
 
         // Available interfaces excluding ones already in an active connection
         $busyIds = Connection::query()
@@ -161,7 +173,9 @@ class Wizard extends Component
         // show the user what they're about to commit. If an ID is null or
         // stale we just pass null and the view handles the dash fallback.
         $fromInterface = $this->fromInterfaceId !== null
-            ? NetworkInterface::query()->with('equipment')->find($this->fromInterfaceId)
+            ? NetworkInterface::query()
+                ->with(['equipment.rack:id,room_id'])
+                ->find($this->fromInterfaceId)
             : null;
         $toInterface = $this->toInterfaceId !== null
             ? NetworkInterface::query()->with('equipment')->find($this->toInterfaceId)
@@ -174,14 +188,102 @@ class Wizard extends Component
             ? $equipment->where('id', $this->fromEquipmentId)->values()
             : $equipment;
 
+        // Step 2 dataset: apply the side/media compatibility filter unless
+        // the user explicitly opted into seeing everything, or the origin is
+        // not yet known. We rebuild the equipment collection with filtered
+        // `interfaces` so the view markup stays identical.
+        $targetsFiltered = false;
+        $equipmentStep2 = $equipment;
+        if (! $this->showAllTargets && $fromInterface !== null) {
+            $predicate = $this->compatibleTargetFilter($fromInterface);
+            $equipmentStep2 = $equipment
+                ->map(function ($eq) use ($predicate) {
+                    $eq = clone $eq;
+                    $eq->setRelation('interfaces', $eq->interfaces->filter($predicate)->values());
+
+                    return $eq;
+                })
+                ->filter(fn ($eq) => $eq->interfaces->isNotEmpty())
+                ->values();
+            $targetsFiltered = true;
+        }
+
         return view('livewire.connections.wizard', [
             'equipment' => $equipment,
             'equipmentStep1' => $equipmentStep1,
+            'equipmentStep2' => $equipmentStep2,
+            'targetsFiltered' => $targetsFiltered,
             'busyIds' => $busyIds,
             'fromInterface' => $fromInterface,
             'toInterface' => $toInterface,
             'colorPresets' => CableColors::presets(),
             'allTags' => Tag::query()->orderBy('name')->get(),
         ]);
+    }
+
+    /**
+     * Returns the predicate used to filter the step-2 destination list given
+     * the origin interface. Rules:
+     *  - origin rear on a patch panel: only rear destinations AND proximity
+     *    (same rack, or unracked same locale).
+     *  - origin rear elsewhere (wall outlet): only rear, ignoring proximity
+     *    (passive endpoints are physically pinned to one location, dorsali
+     *    don't make sense from them).
+     *  - origin non-rear: exclude rear, require same media, apply proximity.
+     */
+    private function compatibleTargetFilter(NetworkInterface $from): \Closure
+    {
+        $fromEq = $from->equipment;
+        $fromRack = $fromEq?->rack_id;
+        // Locale di riferimento: il locale del rack se il dispositivo è
+        // racked, altrimenti il suo room_id diretto.
+        $fromRoom = $fromEq?->rack?->room_id ?? $fromEq?->room_id;
+
+        if ($from->isRear()) {
+            $applyProximity = $fromEq?->type === EquipmentType::PatchPanel;
+            if (! $applyProximity) {
+                return fn (NetworkInterface $if): bool => $if->isRear();
+            }
+
+            return function (NetworkInterface $if) use ($fromRack, $fromRoom): bool {
+                if (! $if->isRear()) {
+                    return false;
+                }
+                $eq = $if->equipment;
+                if (! $eq) {
+                    return false;
+                }
+                $sameRack = $fromRack !== null && $eq->rack_id === $fromRack;
+                $sameRoom = $fromRoom !== null
+                    && $eq->rack_id === null
+                    && $eq->room_id === $fromRoom;
+
+                return $sameRack || $sameRoom;
+            };
+        }
+
+        $fromMedia = $from->media;
+
+        return function (NetworkInterface $if) use ($fromRack, $fromRoom, $fromMedia): bool {
+            if ($if->isRear()) {
+                return false;
+            }
+            if ($fromMedia !== null && $if->media !== $fromMedia) {
+                return false;
+            }
+
+            $eq = $if->equipment;
+            if (! $eq) {
+                return false;
+            }
+
+            // Prossimità fisica: stesso rack oppure unracked nello stesso locale.
+            $sameRack = $fromRack !== null && $eq->rack_id === $fromRack;
+            $sameRoom = $fromRoom !== null
+                && $eq->rack_id === null
+                && $eq->room_id === $fromRoom;
+
+            return $sameRack || $sameRoom;
+        };
     }
 }

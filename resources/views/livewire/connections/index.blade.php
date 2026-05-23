@@ -53,12 +53,12 @@
                         <td class="px-4 py-3">
                             <a href="{{ route('equipment.show', $c->fromInterface->equipment) }}" wire:navigate class="text-indigo-700 hover:underline">{{ $c->fromInterface->equipment->name }}</a>
                             <span class="text-gray-400">·</span>
-                            <span class="font-mono text-gray-700">{{ $c->fromInterface->name }}</span>
+                            <span class="font-mono text-gray-700">{{ $c->fromInterface->name }}@if ($c->fromInterface->side) <span class="text-xs text-gray-500">({{ $c->fromInterface->side->value }})</span>@endif</span>
                         </td>
                         <td class="px-4 py-3">
                             <a href="{{ route('equipment.show', $c->toInterface->equipment) }}" wire:navigate class="text-indigo-700 hover:underline">{{ $c->toInterface->equipment->name }}</a>
                             <span class="text-gray-400">·</span>
-                            <span class="font-mono text-gray-700">{{ $c->toInterface->name }}</span>
+                            <span class="font-mono text-gray-700">{{ $c->toInterface->name }}@if ($c->toInterface->side) <span class="text-xs text-gray-500">({{ $c->toInterface->side->value }})</span>@endif</span>
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $c->cable_type }} {{ $c->cable_length_m ? '· '.$c->cable_length_m.' m' : '' }}</td>
                         <td class="px-4 py-3 text-gray-600">

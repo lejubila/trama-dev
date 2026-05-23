@@ -46,51 +46,99 @@
 
     @if ($activeTab === 'interfaces')
         <div class="flex items-center justify-between mb-3">
-            <h3 class="text-base font-semibold">Interfacce ({{ $interfaces->count() }})</h3>
+            <h3 class="text-base font-semibold">{{ $isPatchLike ? 'Porte' : 'Interfacce' }} ({{ $interfaces->count() }})</h3>
             @can('create', App\Models\NetworkInterface::class)
                 <button wire:click="openIfCreate" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
-                    <x-icon name="plus" class="h-4 w-4" /> Nuova interfaccia
+                    <x-icon name="plus" class="h-4 w-4" /> {{ $isPatchLike ? 'Nuova porta' : 'Nuova interfaccia' }}
                 </button>
             @endcan
         </div>
 
-        <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Speed</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">VLAN</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200 text-sm">
-                    @forelse ($interfaces as $if)
-                        <tr wire:key="if-{{ $if->id }}">
-                            <td class="px-4 py-3 font-mono text-gray-900">{{ $if->name }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $if->type?->value }} / {{ $if->media?->value }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $if->speed_mbps ? $if->speed_mbps.' Mbps' : '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $if->vlan_mode?->value }} {{ $if->vlan_default ? '· '.$if->vlan_default : '' }}</td>
-                            <td class="px-4 py-3 font-mono text-gray-600">{{ $if->ip_address ?? '—' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $if->status?->value }}</td>
-                            <td class="px-4 py-3 text-right space-x-2">
-                                @can('update', $if)
-                                    <button wire:click="openIfEdit({{ $if->id }})" class="text-indigo-600 hover:text-indigo-800"><x-icon name="pencil" class="h-4 w-4 inline" /></button>
-                                @endcan
-                                @can('delete', $if)
-                                    <button wire:click="deleteIf({{ $if->id }})" wire:confirm="Eliminare interfaccia {{ $if->name }}?" class="text-red-600 hover:text-red-800"><x-icon name="trash" class="h-4 w-4 inline" /></button>
-                                @endcan
-                            </td>
+        @if ($isPatchLike)
+            <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Porta</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Connessione front</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Connessione rear</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Connettore</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
                         </tr>
-                    @empty
-                        <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">Nessuna interfaccia.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                        @forelse ($interfaces as $if)
+                            @php
+                                $rear = $if->paired;
+                                $frontConn = $if->activeConnection();
+                                $rearConn = $rear?->activeConnection();
+                                $describe = function ($conn, $localIf) {
+                                    if (! $conn || ! $localIf) return '—';
+                                    $other = $conn->otherEndpoint($localIf);
+                                    if (! $other) return 'connessa';
+                                    $sideLabel = $other->side?->value ? ' ('.$other->side->value.')' : '';
+                                    return ($other->equipment?->name ?? '?') . ' · ' . ($other->name ?? '?') . $sideLabel;
+                                };
+                            @endphp
+                            <tr wire:key="if-{{ $if->id }}">
+                                <td class="px-4 py-3 font-mono text-gray-900">{{ $if->name }}</td>
+                                <td class="px-4 py-3 text-gray-700">{{ $describe($frontConn, $if) }}</td>
+                                <td class="px-4 py-3 text-gray-700">{{ $describe($rearConn, $rear) }}</td>
+                                <td class="px-4 py-3 text-gray-600">{{ $if->connector ?? '—' }}</td>
+                                <td class="px-4 py-3 text-right space-x-2">
+                                    @can('update', $if)
+                                        <button wire:click="openIfEdit({{ $if->id }})" class="text-indigo-600 hover:text-indigo-800"><x-icon name="pencil" class="h-4 w-4 inline" /></button>
+                                    @endcan
+                                    @can('delete', $if)
+                                        <button wire:click="deleteIf({{ $if->id }})" wire:confirm="Eliminare porta {{ $if->name }} (front + rear)?" class="text-red-600 hover:text-red-800"><x-icon name="trash" class="h-4 w-4 inline" /></button>
+                                    @endcan
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">Nessuna porta.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Speed</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">VLAN</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                        @forelse ($interfaces as $if)
+                            <tr wire:key="if-{{ $if->id }}">
+                                <td class="px-4 py-3 font-mono text-gray-900">{{ $if->name }}</td>
+                                <td class="px-4 py-3 text-gray-600">{{ $if->type?->value }} / {{ $if->media?->value }}</td>
+                                <td class="px-4 py-3 text-gray-600">{{ $if->speed_mbps ? $if->speed_mbps.' Mbps' : '—' }}</td>
+                                <td class="px-4 py-3 text-gray-600">{{ $if->vlan_mode?->value }} {{ $if->vlan_default ? '· '.$if->vlan_default : '' }}</td>
+                                <td class="px-4 py-3 font-mono text-gray-600">{{ $if->ip_address ?? '—' }}</td>
+                                <td class="px-4 py-3 text-gray-600">{{ $if->status?->value }}</td>
+                                <td class="px-4 py-3 text-right space-x-2">
+                                    @can('update', $if)
+                                        <button wire:click="openIfEdit({{ $if->id }})" class="text-indigo-600 hover:text-indigo-800"><x-icon name="pencil" class="h-4 w-4 inline" /></button>
+                                    @endcan
+                                    @can('delete', $if)
+                                        <button wire:click="deleteIf({{ $if->id }})" wire:confirm="Eliminare interfaccia {{ $if->name }}?" class="text-red-600 hover:text-red-800"><x-icon name="trash" class="h-4 w-4 inline" /></button>
+                                    @endcan
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">Nessuna interfaccia.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        @endif
     @endif
 
     @if ($activeTab === 'connections')
@@ -126,7 +174,7 @@
                             $remote = $isFromHere ? $c->toInterface : $c->fromInterface;
                         @endphp
                         <tr wire:key="cn-{{ $c->id }}">
-                            <td class="px-4 py-3 font-mono text-gray-900">{{ $local?->name ?? '—' }}</td>
+                            <td class="px-4 py-3 font-mono text-gray-900">{{ $local?->name ?? '—' }}@if ($local?->side) <span class="text-xs text-gray-500">({{ $local->side->value }})</span>@endif</td>
                             <td class="px-4 py-3">
                                 @if ($remote?->equipment)
                                     <a href="{{ route('equipment.show', $remote->equipment) }}" wire:navigate class="text-indigo-700 hover:underline">{{ $remote->equipment->name }}</a>
@@ -134,7 +182,7 @@
                                     <span class="text-gray-400">—</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 font-mono text-gray-700">{{ $remote?->name ?? '—' }}</td>
+                            <td class="px-4 py-3 font-mono text-gray-700">{{ $remote?->name ?? '—' }}@if ($remote?->side) <span class="text-xs text-gray-500">({{ $remote->side->value }})</span>@endif</td>
                             <td class="px-4 py-3 text-gray-600">{{ $c->cable_type }} {{ $c->cable_length_m ? '· '.$c->cable_length_m.' m' : '' }}</td>
                             <td class="px-4 py-3 text-gray-600">
                                 @if ($c->color)
@@ -238,7 +286,7 @@
                         </div>
                     @endif
                     <div class="grid grid-cols-2 gap-3">
-                        <div>
+                        <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700">{{ $ifBulk && $editingIfId === null ? 'Prefisso nome' : 'Nome' }}</label>
                             <input type="text" wire:model.live="ifName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm font-mono" />
                             @error('ifName')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
@@ -254,6 +302,16 @@
                             <select wire:model="ifMedia" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
                                 @foreach (App\Enums\InterfaceMedia::cases() as $m) <option value="{{ $m->value }}">{{ $m->value }}</option> @endforeach
                             </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Connettore</label>
+                            <select wire:model="ifConnector" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                                <option value="">—</option>
+                                @foreach (['rj45', 'sc', 'lc', 'st', 'mpo', 'sfp', 'sfp+', 'qsfp'] as $c)
+                                    <option value="{{ $c }}">{{ $c }}</option>
+                                @endforeach
+                            </select>
+                            @error('ifConnector')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Speed (Mbps)</label>
