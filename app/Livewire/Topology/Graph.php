@@ -69,8 +69,28 @@ class Graph extends Component
     #[Url(except: 0)]
     public int $roomFilter = 0;
 
+    #[Url(except: false)]
+    public bool $hidePatchPanels = false;
+
     public function toggleType(string $type): void
     {
+        $allTypes = array_map(
+            fn (EquipmentType $t) => $t->value,
+            EquipmentType::cases(),
+        );
+
+        // Empty filterTypes is the "all selected" default. Clicking a type
+        // in that state means "deselect just this one" → populate the array
+        // with every other type.
+        if ($this->filterTypes === []) {
+            $this->filterTypes = array_values(array_filter(
+                $allTypes,
+                fn (string $t): bool => $t !== $type,
+            ));
+
+            return;
+        }
+
         if (in_array($type, $this->filterTypes, true)) {
             $this->filterTypes = array_values(array_filter(
                 $this->filterTypes,
@@ -79,11 +99,18 @@ class Graph extends Component
         } else {
             $this->filterTypes[] = $type;
         }
+
+        // Re-checking the last missing type makes the selection cover the
+        // full enum: normalize back to [] so the URL stays clean and the
+        // dropdown trigger badge disappears.
+        if (count(array_unique($this->filterTypes)) === count($allTypes)) {
+            $this->filterTypes = [];
+        }
     }
 
     public function clearFilters(): void
     {
-        $this->reset(['siteId', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom', 'roomFilter']);
+        $this->reset(['siteId', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom', 'roomFilter', 'hidePatchPanels']);
     }
 
     /**
@@ -138,6 +165,7 @@ class Graph extends Component
             groupBySite: $this->groupBySite,
             groupByRoom: $this->groupByRoom,
             tagIds: $this->tagFilters !== [] ? array_map('intval', $this->tagFilters) : null,
+            hidePatchPanels: $this->hidePatchPanels,
         );
     }
 

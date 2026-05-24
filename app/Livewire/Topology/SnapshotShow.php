@@ -75,6 +75,9 @@ class SnapshotShow extends Component
         if (! empty($state['roomFilter'])) {
             $params['roomFilter'] = (int) $state['roomFilter'];
         }
+        if (! empty($state['hidePatchPanels'])) {
+            $params['hidePatchPanels'] = true;
+        }
         // Only attach the snapshotPreset hint when there are positions to
         // restore; old snapshots without nodePositions keep the URL clean.
         if (! empty($state['nodePositions']) && is_array($state['nodePositions'])) {

@@ -58,10 +58,10 @@
             <div x-show="open" x-cloak class="absolute z-20 mt-1 max-h-80 overflow-auto rounded-md bg-white p-2 shadow-lg ring-1 ring-black/5 w-56">
                 @if (count($filterTypes))
                     <button type="button" wire:click="$set('filterTypes', [])"
-                        class="block w-full text-left px-2 py-1 text-xs text-indigo-600 hover:underline">Deseleziona tutto</button>
+                        class="block w-full text-left px-2 py-1 text-xs text-indigo-600 hover:underline">Seleziona tutti</button>
                 @endif
                 @foreach ($types as $t)
-                    @php $checked = in_array($t->value, $filterTypes, true); @endphp
+                    @php $checked = $filterTypes === [] || in_array($t->value, $filterTypes, true); @endphp
                     <button type="button" wire:click="toggleType('{{ $t->value }}')"
                         wire:key="ft-{{ $t->value }}"
                         class="w-full flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-50 text-left">
@@ -113,6 +113,11 @@
             Mostra nascosti
         </label>
 
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Collassa i patch panel: mostra un edge end-to-end tra i terminali (es. switch ↔ presa) etichettato con il path attraversato">
+            <input type="checkbox" wire:model.live="hidePatchPanels" class="rounded border-gray-300 text-indigo-600" />
+            Nascondi patch panel
+        </label>
+
         <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Racchiude gli apparati di ogni rack in un contenitore visivo">
             <input type="checkbox" wire:model.live="groupByRack" class="rounded border-gray-300 text-indigo-600" />
             Raggruppa per rack
@@ -153,6 +158,7 @@
                         groupByRack: $wire.groupByRack,
                         groupBySite: $wire.groupBySite,
                         groupByRoom: $wire.groupByRoom,
+                        hidePatchPanels: $wire.hidePatchPanels,
                         nodePositions: window.cy
                             ? Object.fromEntries(window.cy.nodes().map(n => {
                                 const p = n.position();

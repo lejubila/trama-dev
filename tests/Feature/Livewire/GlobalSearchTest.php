@@ -58,7 +58,7 @@ it('groups results: interfaces by name match show under Interfaces', function ()
 
     Livewire::test(GlobalSearch::class)
         ->set('query', 'UNIQUE')
-        ->assertSee('Interfaces')
+        ->assertSee(__('search.group_interfaces'))
         ->assertSee('Gi0/UNIQUE');
 });
 

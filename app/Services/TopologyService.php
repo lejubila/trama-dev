@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\EquipmentType;
 use App\Models\Connection;
 use App\Models\Equipment;
+use App\Models\NetworkInterface;
 use App\Models\Tenant;
 use App\Services\Icons\IconResolver;
 use App\Support\Tenancy\TenantContext;
@@ -63,11 +65,18 @@ class TopologyService
         bool $groupBySite = false,
         bool $groupByRoom = false,
         ?array $tagIds = null,
+        bool $hidePatchPanels = false,
     ): array {
         $equipmentQuery = Equipment::query()->with(['rack.room.site', 'room.site']);
 
         if (! $includeHidden) {
             $equipmentQuery->where('hidden_in_topology', false);
+        }
+
+        if ($hidePatchPanels) {
+            // Patch panels become transit hops to be stitched into synthetic
+            // edges below; wall outlets stay because they're terminals.
+            $equipmentQuery->where('type', '!=', EquipmentType::PatchPanel->value);
         }
 
         if ($siteId !== null) {
@@ -263,7 +272,9 @@ class TopologyService
         }
 
         $edges = [];
-        if ($equipmentIds !== []) {
+        if ($hidePatchPanels) {
+            $edges = $this->buildPassthroughEdges($equipmentIds);
+        } elseif ($equipmentIds !== []) {
             $connections = Connection::query()
                 ->with(['fromInterface', 'toInterface'])
                 ->where('status', 'active')
@@ -276,43 +287,7 @@ class TopologyService
                 ->get();
 
             foreach ($connections as $c) {
-                $fromName = (string) ($c->fromInterface?->name ?? '');
-                $toName = (string) ($c->toInterface?->name ?? '');
-                $label = (string) ($c->cable_label ?? '');
-
-                // Make the edge long enough to display source port name +
-                // center label + target port name without overlap. ~6.5 px
-                // per character at the chosen font size, with margins.
-                $idealLength = (int) max(
-                    80,
-                    6.5 * (strlen($fromName) + strlen($label) + strlen($toName)) + 60,
-                );
-
-                $data = [
-                    'id' => 'cn-'.$c->id,
-                    'source' => 'eq-'.$c->fromInterface?->equipment_id,
-                    'target' => 'eq-'.$c->toInterface?->equipment_id,
-                    'media' => $c->fromInterface?->media?->value,
-                    'speed' => $c->fromInterface?->speed_mbps,
-                    'cableType' => $c->cable_type,
-                    'color' => $c->color, // hex or null; JS falls back to media color
-                    'status' => $c->status?->value,
-                    'idealLength' => $idealLength,
-                ];
-                // Omit label/fromIface/toIface when empty so the Cytoscape
-                // attribute selectors (edge[label], edge[fromIface], edge[toIface])
-                // don't match and we avoid "no mapping for property" warnings.
-                if ($label !== '') {
-                    $data['label'] = $label;
-                }
-                if ($fromName !== '') {
-                    $data['fromIface'] = $fromName;
-                }
-                if ($toName !== '') {
-                    $data['toIface'] = $toName;
-                }
-
-                $edges[] = ['data' => $data];
+                $edges[] = ['data' => $this->edgeData($c)];
             }
         }
 
@@ -320,5 +295,213 @@ class TopologyService
             'nodes' => $nodes,
             'edges' => $edges,
         ];
+    }
+
+    /**
+     * Build the edge payload for a single concrete Connection (no collapse).
+     *
+     * @return array<string, mixed>
+     */
+    private function edgeData(Connection $c): array
+    {
+        $fromName = (string) ($c->fromInterface?->name ?? '');
+        $toName = (string) ($c->toInterface?->name ?? '');
+        $label = (string) ($c->cable_label ?? '');
+
+        $idealLength = (int) max(
+            80,
+            6.5 * (strlen($fromName) + strlen($label) + strlen($toName)) + 60,
+        );
+
+        $data = [
+            'id' => 'cn-'.$c->id,
+            'source' => 'eq-'.$c->fromInterface?->equipment_id,
+            'target' => 'eq-'.$c->toInterface?->equipment_id,
+            'media' => $c->fromInterface?->media?->value,
+            'speed' => $c->fromInterface?->speed_mbps,
+            'cableType' => $c->cable_type,
+            'color' => $c->color,
+            'status' => $c->status?->value,
+            'idealLength' => $idealLength,
+        ];
+        if ($label !== '') {
+            $data['label'] = $label;
+        }
+        if ($fromName !== '') {
+            $data['fromIface'] = $fromName;
+        }
+        if ($toName !== '') {
+            $data['toIface'] = $toName;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Compute the collapsed edge list when patch panels are hidden.
+     *
+     * For every active connection we resolve each endpoint through chains of
+     * keystone pairs on patch panels until we hit a non-patch-panel terminal.
+     * A synthetic edge between the two terminals is emitted at most once per
+     * resolved pair, labelled with the transit ports (e.g. "via PP1.P3").
+     *
+     * @param  list<int>  $visibleEquipmentIds  ids of equipment still in the node payload
+     * @return list<array<string, mixed>>
+     */
+    private function buildPassthroughEdges(array $visibleEquipmentIds): array
+    {
+        $visibleSet = array_flip($visibleEquipmentIds);
+
+        $connections = Connection::query()
+            ->with(['fromInterface.equipment', 'toInterface.equipment', 'fromInterface.paired', 'toInterface.paired'])
+            ->where('status', 'active')
+            ->get();
+
+        /** @var array<int, Connection> $byInterface */
+        $byInterface = [];
+        foreach ($connections as $c) {
+            $byInterface[$c->from_interface_id] = $c;
+            $byInterface[$c->to_interface_id] = $c;
+        }
+
+        /** @var array<int, true> $consumed connection ids already emitted */
+        $consumed = [];
+        /** @var array<string, true> $emittedPairs key "min-max" of resolved equipment ids */
+        $emittedPairs = [];
+
+        $edges = [];
+
+        foreach ($connections as $c) {
+            if (isset($consumed[$c->id])) {
+                continue;
+            }
+
+            $visited = [];
+            $transitA = [];
+            $transitB = [];
+
+            $termA = $this->resolveTerminal($c->fromInterface, $byInterface, $visited, $transitA);
+            $termB = $this->resolveTerminal($c->toInterface, $byInterface, $visited, $transitB);
+
+            // Consume every connection touched by this chain so we don't
+            // re-emit the same passthrough from a different starting hop.
+            foreach (array_keys($visited) as $ifId) {
+                $touched = $byInterface[$ifId] ?? null;
+                if ($touched !== null) {
+                    $consumed[$touched->id] = true;
+                }
+            }
+            $consumed[$c->id] = true;
+
+            if ($termA === null || $termB === null) {
+                continue;
+            }
+
+            $eqA = $termA->equipment_id;
+            $eqB = $termB->equipment_id;
+            if ($eqA === $eqB) {
+                continue;
+            }
+            if (! isset($visibleSet[$eqA]) || ! isset($visibleSet[$eqB])) {
+                continue;
+            }
+
+            $key = min($eqA, $eqB).'-'.max($eqA, $eqB);
+            if (isset($emittedPairs[$key])) {
+                continue;
+            }
+            $emittedPairs[$key] = true;
+
+            $isPassthrough = $transitA !== [] || $transitB !== [];
+            $transit = array_merge(array_reverse($transitA), $transitB);
+            $viaLabel = $isPassthrough ? 'via '.implode(' · ', $transit) : (string) ($c->cable_label ?? '');
+
+            $fromName = (string) ($termA->name ?? '');
+            $toName = (string) ($termB->name ?? '');
+            $idealLength = (int) max(
+                80,
+                6.5 * (strlen($fromName) + strlen($viaLabel) + strlen($toName)) + 60,
+            );
+
+            $data = [
+                'id' => ($isPassthrough ? 'cn-pt-' : 'cn-').$c->id,
+                'source' => 'eq-'.$eqA,
+                'target' => 'eq-'.$eqB,
+                'media' => $c->fromInterface?->media?->value,
+                'speed' => $c->fromInterface?->speed_mbps,
+                'cableType' => $c->cable_type,
+                'color' => $c->color,
+                'status' => $c->status?->value,
+                'idealLength' => $idealLength,
+            ];
+            if ($viaLabel !== '') {
+                $data['label'] = $viaLabel;
+            }
+            if ($fromName !== '') {
+                $data['fromIface'] = $fromName;
+            }
+            if ($toName !== '') {
+                $data['toIface'] = $toName;
+            }
+            if ($isPassthrough) {
+                $data['passthrough'] = true;
+                $data['transit'] = $transit;
+            }
+
+            $edges[] = ['data' => $data];
+        }
+
+        return $edges;
+    }
+
+    /**
+     * Walk forward from an interface until a non-patch-panel terminal is
+     * reached, recording each transit port along the way. Returns null if
+     * the chain breaks (paired interface missing, no connection on the
+     * paired side, or a loop is detected).
+     *
+     * @param  array<int, Connection>  $byInterface
+     * @param  array<int, true>  $visited
+     * @param  list<string>  $transit
+     */
+    private function resolveTerminal(
+        ?NetworkInterface $iface,
+        array $byInterface,
+        array &$visited,
+        array &$transit,
+    ): ?NetworkInterface {
+        if ($iface === null) {
+            return null;
+        }
+        if (isset($visited[$iface->id])) {
+            return null; // loop guard
+        }
+        $visited[$iface->id] = true;
+
+        $eq = $iface->equipment;
+        if ($eq === null || $eq->type !== EquipmentType::PatchPanel) {
+            return $iface;
+        }
+
+        // Transit hop: record "PPname.portname" and keep walking through the
+        // sibling (paired) interface on the opposite side.
+        $transit[] = ($eq->name ?? '?').'.'.($iface->name ?? '?');
+
+        $paired = $iface->paired;
+        if ($paired === null || isset($visited[$paired->id])) {
+            return null;
+        }
+        $visited[$paired->id] = true;
+
+        $next = $byInterface[$paired->id] ?? null;
+        if ($next === null) {
+            return null;
+        }
+
+        $other = $next->from_interface_id === $paired->id
+            ? $next->toInterface
+            : $next->fromInterface;
+
+        return $this->resolveTerminal($other, $byInterface, $visited, $transit);
     }
 }

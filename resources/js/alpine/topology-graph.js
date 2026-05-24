@@ -153,7 +153,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             // event the server can dispatch, plus poll on filter changes via
             // $wire helpers. Simpler: re-query the API whenever filters change.
             const refresh = () => this._refresh();
-            ['siteId', 'roomFilter', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom']
+            ['siteId', 'roomFilter', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom', 'hidePatchPanels']
                 .forEach((k) => this.$watch('$wire.' + k, refresh));
         },
 
@@ -274,16 +274,23 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
 
             this._computeIdealLengths();
 
-            if (majorChange) {
-                // First refresh, or the dataset changed too much (e.g. site
-                // switch) — run a fresh randomized layout.
+            // With compound parents on the canvas (group-by-rack/room/site),
+            // re-running cose-bilkent on successive filter changes destabilises
+            // inter-compound spacing — each fresh run pushes compounds slightly
+            // further apart, accumulating into the "rack drift" reported by the
+            // user. Skip the relayout in that case: cache restore + neighbour
+            // placement of brand-new nodes give a stable result. The first run
+            // (knownIds empty) still needs a real layout to place everything,
+            // otherwise compound members end up stacked at the canvas centre.
+            const firstRun = knownIds.size === 0;
+            const shouldRelayout = majorChange && (firstRun || !nowHasCompounds);
+            if (shouldRelayout) {
                 this._layoutRanOnce = false;
                 this._runLayout(this._layout);
             } else {
-                // Minor delta (typical for "Mostra nascosti" toggle, type
-                // filter change, etc.): keep existing positions verbatim and
-                // place each new node near a known neighbor; fallback to the
-                // bbox center of known positions with a small grid jitter.
+                // Minor delta OR major-with-compounds: keep existing positions
+                // verbatim and place each new node near a known neighbor;
+                // fallback to the bbox center of known positions with jitter.
                 if (newNodes.length > 0) {
                     const xs = Object.values(prevPositions).map((p) => p.x);
                     const ys = Object.values(prevPositions).map((p) => p.y);
@@ -659,12 +666,16 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                         'source-text-offset': (ele) => {
                             const size = ele.source().data('iconSize') || 44;
                             const fontPx = Math.max(6, size * 0.20);
-                            const nodeFontPx = Math.max(6, size * 0.25);
-                            const nodeLabelHeight = nodeFontPx + Math.max(2, size * 0.12);
                             const chars = (ele.data('fromIface') || '').length;
                             // Monospace ratio ≈ 0.6 → half-width = chars * font * 0.30.
+                            // Position the label so its near edge sits just
+                            // past the icon: offset = icon radius + half
+                            // label + small padding. The autorotate keeps
+                            // the label parallel to the cable, not to the
+                            // node name beneath the icon, so we don't need
+                            // to clear the node-label height.
                             const halfLabel = chars * fontPx * 0.30;
-                            return size / 2 + nodeLabelHeight + halfLabel + 6;
+                            return size / 2 + halfLabel + 3;
                         },
                         'source-text-rotation': 'autorotate',
                     },
@@ -676,11 +687,9 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                         'target-text-offset': (ele) => {
                             const size = ele.target().data('iconSize') || 44;
                             const fontPx = Math.max(6, size * 0.20);
-                            const nodeFontPx = Math.max(6, size * 0.25);
-                            const nodeLabelHeight = nodeFontPx + Math.max(2, size * 0.12);
                             const chars = (ele.data('toIface') || '').length;
                             const halfLabel = chars * fontPx * 0.30;
-                            return size / 2 + nodeLabelHeight + halfLabel + 6;
+                            return size / 2 + halfLabel + 3;
                         },
                         'target-text-rotation': 'autorotate',
                     },

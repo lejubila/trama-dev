@@ -47,11 +47,19 @@ it('renders the topology page for an authenticated user', function (): void {
 it('toggles a type filter on and off', function (): void {
     [$tenant] = bootTopologyScene('admin');
 
-    Livewire::test(Graph::class)
+    // Default state: filterTypes = [] means "all types selected" in the UI.
+    // First toggle on "switch" deselects it from that all-selected set →
+    // array now contains every type except switch. A second toggle adds
+    // switch back, the set covers the full enum and is normalized to [].
+    $component = Livewire::test(Graph::class)
         ->assertSet('filterTypes', [])
-        ->call('toggleType', 'switch')
-        ->assertSet('filterTypes', ['switch'])
-        ->call('toggleType', 'switch')
+        ->call('toggleType', 'switch');
+
+    $after = $component->get('filterTypes');
+    expect($after)->not->toContain('switch');
+    expect($after)->toContain('router');
+
+    $component->call('toggleType', 'switch')
         ->assertSet('filterTypes', []);
 });
 

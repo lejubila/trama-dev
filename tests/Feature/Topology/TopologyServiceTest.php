@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Interfaces\CreateKeystonePair;
 use App\Enums\EquipmentType;
 use App\Models\Connection;
 use App\Models\Equipment;
@@ -11,6 +12,7 @@ use App\Models\Room;
 use App\Models\Site;
 use App\Models\Tag;
 use App\Models\Tenant;
+use App\Services\ConnectionService;
 use App\Services\TopologyService;
 use App\Support\Tenancy\TenantContext;
 
@@ -414,4 +416,109 @@ it('site filter now also includes unracked equipment with that room.site_id', fu
     $graph = app(TopologyService::class)->buildGraph(siteId: $siteA->getKey());
     $labels = collect($graph['nodes'])->pluck('data.label')->all();
     expect($labels)->toContain('AP-A')->not->toContain('AP-B');
+});
+
+// --------------------------------------------------------------------------
+// hidePatchPanels — passthrough collapse
+// --------------------------------------------------------------------------
+
+it('collapses a single patch panel hop into one synthetic edge', function (): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+
+    $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW1']);
+    $pp = Equipment::factory()->ofType(EquipmentType::PatchPanel)->create(['name' => 'PP1']);
+    $wo = Equipment::factory()->ofType(EquipmentType::WallOutlet)->create(['name' => 'WO1']);
+
+    $swPort = NetworkInterface::factory()->ethernet()->create(['equipment_id' => $sw->getKey(), 'name' => 'Gi0/1']);
+    [$ppFront, $ppRear] = app(CreateKeystonePair::class)
+        ->execute($pp, ['name' => 'P-3']);
+    [, $woRear] = app(CreateKeystonePair::class)
+        ->execute($wo, ['name' => 'A']);
+
+    app(ConnectionService::class)->connect($swPort, $ppFront, ['cable_type' => 'utp_cat6']);
+    app(ConnectionService::class)->connect($ppRear, $woRear, ['cable_type' => 'utp_cat6']);
+
+    $graph = app(TopologyService::class)->buildGraph(hidePatchPanels: true);
+    $nodeIds = collect($graph['nodes'])->pluck('data.id')->all();
+
+    expect($nodeIds)->toContain('eq-'.$sw->getKey());
+    expect($nodeIds)->toContain('eq-'.$wo->getKey());
+    expect($nodeIds)->not->toContain('eq-'.$pp->getKey());
+
+    $edges = collect($graph['edges']);
+    expect($edges)->toHaveCount(1);
+    $e = $edges->first()['data'];
+    $endpoints = [$e['source'], $e['target']];
+    sort($endpoints);
+    $expected = ['eq-'.min($sw->getKey(), $wo->getKey()), 'eq-'.max($sw->getKey(), $wo->getKey())];
+    expect($endpoints)->toEqual($expected);
+    expect($e['passthrough'])->toBeTrue();
+    expect($e['transit'])->toEqual(['PP1.P-3']);
+    expect($e['label'])->toEqual('via PP1.P-3');
+});
+
+it('collapses a multi-hop chain through two patch panels', function (): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+
+    $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW1']);
+    $pp1 = Equipment::factory()->ofType(EquipmentType::PatchPanel)->create(['name' => 'PP1']);
+    $pp2 = Equipment::factory()->ofType(EquipmentType::PatchPanel)->create(['name' => 'PP2']);
+    $wo = Equipment::factory()->ofType(EquipmentType::WallOutlet)->create(['name' => 'WO1']);
+
+    $swPort = NetworkInterface::factory()->ethernet()->create(['equipment_id' => $sw->getKey(), 'name' => 'Gi0/1']);
+    [$pp1Front, $pp1Rear] = app(CreateKeystonePair::class)->execute($pp1, ['name' => 'P3']);
+    [$pp2Front, $pp2Rear] = app(CreateKeystonePair::class)->execute($pp2, ['name' => 'Q7']);
+    [, $woRear] = app(CreateKeystonePair::class)->execute($wo, ['name' => 'A']);
+
+    $svc = app(ConnectionService::class);
+    $svc->connect($swPort, $pp1Front, ['cable_type' => 'utp_cat6']);
+    $svc->connect($pp1Rear, $pp2Rear, ['cable_type' => 'utp_cat6']);       // dorsale rear↔rear
+    $svc->connect($pp2Front, $woRear, ['cable_type' => 'utp_cat6']);
+
+    $graph = app(TopologyService::class)->buildGraph(hidePatchPanels: true);
+
+    $edges = collect($graph['edges']);
+    expect($edges)->toHaveCount(1);
+    $e = $edges->first()['data'];
+    expect($e['passthrough'])->toBeTrue();
+    expect($e['transit'])->toEqualCanonicalizing(['PP1.P3', 'PP2.Q7']);
+});
+
+it('drops a connection whose chain is broken (rear not cabled)', function (): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+
+    $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW1']);
+    $pp = Equipment::factory()->ofType(EquipmentType::PatchPanel)->create(['name' => 'PP1']);
+
+    $swPort = NetworkInterface::factory()->ethernet()->create(['equipment_id' => $sw->getKey(), 'name' => 'Gi0/1']);
+    [$ppFront] = app(CreateKeystonePair::class)->execute($pp, ['name' => 'P3']);
+
+    app(ConnectionService::class)->connect($swPort, $ppFront, ['cable_type' => 'utp_cat6']);
+
+    $graph = app(TopologyService::class)->buildGraph(hidePatchPanels: true);
+
+    expect($graph['edges'])->toEqual([]);
+});
+
+it('leaves non-passthrough connections untouched and excludes only patch panels', function (): void {
+    [$tenant, $site, $sw, $rt] = makeWiredScene();
+
+    // Add a patch panel completely unconnected — should disappear from the
+    // node list but the existing SW-RT direct cable should stay.
+    $pp = Equipment::factory()->ofType(EquipmentType::PatchPanel)->create(['name' => 'LONELY-PP']);
+
+    $graph = app(TopologyService::class)->buildGraph(hidePatchPanels: true);
+    $nodeIds = collect($graph['nodes'])->pluck('data.id')->all();
+
+    expect($nodeIds)->toContain('eq-'.$sw->getKey());
+    expect($nodeIds)->toContain('eq-'.$rt->getKey());
+    expect($nodeIds)->not->toContain('eq-'.$pp->getKey());
+
+    $edges = collect($graph['edges']);
+    expect($edges)->toHaveCount(1);
+    $e = $edges->first()['data'];
+    expect($e['passthrough'] ?? false)->toBeFalse();
 });
