@@ -58,11 +58,18 @@
                         <td class="px-4 py-3 font-medium text-gray-900">
                             <span class="inline-flex items-center gap-1.5">
                                 <a href="{{ route('equipment.show', $eq) }}" wire:navigate class="text-indigo-700 hover:underline">{{ $eq->name }}</a>
-                                @if ($eq->hidden_in_topology)
-                                    <span title="Nascosto nella topologia" class="text-gray-400">
-                                        <x-icon name="eye-slash" class="h-4 w-4" />
+                                @can('update', $eq)
+                                    <button type="button"
+                                        wire:click="toggleHiddenInTopology({{ $eq->id }})"
+                                        title="{{ $eq->hidden_in_topology ? 'Nascosto nella topologia — click per mostrare' : 'Visibile nella topologia — click per nascondere' }}"
+                                        class="text-gray-400 hover:text-indigo-600">
+                                        <x-icon name="{{ $eq->hidden_in_topology ? 'eye-slash' : 'eye' }}" class="h-4 w-4" />
+                                    </button>
+                                @else
+                                    <span title="{{ $eq->hidden_in_topology ? 'Nascosto nella topologia' : 'Visibile nella topologia' }}" class="text-gray-400">
+                                        <x-icon name="{{ $eq->hidden_in_topology ? 'eye-slash' : 'eye' }}" class="h-4 w-4" />
                                     </span>
-                                @endif
+                                @endcan
                             </span>
                             @if ($eq->tags->isNotEmpty())
                                 <div class="mt-1"><x-tag-chips :tags="$eq->tags" /></div>

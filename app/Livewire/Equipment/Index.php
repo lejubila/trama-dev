@@ -350,6 +350,25 @@ class Index extends Component
         $this->dispatch('toast', type: 'success', message: 'Icona rimossa.');
     }
 
+    /**
+     * Flip the `hidden_in_topology` flag straight from the index row.
+     * The eye icon next to the device name doubles as a quick toggle.
+     */
+    public function toggleHiddenInTopology(int $id): void
+    {
+        $eq = Equipment::query()->findOrFail($id);
+        $this->authorize('update', $eq);
+
+        $eq->update(['hidden_in_topology' => ! $eq->hidden_in_topology]);
+        $this->dispatch(
+            'toast',
+            type: 'success',
+            message: $eq->hidden_in_topology
+                ? 'Dispositivo nascosto nella topologia.'
+                : 'Dispositivo visibile nella topologia.',
+        );
+    }
+
     public function delete(int $id): void
     {
         $eq = Equipment::query()->findOrFail($id);

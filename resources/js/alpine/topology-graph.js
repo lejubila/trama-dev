@@ -153,8 +153,17 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             // event the server can dispatch, plus poll on filter changes via
             // $wire helpers. Simpler: re-query the API whenever filters change.
             const refresh = () => this._refresh();
-            ['siteId', 'roomFilter', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom', 'hidePatchPanels']
+            const refreshNoLayout = () => this._refresh({ skipLayout: true });
+            // Scope filters: a big delta (e.g. site switch) can legitimately
+            // trigger a fresh layout when there are no compound parents.
+            ['siteId', 'roomFilter', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes']
                 .forEach((k) => this.$watch('$wire.' + k, refresh));
+            // Purely visual flags: must never reposition existing nodes,
+            // regardless of dataset delta. Compounds appear/disappear around
+            // their children, hidden devices fade in/out, patch-panel
+            // passthrough flips — never a relayout.
+            ['includeHidden', 'hidePatchPanels', 'groupByRack', 'groupBySite', 'groupByRoom']
+                .forEach((k) => this.$watch('$wire.' + k, refreshNoLayout));
         },
 
         destroy() {
@@ -223,7 +232,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             return [...nodes, ...edges];
         },
 
-        async _refresh() {
+        async _refresh({ skipLayout = false } = {}) {
             // Ask the Livewire component for fresh data with the current filters.
             const data = await this.$wire.graphData();
 
@@ -283,7 +292,8 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             // (knownIds empty) still needs a real layout to place everything,
             // otherwise compound members end up stacked at the canvas centre.
             const firstRun = knownIds.size === 0;
-            const shouldRelayout = majorChange && (firstRun || !nowHasCompounds);
+            const shouldRelayout = firstRun
+                || (!skipLayout && majorChange && !nowHasCompounds);
             if (shouldRelayout) {
                 this._layoutRanOnce = false;
                 this._runLayout(this._layout);
