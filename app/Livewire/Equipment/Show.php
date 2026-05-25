@@ -299,6 +299,16 @@ class Show extends Component
             return false;
         }
 
+        return $this->isPassthroughEquipment();
+    }
+
+    /**
+     * True when the active equipment is a purely physical pass-through
+     * (patch panel or wall outlet). On these devices the interfaces are
+     * passive connectors with no VLAN / IP / MAC concept.
+     */
+    public function isPassthroughEquipment(): bool
+    {
         return in_array(
             $this->equipment->type,
             [EquipmentType::PatchPanel, EquipmentType::WallOutlet],
@@ -311,25 +321,33 @@ class Show extends Component
      */
     private function basePayload(): array
     {
+        $passthrough = $this->isPassthroughEquipment();
+
         return [
             'equipment_id' => $this->equipment->getKey(),
             'type' => InterfaceType::from($this->ifType),
             'media' => InterfaceMedia::from($this->ifMedia),
             'connector' => $this->ifConnector !== '' ? $this->ifConnector : null,
             'speed_mbps' => $this->ifSpeedMbps,
-            'vlan_mode' => InterfaceVlanMode::from($this->ifVlanMode),
+            // Passive passthrough hardware has no VLAN logic at all → pin
+            // the mode to `none` regardless of what was posted.
+            'vlan_mode' => $passthrough
+                ? InterfaceVlanMode::None
+                : InterfaceVlanMode::from($this->ifVlanMode),
             // VLAN default and allowed are meaningless on ports with no VLAN
             // concept (none) or on transparent passthroughs (any tag flows
             // unchanged): force them to null no matter what the user typed.
-            'vlan_default' => $this->vlanFieldsDisabled() ? null : $this->ifVlanDefault,
+            'vlan_default' => ($passthrough || $this->vlanFieldsDisabled()) ? null : $this->ifVlanDefault,
             // `vlans_allowed` is meaningful only for tagged trunks/hybrids.
             // Access ports carry a single VLAN (vlan_default); none and
             // transparent have no VLAN logic at all → blank in every case.
-            'vlans_allowed' => $this->vlansAllowedDisabled()
+            'vlans_allowed' => ($passthrough || $this->vlansAllowedDisabled())
                 ? null
                 : $this->parseVlanListOrNull($this->ifVlansAllowedText),
-            'ip_address' => $this->ifIpAddress !== '' ? $this->ifIpAddress : null,
-            'mac_address' => $this->ifMacAddress !== '' ? $this->ifMacAddress : null,
+            // Patch panel / wall outlet ports are dumb connectors: no IP /
+            // MAC ever lives on them. Force-clear to avoid stale legacy data.
+            'ip_address' => $passthrough ? null : ($this->ifIpAddress !== '' ? $this->ifIpAddress : null),
+            'mac_address' => $passthrough ? null : ($this->ifMacAddress !== '' ? $this->ifMacAddress : null),
             'status' => InterfaceStatus::from($this->ifStatus),
             'poe' => InterfacePoe::from($this->ifPoe),
             'description' => $this->ifDescription !== '' ? $this->ifDescription : null,
@@ -417,8 +435,9 @@ class Show extends Component
     private function validateVlansAllowed(): bool
     {
         // Skip the parser when the field is going to be wiped anyway
-        // (none/access/transparent — see vlansAllowedDisabled).
-        if ($this->vlansAllowedDisabled()) {
+        // (none/access/transparent — see vlansAllowedDisabled), or when the
+        // host equipment is a passive passthrough (PP/WO).
+        if ($this->isPassthroughEquipment() || $this->vlansAllowedDisabled()) {
             return true;
         }
         try {

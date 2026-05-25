@@ -40,6 +40,8 @@ class Equipment extends Model implements AuditableContract
         'tenant_id',
         'rack_id',
         'room_id',
+        'position_x',
+        'position_y',
         'name',
         'type',
         'vendor',

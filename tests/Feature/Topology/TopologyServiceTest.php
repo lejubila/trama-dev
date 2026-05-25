@@ -433,22 +433,21 @@ it('collapses a single patch panel hop into one synthetic edge', function (): vo
 
     $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW1']);
     $pp = Equipment::factory()->ofType(EquipmentType::PatchPanel)->create(['name' => 'PP1']);
-    $wo = Equipment::factory()->ofType(EquipmentType::WallOutlet)->create(['name' => 'WO1']);
+    $ap = Equipment::factory()->ofType(EquipmentType::AccessPoint)->create(['name' => 'AP1']);
 
     $swPort = NetworkInterface::factory()->ethernet()->create(['equipment_id' => $sw->getKey(), 'name' => 'Gi0/1']);
     [$ppFront, $ppRear] = app(CreateKeystonePair::class)
         ->execute($pp, ['name' => 'P-3']);
-    [, $woRear] = app(CreateKeystonePair::class)
-        ->execute($wo, ['name' => 'A']);
+    $apPort = NetworkInterface::factory()->ethernet()->create(['equipment_id' => $ap->getKey(), 'name' => 'eth0']);
 
     app(ConnectionService::class)->connect($swPort, $ppFront, ['cable_type' => 'utp_cat6']);
-    app(ConnectionService::class)->connect($ppRear, $woRear, ['cable_type' => 'utp_cat6']);
+    app(ConnectionService::class)->connect($ppRear, $apPort, ['cable_type' => 'utp_cat6']);
 
     $graph = app(TopologyService::class)->buildGraph(hidePatchPanels: true);
     $nodeIds = collect($graph['nodes'])->pluck('data.id')->all();
 
     expect($nodeIds)->toContain('eq-'.$sw->getKey());
-    expect($nodeIds)->toContain('eq-'.$wo->getKey());
+    expect($nodeIds)->toContain('eq-'.$ap->getKey());
     expect($nodeIds)->not->toContain('eq-'.$pp->getKey());
 
     $edges = collect($graph['edges']);
@@ -456,11 +455,45 @@ it('collapses a single patch panel hop into one synthetic edge', function (): vo
     $e = $edges->first()['data'];
     $endpoints = [$e['source'], $e['target']];
     sort($endpoints);
-    $expected = ['eq-'.min($sw->getKey(), $wo->getKey()), 'eq-'.max($sw->getKey(), $wo->getKey())];
+    $expected = ['eq-'.min($sw->getKey(), $ap->getKey()), 'eq-'.max($sw->getKey(), $ap->getKey())];
     expect($endpoints)->toEqual($expected);
     expect($e['passthrough'])->toBeTrue();
     expect($e['transit'])->toEqual(['PP1.P-3']);
     expect($e['label'])->toEqual('via PP1.P-3');
+});
+
+it('hides wall outlets alongside patch panels when hidePatchPanels is set', function (): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+
+    $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW1']);
+    $pp = Equipment::factory()->ofType(EquipmentType::PatchPanel)->create(['name' => 'PP1']);
+    $wo = Equipment::factory()->ofType(EquipmentType::WallOutlet)->create(['name' => 'WO1']);
+    $ap = Equipment::factory()->ofType(EquipmentType::AccessPoint)->create(['name' => 'AP1']);
+
+    $swPort = NetworkInterface::factory()->ethernet()->create(['equipment_id' => $sw->getKey(), 'name' => 'Gi0/1']);
+    [$ppFront, $ppRear] = app(CreateKeystonePair::class)->execute($pp, ['name' => 'P3']);
+    [$woFront, $woRear] = app(CreateKeystonePair::class)->execute($wo, ['name' => 'A']);
+    $apPort = NetworkInterface::factory()->ethernet()->create(['equipment_id' => $ap->getKey(), 'name' => 'eth0']);
+
+    $svc = app(ConnectionService::class);
+    $svc->connect($swPort, $ppFront, ['cable_type' => 'utp_cat6']);
+    $svc->connect($ppRear, $woRear, ['cable_type' => 'utp_cat6']);
+    $svc->connect($woFront, $apPort, ['cable_type' => 'utp_cat6']);
+
+    $graph = app(TopologyService::class)->buildGraph(hidePatchPanels: true);
+    $nodeIds = collect($graph['nodes'])->pluck('data.id')->all();
+
+    expect($nodeIds)->toContain('eq-'.$sw->getKey());
+    expect($nodeIds)->toContain('eq-'.$ap->getKey());
+    expect($nodeIds)->not->toContain('eq-'.$pp->getKey());
+    expect($nodeIds)->not->toContain('eq-'.$wo->getKey());
+
+    $edges = collect($graph['edges']);
+    expect($edges)->toHaveCount(1);
+    $e = $edges->first()['data'];
+    expect($e['passthrough'])->toBeTrue();
+    expect($e['transit'])->toEqualCanonicalizing(['PP1.P3', 'WO1.A']);
 });
 
 it('collapses a multi-hop chain through two patch panels', function (): void {
@@ -470,17 +503,17 @@ it('collapses a multi-hop chain through two patch panels', function (): void {
     $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW1']);
     $pp1 = Equipment::factory()->ofType(EquipmentType::PatchPanel)->create(['name' => 'PP1']);
     $pp2 = Equipment::factory()->ofType(EquipmentType::PatchPanel)->create(['name' => 'PP2']);
-    $wo = Equipment::factory()->ofType(EquipmentType::WallOutlet)->create(['name' => 'WO1']);
+    $ap = Equipment::factory()->ofType(EquipmentType::AccessPoint)->create(['name' => 'AP1']);
 
     $swPort = NetworkInterface::factory()->ethernet()->create(['equipment_id' => $sw->getKey(), 'name' => 'Gi0/1']);
     [$pp1Front, $pp1Rear] = app(CreateKeystonePair::class)->execute($pp1, ['name' => 'P3']);
     [$pp2Front, $pp2Rear] = app(CreateKeystonePair::class)->execute($pp2, ['name' => 'Q7']);
-    [, $woRear] = app(CreateKeystonePair::class)->execute($wo, ['name' => 'A']);
+    $apPort = NetworkInterface::factory()->ethernet()->create(['equipment_id' => $ap->getKey(), 'name' => 'eth0']);
 
     $svc = app(ConnectionService::class);
     $svc->connect($swPort, $pp1Front, ['cable_type' => 'utp_cat6']);
     $svc->connect($pp1Rear, $pp2Rear, ['cable_type' => 'utp_cat6']);       // dorsale rear↔rear
-    $svc->connect($pp2Front, $woRear, ['cable_type' => 'utp_cat6']);
+    $svc->connect($pp2Front, $apPort, ['cable_type' => 'utp_cat6']);
 
     $graph = app(TopologyService::class)->buildGraph(hidePatchPanels: true);
 

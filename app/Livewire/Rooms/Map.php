@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Rooms;
 
+use App\Models\Equipment;
 use App\Models\Rack;
 use App\Models\Room;
 use App\Services\Icons\IconResolver;
@@ -54,6 +55,35 @@ class Map extends Component
                     $q->whereNull('position_x')->orWhereNull('position_y');
                 })
                 ->update(['position_x' => $defaultCenter, 'position_y' => $defaultCenter]);
+
+            // Unracked equipment placed directly in this room: progressive
+            // top-left offset so multiple new devices don't pile up on the
+            // same pixel. Step on X by half-meter; wrap to a new row when X
+            // would exceed the room width minus a half-icon margin.
+            [$widthM] = $this->dimensions();
+            $unposed = Equipment::query()
+                ->whereNull('rack_id')
+                ->where('room_id', $room->getKey())
+                ->where(function ($q): void {
+                    $q->whereNull('position_x')->orWhereNull('position_y');
+                })
+                ->orderBy('id')
+                ->get(['id']);
+
+            $step = 0.5;
+            $x = $defaultCenter;
+            $y = $defaultCenter;
+            foreach ($unposed as $eq) {
+                Equipment::query()->whereKey($eq->id)->update([
+                    'position_x' => round($x, 2),
+                    'position_y' => round($y, 2),
+                ]);
+                $x += $step;
+                if ($x > $widthM - $defaultCenter) {
+                    $x = $defaultCenter;
+                    $y += $step;
+                }
+            }
         }
     }
 
@@ -93,6 +123,58 @@ class Map extends Component
             ->where('room_id', $this->room->getKey())
             ->whereNotNull('icon_size_px')
             ->update(['icon_size_px' => null]);
+
+        Equipment::query()
+            ->whereNull('rack_id')
+            ->where('room_id', $this->room->getKey())
+            ->whereNotNull('icon_size_px')
+            ->update(['icon_size_px' => null]);
+    }
+
+    public function resetEquipmentIcon(int $equipmentId): void
+    {
+        /** @var Equipment $eq */
+        $eq = Equipment::query()
+            ->whereNull('rack_id')
+            ->where('room_id', $this->room->getKey())
+            ->findOrFail($equipmentId);
+
+        $this->authorize('update', $eq);
+        $eq->update(['icon_size_px' => null]);
+    }
+
+    public function resizeEquipmentIcon(int $equipmentId, int $sizePx): void
+    {
+        /** @var Equipment $eq */
+        $eq = Equipment::query()
+            ->whereNull('rack_id')
+            ->where('room_id', $this->room->getKey())
+            ->findOrFail($equipmentId);
+
+        $this->authorize('update', $eq);
+
+        $clamped = max(self::MIN_ICON_SIZE_PX, min(self::MAX_ICON_SIZE_PX, $sizePx));
+        $eq->update(['icon_size_px' => $clamped]);
+    }
+
+    public function moveEquipment(int $equipmentId, float $x, float $y): void
+    {
+        /** @var Equipment $eq */
+        $eq = Equipment::query()
+            ->whereNull('rack_id')
+            ->where('room_id', $this->room->getKey())
+            ->findOrFail($equipmentId);
+
+        $this->authorize('update', $eq);
+
+        [$widthM, $depthM] = $this->dimensions();
+        $iconSizePx = (int) ($eq->icon_size_px ?? self::DEFAULT_ICON_SIZE_PX);
+        $halfM = ($iconSizePx / self::SCALE) / 2;
+
+        $eq->update([
+            'position_x' => round(max($halfM, min($widthM - $halfM, $x)), 2),
+            'position_y' => round(max($halfM, min($depthM - $halfM, $y)), 2),
+        ]);
     }
 
     public function resizeRackIcon(int $rackId, int $sizePx): void
@@ -139,6 +221,12 @@ class Map extends Component
             ->orderBy('name')
             ->get(['id', 'name', 'position_x', 'position_y', 'icon_path', 'icon_size_px']);
 
+        $equipments = Equipment::query()
+            ->whereNull('rack_id')
+            ->where('room_id', $room->getKey())
+            ->orderBy('name')
+            ->get(['id', 'name', 'type', 'position_x', 'position_y', 'icon_path', 'icon_size_px']);
+
         $tenantId = (int) ($room->tenant_id ?? 0);
         $roomDefault = $room->rack_icon_size_px !== null
             ? (int) $room->rack_icon_size_px
@@ -155,6 +243,17 @@ class Map extends Component
                 : $roomDefault;
         }
 
+        $equipmentIcons = [];
+        $equipmentIconSizes = [];
+        $equipmentHasOverride = [];
+        foreach ($equipments as $eq) {
+            $equipmentIcons[$eq->id] = $resolver->urlForEquipment($eq, $tenantId);
+            $equipmentHasOverride[$eq->id] = $eq->icon_size_px !== null;
+            $equipmentIconSizes[$eq->id] = $eq->icon_size_px !== null
+                ? (int) $eq->icon_size_px
+                : $roomDefault;
+        }
+
         $user = auth()->user();
         $canEdit = $user !== null && $user->canManageData();
 
@@ -166,6 +265,10 @@ class Map extends Component
             'rackIcons' => $rackIcons,
             'rackIconSizes' => $rackIconSizes,
             'rackHasOverride' => $rackHasOverride,
+            'equipments' => $equipments,
+            'equipmentIcons' => $equipmentIcons,
+            'equipmentIconSizes' => $equipmentIconSizes,
+            'equipmentHasOverride' => $equipmentHasOverride,
             'roomIconSize' => $roomDefault,
             'canEdit' => $canEdit,
             'widthM' => $widthM,

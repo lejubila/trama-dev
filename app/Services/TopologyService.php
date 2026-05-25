@@ -76,9 +76,12 @@ class TopologyService
         }
 
         if ($hidePatchPanels) {
-            // Patch panels become transit hops to be stitched into synthetic
-            // edges below; wall outlets stay because they're terminals.
-            $equipmentQuery->where('type', '!=', EquipmentType::PatchPanel->value);
+            // Patch panels and wall outlets become transit hops to be stitched
+            // into synthetic edges below; both are physical pass-throughs.
+            $equipmentQuery->whereNotIn('type', [
+                EquipmentType::PatchPanel->value,
+                EquipmentType::WallOutlet->value,
+            ]);
         }
 
         if ($siteId !== null) {
@@ -582,7 +585,7 @@ class TopologyService
         $visited[$iface->id] = true;
 
         $eq = $iface->equipment;
-        if ($eq === null || $eq->type !== EquipmentType::PatchPanel) {
+        if ($eq === null || ! in_array($eq->type, [EquipmentType::PatchPanel, EquipmentType::WallOutlet], true)) {
             return $iface;
         }
 

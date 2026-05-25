@@ -9,7 +9,7 @@
     $floorPlanUrl = $room->floor_plan_path ? '/storage/'.ltrim($room->floor_plan_path, '/') : null;
 @endphp
 <div x-data="roomMapDnD" x-init="init($el)">
-    @if ($racks->isEmpty())
+    @if ($racks->isEmpty() && $equipments->isEmpty())
         <div class="text-sm text-gray-500 dark:text-slate-400 italic">
             {{ __('rooms.map_empty') }}
         </div>
@@ -48,7 +48,9 @@
                     $iconSizePx = $rackIconSizes[$r->id] ?? \App\Livewire\Rooms\Map::DEFAULT_ICON_SIZE_PX;
                 @endphp
                 <g
-                    class="room-map-rack"
+                    class="room-map-node"
+                    data-kind="rack"
+                    data-node-id="{{ $r->id }}"
                     data-rack-id="{{ $r->id }}"
                     data-x="{{ $px }}"
                     data-y="{{ $py }}"
@@ -90,6 +92,59 @@
                              this rack has its own size override. JS hides/shows
                              it dynamically as resizes happen. --}}
                         <g class="rack-icon-reset" style="cursor: pointer; display: {{ ($rackHasOverride[$r->id] ?? false) ? 'inline' : 'none' }};">
+                            <circle cx="{{ $halfRackPx - 4 }}" cy="{{ -$halfRackPx + 4 }}" r="5" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
+                            <text x="{{ $halfRackPx - 4 }}" y="{{ -$halfRackPx + 6 }}" text-anchor="middle" font-size="7" font-weight="700" fill="#ffffff" style="pointer-events: none;">×</text>
+                        </g>
+                    @endif
+                </g>
+            @endforeach
+
+            @foreach ($equipments as $eq)
+                @php
+                    $px = (float) ($eq->position_x ?? 0);
+                    $py = (float) ($eq->position_y ?? 0);
+                    $iconUrl = $equipmentIcons[$eq->id] ?? null;
+                    $iconSizePx = $equipmentIconSizes[$eq->id] ?? \App\Livewire\Rooms\Map::DEFAULT_ICON_SIZE_PX;
+                @endphp
+                <g
+                    class="room-map-node"
+                    data-kind="equipment"
+                    data-node-id="{{ $eq->id }}"
+                    data-x="{{ $px }}"
+                    data-y="{{ $py }}"
+                    data-icon-size-px="{{ $iconSizePx }}"
+                    data-icon-override="{{ ($equipmentHasOverride[$eq->id] ?? false) ? '1' : '0' }}"
+                    data-icon-url="{{ $iconUrl ?? '' }}"
+                    data-href="{{ route('equipment.show', $eq) }}"
+                    transform="translate({{ $px * $scale }},{{ $py * $scale }})"
+                    style="cursor: {{ $canEdit ? 'grab' : 'pointer' }};"
+                >
+                    @if ($iconUrl)
+                        <image class="rack-icon" href="{{ $iconUrl }}" x="{{ -$halfRackPx }}" y="{{ -$halfRackPx }}" width="{{ $rackPx }}" height="{{ $rackPx }}" preserveAspectRatio="xMidYMid meet" />
+                    @else
+                        <rect class="rack-icon"
+                            x="{{ -$halfRackPx }}" y="{{ -$halfRackPx }}"
+                            width="{{ $rackPx }}" height="{{ $rackPx }}"
+                            fill="#fef3c7" stroke="#d97706" stroke-width="1.5" rx="3"
+                            fill-opacity="0.9"
+                        />
+                    @endif
+                    <text
+                        class="rack-label"
+                        x="0" y="{{ $halfRackPx + $rackPx * 0.10 + $rackPx * 0.22 }}"
+                        text-anchor="middle"
+                        font-size="{{ $rackPx * 0.22 }}" fill="#1f2937" font-weight="600"
+                        stroke="#ffffff" stroke-width="{{ $rackPx * 0.22 * 0.25 }}" paint-order="stroke"
+                        style="pointer-events: none;"
+                    >{{ $eq->name }}</text>
+                    @if ($canEdit)
+                        <rect class="rack-icon-resize"
+                            x="{{ $halfRackPx - 4 }}" y="{{ $halfRackPx - 4 }}"
+                            width="8" height="8" rx="1.5"
+                            fill="#4f46e5" stroke="#ffffff" stroke-width="1"
+                            style="cursor: nwse-resize;"
+                        />
+                        <g class="rack-icon-reset" style="cursor: pointer; display: {{ ($equipmentHasOverride[$eq->id] ?? false) ? 'inline' : 'none' }};">
                             <circle cx="{{ $halfRackPx - 4 }}" cy="{{ -$halfRackPx + 4 }}" r="5" fill="#dc2626" stroke="#ffffff" stroke-width="1" />
                             <text x="{{ $halfRackPx - 4 }}" y="{{ -$halfRackPx + 6 }}" text-anchor="middle" font-size="7" font-weight="700" fill="#ffffff" style="pointer-events: none;">×</text>
                         </g>

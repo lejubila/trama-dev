@@ -1,7 +1,7 @@
 /**
  * Alpine factory for the room-map drag & drop + icon resize.
  *
- * Coordinates note: `data-x`/`data-y` on each `<g.room-map-rack>` are the
+ * Coordinates note: `data-x`/`data-y` on each `<g.room-map-node>` are the
  * rack's **center** in meters. The `<g transform="translate(cx, cy)">`
  * positions that center; inner shapes are drawn centered on (0, 0) so they
  * grow symmetrically around the center when resized.
@@ -14,7 +14,7 @@
  * but no per-screen-pixel computation happens anymore.
  *
  * On the wrapper `<div x-data="roomMapDnD" x-init="init($el)">` it:
- *  - on `pointerdown` over `<g.room-map-rack>` either drags (moves the
+ *  - on `pointerdown` over `<g.room-map-node>` either drags (moves the
  *    center), resizes (handle), or resets (small × button when override
  *    is active).
  *  - on `pointerup` persists move via `$wire.moveRack(id, x, y)` (center
@@ -28,6 +28,7 @@ export default function roomMapDnD() {
         _svg: null,
         _node: null,
         _id: null,
+        _kind: null,
         _href: null,
         _scale: 50,
         _roomW: 12,
@@ -74,7 +75,7 @@ export default function roomMapDnD() {
             root.addEventListener('room-default-size', (e) => {
                 const size = parseInt(e.detail && e.detail.size, 10);
                 if (!size) return;
-                this._svg.querySelectorAll('g.room-map-rack').forEach((g) => {
+                this._svg.querySelectorAll('g.room-map-node').forEach((g) => {
                     if (g.dataset.iconOverride === '1') return;
                     g.dataset.iconSizePx = String(size);
                     this._applyIconSize(g);
@@ -84,7 +85,7 @@ export default function roomMapDnD() {
             // "Reset tutti": drop every per-rack override locally.
             root.addEventListener('room-reset-all', () => {
                 const defaultPx = parseInt(this._svg.dataset.roomIconSizePx || '40', 10);
-                this._svg.querySelectorAll('g.room-map-rack').forEach((g) => {
+                this._svg.querySelectorAll('g.room-map-node').forEach((g) => {
                     g.dataset.iconOverride = '0';
                     g.dataset.iconSizePx = String(defaultPx);
                     const reset = g.querySelector('.rack-icon-reset');
@@ -97,7 +98,7 @@ export default function roomMapDnD() {
         // ---- icon sizing -----------------------------------------------
 
         _applyAllIconSizes() {
-            this._svg.querySelectorAll('g.room-map-rack').forEach((g) => this._applyIconSize(g));
+            this._svg.querySelectorAll('g.room-map-node').forEach((g) => this._applyIconSize(g));
         },
 
         _applyIconSize(g) {
@@ -157,7 +158,7 @@ export default function roomMapDnD() {
         // ---- pointer interactions --------------------------------------
 
         onDown(e) {
-            const g = e.target.closest('g.room-map-rack');
+            const g = e.target.closest('g.room-map-node');
             if (!g) return;
 
             // Reset-to-room-default button: short-circuit drag/resize.
@@ -165,14 +166,19 @@ export default function roomMapDnD() {
             if (onReset && this._canEdit) {
                 e.preventDefault();
                 e.stopPropagation();
-                const id = parseInt(g.dataset.rackId, 10);
+                const id = parseInt(g.dataset.nodeId || g.dataset.rackId, 10);
+                const kind = g.dataset.kind || 'rack';
                 const defaultPx = parseInt(this._svg.dataset.roomIconSizePx || '40', 10);
                 g.dataset.iconOverride = '0';
                 g.dataset.iconSizePx = String(defaultPx);
                 const reset = g.querySelector('.rack-icon-reset');
                 if (reset) reset.style.display = 'none';
                 this._applyIconSize(g);
-                this.$wire.resetRackIcon(id);
+                if (kind === 'equipment') {
+                    this.$wire.resetEquipmentIcon(id);
+                } else {
+                    this.$wire.resetRackIcon(id);
+                }
                 return;
             }
 
@@ -180,7 +186,8 @@ export default function roomMapDnD() {
 
             e.preventDefault();
             this._node = g;
-            this._id = parseInt(g.dataset.rackId, 10);
+            this._id = parseInt(g.dataset.nodeId || g.dataset.rackId, 10);
+            this._kind = g.dataset.kind || 'rack';
             this._href = g.dataset.href || null;
             this._startClientX = e.clientX;
             this._startClientY = e.clientY;
@@ -258,6 +265,7 @@ export default function roomMapDnD() {
             const node = this._node;
             const moved = this._moved;
             const id = this._id;
+            const kind = this._kind || 'rack';
             const href = this._href;
             const mode = this._mode;
             const resizePx = this._resizePx;
@@ -265,6 +273,7 @@ export default function roomMapDnD() {
             this.dragging = false;
             this._node = null;
             this._id = null;
+            this._kind = null;
             this._href = null;
             this._moved = false;
             this._mode = null;
@@ -280,14 +289,22 @@ export default function roomMapDnD() {
                 node.dataset.iconOverride = '1';
                 const reset = node.querySelector('.rack-icon-reset');
                 if (reset) reset.style.display = 'inline';
-                this.$wire.resizeRackIcon(id, resizePx);
+                if (kind === 'equipment') {
+                    this.$wire.resizeEquipmentIcon(id, resizePx);
+                } else {
+                    this.$wire.resizeRackIcon(id, resizePx);
+                }
                 return;
             }
 
             if (mode === 'move' && moved && this._canEdit && node) {
                 const x = parseFloat(node.dataset.x);
                 const y = parseFloat(node.dataset.y);
-                this.$wire.moveRack(id, x, y);
+                if (kind === 'equipment') {
+                    this.$wire.moveEquipment(id, x, y);
+                } else {
+                    this.$wire.moveRack(id, x, y);
+                }
                 return;
             }
 

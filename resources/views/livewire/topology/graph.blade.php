@@ -113,9 +113,9 @@
             Mostra nascosti
         </label>
 
-        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Collassa i patch panel: mostra un edge end-to-end tra i terminali (es. switch ↔ presa) etichettato con il path attraversato">
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Collassa patch panel e prese a muro: mostra un edge end-to-end tra i terminali etichettato con il path attraversato">
             <input type="checkbox" wire:model.live="hidePatchPanels" class="rounded border-gray-300 text-indigo-600" />
-            Nascondi patch panel
+            Nascondi patch panel / prese
         </label>
 
         <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Racchiude gli apparati di ogni rack in un contenitore visivo">
