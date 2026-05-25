@@ -23,8 +23,13 @@ it('lists interfaces of an equipment (nested route)', function (): void {
     $u = apiUser('admin');
     $eq = bootEquipmentFor($u);
     TenantContext::setId($u['tenant']->getKey());
-    NetworkInterface::factory()->ethernet()->count(3)->create(['equipment_id' => $eq->getKey()])
-        ->each(fn ($i, $idx) => $i->update(['name' => 'Gi0/'.($idx + 1)]));
+    // Use a sequence to guarantee unique names up-front; otherwise the
+    // factory's random `Gi0/<n>` can collide on count(3) (flaky).
+    NetworkInterface::factory()->ethernet()->count(3)->sequence(
+        ['name' => 'Gi0/1'],
+        ['name' => 'Gi0/2'],
+        ['name' => 'Gi0/3'],
+    )->create(['equipment_id' => $eq->getKey()]);
 
     $this->withHeaders(apiHeaders($u['token'], $u['tenant']->getKey()))
         ->getJson("/api/v1/equipment/{$eq->id}/interfaces")

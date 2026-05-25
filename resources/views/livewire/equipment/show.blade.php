@@ -120,7 +120,13 @@
                                 <td class="px-4 py-3 font-mono text-gray-900">{{ $if->name }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $if->type?->value }} / {{ $if->media?->value }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $if->speed_mbps ? $if->speed_mbps.' Mbps' : '—' }}</td>
-                                <td class="px-4 py-3 text-gray-600">{{ $if->vlan_mode?->value }} {{ $if->vlan_default ? '· '.$if->vlan_default : '' }}</td>
+                                <td class="px-4 py-3 text-gray-600">
+                                    {{ $if->vlan_mode?->value }}@if ($if->vlan_default) · {{ $if->vlan_default }}@endif
+                                    @if (is_array($if->vlans_allowed) && $if->vlans_allowed !== []
+                                        && in_array($if->vlan_mode?->value, ['trunk', 'hybrid'], true))
+                                        <span class="text-gray-500">({{ $this->formatVlanRanges($if->vlans_allowed) }})</span>
+                                    @endif
+                                </td>
                                 <td class="px-4 py-3 font-mono text-gray-600">{{ $if->ip_address ?? '—' }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $if->status?->value }}</td>
                                 <td class="px-4 py-3 text-right space-x-2">
@@ -287,8 +293,13 @@
                     @endif
                     <div class="grid grid-cols-2 gap-3">
                         <div class="col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">{{ $ifBulk && $editingIfId === null ? 'Prefisso nome' : 'Nome' }}</label>
+                            <label class="block text-sm font-medium text-gray-700">{{ $ifBulk && $editingIfId === null ? 'Nome (usa % per il numero)' : 'Nome' }}</label>
                             <input type="text" wire:model.live="ifName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm font-mono" />
+                            @if ($ifBulk && $editingIfId === null)
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Usa <code class="font-mono">%</code> per indicare dove inserire il numero (es. <code class="font-mono">Port-%-LAN</code>). Se omesso, il numero viene appeso in coda.
+                                </p>
+                            @endif
                             @error('ifName')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -317,15 +328,35 @@
                             <label class="block text-sm font-medium text-gray-700">Speed (Mbps)</label>
                             <input type="number" wire:model="ifSpeedMbps" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                         </div>
+                        @php
+                            $vlanDisabled = in_array($ifVlanMode, ['none', 'transparent'], true);
+                            $vlansAllowedDisabled = in_array($ifVlanMode, ['none', 'access', 'transparent'], true);
+                        @endphp
                         <div>
                             <label class="block text-sm font-medium text-gray-700">VLAN mode</label>
-                            <select wire:model="ifVlanMode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                            <select wire:model.live="ifVlanMode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
                                 @foreach (App\Enums\InterfaceVlanMode::cases() as $v) <option value="{{ $v->value }}">{{ $v->value }}</option> @endforeach
                             </select>
+                            <p class="text-xs text-gray-500 mt-1">
+                                <code class="font-mono">none</code>: porta senza concetto VLAN (console, power) ·
+                                <code class="font-mono">transparent</code>: hub/unmanaged, qualunque tag passa.
+                            </p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">VLAN default</label>
-                            <input type="number" wire:model="ifVlanDefault" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                            <input type="number" wire:model="ifVlanDefault" @disabled($vlanDisabled) class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm disabled:bg-gray-100 disabled:text-gray-400" />
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">VLAN ammesse</label>
+                            <input type="text" wire:model="ifVlansAllowedText" placeholder="es. 1, 60, 100-105" @disabled($vlansAllowedDisabled) class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm font-mono disabled:bg-gray-100 disabled:text-gray-400" />
+                            <p class="text-xs text-gray-500 mt-1">
+                                @if ($vlansAllowedDisabled)
+                                    Non applicabile a <code class="font-mono">{{ $ifVlanMode }}</code>.
+                                @else
+                                    Lista o range di VLAN trasportate dal trunk (1–4094). Usa <code class="font-mono">,</code> e <code class="font-mono">-</code>.
+                                @endif
+                            </p>
+                            @error('ifVlansAllowedText')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">IP</label>

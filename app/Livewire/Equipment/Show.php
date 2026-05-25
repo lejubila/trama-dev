@@ -49,6 +49,13 @@ class Show extends Component
 
     public ?int $ifVlanDefault = 1;
 
+    /**
+     * User-edited representation of `vlans_allowed`: a comma-separated list
+     * with optional ranges, e.g. "1, 60, 100-105". Parsed on save into a
+     * sorted/deduped array of integers in `parseVlanListOrNull`.
+     */
+    public string $ifVlansAllowedText = '';
+
     public string $ifIpAddress = '';
 
     public string $ifMacAddress = '';
@@ -80,6 +87,7 @@ class Show extends Component
             'ifSpeedMbps' => 'nullable|integer|min:1',
             'ifVlanMode' => ['nullable', Rule::in(array_column(InterfaceVlanMode::cases(), 'value'))],
             'ifVlanDefault' => 'nullable|integer|min:1|max:4094',
+            'ifVlansAllowedText' => 'nullable|string|max:255',
             'ifIpAddress' => 'nullable|string|max:45',
             'ifMacAddress' => 'nullable|string|max:17',
             'ifStatus' => ['required', Rule::in(array_column(InterfaceStatus::cases(), 'value'))],
@@ -135,7 +143,7 @@ class Show extends Component
     public function openIfCreate(): void
     {
         $this->authorize('create', NetworkInterface::class);
-        $this->reset(['editingIfId', 'ifName', 'ifIpAddress', 'ifMacAddress', 'ifDescription', 'ifBulk']);
+        $this->reset(['editingIfId', 'ifName', 'ifIpAddress', 'ifMacAddress', 'ifDescription', 'ifBulk', 'ifVlansAllowedText']);
         $this->ifBulkQuantity = 12;
         $this->ifBulkStartFrom = 1;
         $isPatchLike = in_array(
@@ -169,6 +177,9 @@ class Show extends Component
         $this->ifSpeedMbps = $if->speed_mbps;
         $this->ifVlanMode = $if->vlan_mode?->value ?? 'access';
         $this->ifVlanDefault = $if->vlan_default;
+        $this->ifVlansAllowedText = $this->formatVlanRanges(
+            is_array($if->vlans_allowed) ? $if->vlans_allowed : null
+        );
         $this->ifIpAddress = (string) ($if->ip_address ?? '');
         $this->ifMacAddress = (string) ($if->mac_address ?? '');
         $this->ifStatus = $if->status?->value ?? 'unknown';
@@ -192,6 +203,10 @@ class Show extends Component
     private function saveSingleIf(): void
     {
         $this->validate();
+
+        if (! $this->validateVlansAllowed()) {
+            return;
+        }
 
         if ($this->editingIfId !== null) {
             $if = NetworkInterface::query()->findOrFail($this->editingIfId);
@@ -226,6 +241,10 @@ class Show extends Component
     {
         $this->authorize('create', NetworkInterface::class);
         $this->validate();
+
+        if (! $this->validateVlansAllowed()) {
+            return;
+        }
 
         $names = $this->generateBulkNames();
 
@@ -299,7 +318,16 @@ class Show extends Component
             'connector' => $this->ifConnector !== '' ? $this->ifConnector : null,
             'speed_mbps' => $this->ifSpeedMbps,
             'vlan_mode' => InterfaceVlanMode::from($this->ifVlanMode),
-            'vlan_default' => $this->ifVlanDefault,
+            // VLAN default and allowed are meaningless on ports with no VLAN
+            // concept (none) or on transparent passthroughs (any tag flows
+            // unchanged): force them to null no matter what the user typed.
+            'vlan_default' => $this->vlanFieldsDisabled() ? null : $this->ifVlanDefault,
+            // `vlans_allowed` is meaningful only for tagged trunks/hybrids.
+            // Access ports carry a single VLAN (vlan_default); none and
+            // transparent have no VLAN logic at all → blank in every case.
+            'vlans_allowed' => $this->vlansAllowedDisabled()
+                ? null
+                : $this->parseVlanListOrNull($this->ifVlansAllowedText),
             'ip_address' => $this->ifIpAddress !== '' ? $this->ifIpAddress : null,
             'mac_address' => $this->ifMacAddress !== '' ? $this->ifMacAddress : null,
             'status' => InterfaceStatus::from($this->ifStatus),
@@ -309,7 +337,12 @@ class Show extends Component
     }
 
     /**
-     * Generates the list of suffixed names for a bulk create.
+     * Generates the names list for a bulk create. The user-provided
+     * `ifName` is a template where the `%` character marks where the
+     * zero-padded number is to be inserted. `%%` is a literal escape for
+     * a percent sign. When no `%` appears at all, the number is appended
+     * at the end (backward-compatible with the old "prefix-only" mode).
+     *
      * Pad length is the digit count of the LARGEST number in the range
      * (start..start+quantity-1), so start=95/qty=10 yields 95..104 with
      * width 3 → 095, 096, …, 104.
@@ -323,9 +356,19 @@ class Show extends Component
         $max = $start + $quantity - 1;
         $padLen = strlen((string) $max);
 
+        // Tolerate `%%` as a literal percent sign by parking it under a
+        // sentinel before checking for an actual `%` placeholder.
+        $sentinel = "\0";
+        $template = str_replace('%%', $sentinel, $this->ifName);
+        $hasPlaceholder = str_contains($template, '%');
+
         $names = [];
         for ($i = 0; $i < $quantity; $i++) {
-            $names[] = $this->ifName.str_pad((string) ($start + $i), $padLen, '0', STR_PAD_LEFT);
+            $num = str_pad((string) ($start + $i), $padLen, '0', STR_PAD_LEFT);
+            $name = $hasPlaceholder
+                ? str_replace('%', $num, $template)
+                : $template.$num;
+            $names[] = str_replace($sentinel, '%', $name);
         }
 
         return $names;
@@ -364,6 +407,140 @@ class Show extends Component
         $this->authorize('delete', $c);
         $c->delete();
         $this->dispatch('toast', type: 'success', message: 'Connessione rimossa.');
+    }
+
+    /**
+     * Runs parseVlanListOrNull as a guard before persisting and surfaces a
+     * friendly error under the input. Returns false when the syntax is
+     * invalid (caller short-circuits the save).
+     */
+    private function validateVlansAllowed(): bool
+    {
+        // Skip the parser when the field is going to be wiped anyway
+        // (none/access/transparent — see vlansAllowedDisabled).
+        if ($this->vlansAllowedDisabled()) {
+            return true;
+        }
+        try {
+            $this->parseVlanListOrNull($this->ifVlansAllowedText);
+
+            return true;
+        } catch (\InvalidArgumentException $e) {
+            $this->addError('ifVlansAllowedText', $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * True when the active VLAN mode makes both `vlan_default` and
+     * `vlans_allowed` meaningless: `none` (no VLAN concept at all) and
+     * `transparent` (any tag flows through unchanged).
+     */
+    private function vlanFieldsDisabled(): bool
+    {
+        return in_array($this->ifVlanMode, ['none', 'transparent'], true);
+    }
+
+    /**
+     * True when `vlans_allowed` does not apply: in addition to the modes
+     * above (none/transparent), access ports also have no allowed-list —
+     * they carry a single VLAN (vlan_default).
+     */
+    private function vlansAllowedDisabled(): bool
+    {
+        return in_array($this->ifVlanMode, ['none', 'access', 'transparent'], true);
+    }
+
+    /**
+     * Parse a Cisco-style VLAN list like "1, 60, 100-105" into a sorted
+     * deduped integer array. Empty input returns null. Throws
+     * InvalidArgumentException on any malformed token (non-numeric, out of
+     * range 1-4094, or descending range like "10-9").
+     *
+     * @return list<int>|null
+     */
+    private function parseVlanListOrNull(string $text): ?array
+    {
+        $text = trim($text);
+        if ($text === '') {
+            return null;
+        }
+
+        $out = [];
+        foreach (explode(',', $text) as $token) {
+            $token = trim($token);
+            if ($token === '') {
+                continue;
+            }
+
+            if (str_contains($token, '-')) {
+                $parts = explode('-', $token, 2);
+                $from = trim($parts[0]);
+                $to = trim($parts[1]);
+                if (! ctype_digit($from) || ! ctype_digit($to)) {
+                    throw new \InvalidArgumentException("Range non valido: \"{$token}\". Usa numeri 1-4094.");
+                }
+                $from = (int) $from;
+                $to = (int) $to;
+                if ($from < 1 || $to < 1 || $from > 4094 || $to > 4094) {
+                    throw new \InvalidArgumentException("VLAN fuori intervallo 1-4094: \"{$token}\".");
+                }
+                if ($from > $to) {
+                    throw new \InvalidArgumentException("Range invertito: \"{$token}\" (atteso \"from-to\" crescente).");
+                }
+                for ($v = $from; $v <= $to; $v++) {
+                    $out[$v] = true;
+                }
+            } else {
+                if (! ctype_digit($token)) {
+                    throw new \InvalidArgumentException("Token non valido: \"{$token}\". Usa numeri 1-4094.");
+                }
+                $v = (int) $token;
+                if ($v < 1 || $v > 4094) {
+                    throw new \InvalidArgumentException("VLAN fuori intervallo 1-4094: \"{$token}\".");
+                }
+                $out[$v] = true;
+            }
+        }
+
+        if ($out === []) {
+            return null;
+        }
+        $vlans = array_keys($out);
+        sort($vlans);
+
+        return $vlans;
+    }
+
+    /**
+     * Inverse of parseVlanListOrNull: compact "[1,2,3,5,6]" into "1-3, 5-6".
+     * Public so the Blade view can render the value inline in the table.
+     */
+    public function formatVlanRanges(?array $vlans): string
+    {
+        if ($vlans === null || $vlans === []) {
+            return '';
+        }
+        $vlans = array_values(array_unique(array_map('intval', $vlans)));
+        sort($vlans);
+
+        $ranges = [];
+        $start = $vlans[0];
+        $prev = $start;
+        foreach (array_slice($vlans, 1) as $v) {
+            if ($v === $prev + 1) {
+                $prev = $v;
+
+                continue;
+            }
+            $ranges[] = $start === $prev ? (string) $start : $start.'-'.$prev;
+            $start = $v;
+            $prev = $v;
+        }
+        $ranges[] = $start === $prev ? (string) $start : $start.'-'.$prev;
+
+        return implode(', ', $ranges);
     }
 
     public function render(): View

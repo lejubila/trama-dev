@@ -213,7 +213,9 @@ it('refuses to rename an interface to a name already used on the same equipment'
 
 it('bulk-creates interfaces with zero-padded suffix based on max-digit count', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
-    $eq = Equipment::factory()->create();
+    // Force a non-keystone equipment type so bulk doesn't create
+    // front/rear pairs (which would double the row count).
+    $eq = Equipment::factory()->ofType(EquipmentType::Switch)->create();
 
     Livewire::test(EquipmentShow::class, ['equipment' => $eq])
         ->call('openIfCreate')
@@ -233,7 +235,7 @@ it('bulk-creates interfaces with zero-padded suffix based on max-digit count', f
 
 it('pads bulk suffix only when the max number has more than one digit', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
-    $eq = Equipment::factory()->create();
+    $eq = Equipment::factory()->ofType(EquipmentType::Switch)->create();
 
     // qty=8 → max=8, single digit → no padding
     Livewire::test(EquipmentShow::class, ['equipment' => $eq])
@@ -250,7 +252,7 @@ it('pads bulk suffix only when the max number has more than one digit', function
 
 it('rolls back bulk creation when any generated name conflicts', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
-    $eq = Equipment::factory()->create();
+    $eq = Equipment::factory()->ofType(EquipmentType::Switch)->create();
     NetworkInterface::factory()->ethernet()->create([
         'equipment_id' => $eq->getKey(),
         'name' => 'Port05',
@@ -350,4 +352,218 @@ it('remembers the last filter in session across visits', function (): void {
     Livewire::test(EquipmentIndex::class)
         ->assertSet('typeFilter', 'router')
         ->assertSet('search', 'border');
+});
+
+it('bulk-creates interfaces with the % placeholder mid-name', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->ofType(EquipmentType::Switch)->create();
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifBulk', true)
+        ->set('ifBulkQuantity', 3)
+        ->set('ifBulkStartFrom', 1)
+        ->set('ifName', 'Port-%-LAN')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    $names = $eq->interfaces()->pluck('name')->sort()->values()->all();
+    expect($names)->toBe(['Port-1-LAN', 'Port-2-LAN', 'Port-3-LAN']);
+});
+
+it('bulk-creates interfaces with the % placeholder at the end (equivalent to legacy suffix)', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->ofType(EquipmentType::Switch)->create();
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifBulk', true)
+        ->set('ifBulkQuantity', 12)
+        ->set('ifBulkStartFrom', 1)
+        ->set('ifName', 'Gi0/%')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    $names = $eq->interfaces()->pluck('name')->sort()->values()->all();
+    expect($names)->toBe([
+        'Gi0/01', 'Gi0/02', 'Gi0/03', 'Gi0/04', 'Gi0/05', 'Gi0/06',
+        'Gi0/07', 'Gi0/08', 'Gi0/09', 'Gi0/10', 'Gi0/11', 'Gi0/12',
+    ]);
+});
+
+it('escapes the %% sequence to a literal percent sign in bulk names', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->ofType(EquipmentType::Switch)->create();
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifBulk', true)
+        ->set('ifBulkQuantity', 2)
+        ->set('ifBulkStartFrom', 1)
+        ->set('ifName', '100%% load %')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    $names = $eq->interfaces()->pluck('name')->sort()->values()->all();
+    expect($names)->toBe(['100% load 1', '100% load 2']);
+});
+
+it('parses vlans_allowed from a comma-and-range list when creating an interface', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifName', 'Gi0/24')
+        ->set('ifVlanMode', 'trunk')
+        ->set('ifVlanDefault', 1)
+        ->set('ifVlansAllowedText', '1, 60, 100-105')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    $if = $eq->interfaces()->where('name', 'Gi0/24')->firstOrFail();
+    expect($if->vlans_allowed)->toEqual([1, 60, 100, 101, 102, 103, 104, 105]);
+});
+
+it('reloads vlans_allowed into a compact range string when editing', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+    $if = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $eq->getKey(),
+        'name' => 'Gi0/1',
+        'vlans_allowed' => [1, 2, 3, 5, 6, 60],
+    ]);
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfEdit', $if->getKey())
+        ->assertSet('ifVlansAllowedText', '1-3, 5-6, 60');
+});
+
+it('rejects an invalid vlans_allowed string', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+
+    // Need trunk mode for the parser to actually run — access/none/transparent
+    // skip parsing and silently null the field.
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifName', 'Gi0/24')
+        ->set('ifVlanMode', 'trunk')
+        ->set('ifVlansAllowedText', '5000')
+        ->call('saveIf')
+        ->assertHasErrors(['ifVlansAllowedText']);
+
+    expect($eq->interfaces()->where('name', 'Gi0/24')->exists())->toBeFalse();
+});
+
+it('rejects a descending range in vlans_allowed', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifName', 'Gi0/24')
+        ->set('ifVlanMode', 'trunk')
+        ->set('ifVlansAllowedText', '10-5')
+        ->call('saveIf')
+        ->assertHasErrors(['ifVlansAllowedText']);
+});
+
+it('stores null vlans_allowed when the field is blank', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifName', 'Gi0/24')
+        ->set('ifVlansAllowedText', '')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    expect($eq->interfaces()->where('name', 'Gi0/24')->firstOrFail()->vlans_allowed)->toBeNull();
+});
+
+it('blanks vlan_default and vlans_allowed when vlan_mode is transparent', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifName', 'uplink')
+        ->set('ifVlanMode', 'transparent')
+        ->set('ifVlanDefault', 999)
+        ->set('ifVlansAllowedText', '1, 60, 100-105')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    $if = $eq->interfaces()->where('name', 'uplink')->firstOrFail();
+    expect($if->vlan_default)->toBeNull();
+    expect($if->vlans_allowed)->toBeNull();
+});
+
+it('blanks vlan_default and vlans_allowed when vlan_mode is none', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifName', 'console')
+        ->set('ifVlanMode', 'none')
+        ->set('ifVlanDefault', 999)
+        ->set('ifVlansAllowedText', '1, 60')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    $if = $eq->interfaces()->where('name', 'console')->firstOrFail();
+    expect($if->vlan_default)->toBeNull();
+    expect($if->vlans_allowed)->toBeNull();
+});
+
+it('skips vlans_allowed parsing error when vlan_mode is transparent', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->create();
+
+    // Garbage in the text field, but transparent mode means we never parse it.
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifName', 'uplink2')
+        ->set('ifVlanMode', 'transparent')
+        ->set('ifVlansAllowedText', 'invalid garbage')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+});
+
+it('blanks vlans_allowed when vlan_mode is access (single-VLAN port)', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->ofType(EquipmentType::Switch)->create();
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifName', 'access-port')
+        ->set('ifVlanMode', 'access')
+        ->set('ifVlanDefault', 10)
+        ->set('ifVlansAllowedText', '1, 60')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    $if = $eq->interfaces()->where('name', 'access-port')->firstOrFail();
+    expect($if->vlan_default)->toBe(10);  // vlan_default stays — it's the access VLAN
+    expect($if->vlans_allowed)->toBeNull(); // vlans_allowed is wiped on access
+});
+
+it('keeps vlans_allowed for trunk mode', function (): void {
+    [$tenant, $user, $rack] = bootEquipmentScene('admin');
+    $eq = Equipment::factory()->ofType(EquipmentType::Switch)->create();
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $eq])
+        ->call('openIfCreate')
+        ->set('ifName', 'trunk-port')
+        ->set('ifVlanMode', 'trunk')
+        ->set('ifVlanDefault', 1)
+        ->set('ifVlansAllowedText', '1, 60, 100-102')
+        ->call('saveIf')
+        ->assertHasNoErrors();
+
+    $if = $eq->interfaces()->where('name', 'trunk-port')->firstOrFail();
+    expect($if->vlans_allowed)->toEqual([1, 60, 100, 101, 102]);
 });

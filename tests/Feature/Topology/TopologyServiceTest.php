@@ -167,13 +167,18 @@ it('excludes equipment flagged as hidden_in_topology and includes them when incl
 it('filters by VLAN via interface vlan_default', function (): void {
     [$tenant, $site, $sw, $rt] = makeWiredScene();
 
+    // Update VLAN on BOTH endpoints of the cable so it survives the
+    // strict per-cable filter; otherwise the orphan-pruning would
+    // remove the surviving node as well.
     $sw->interfaces()->update(['vlan_default' => 42]);
+    $rt->interfaces()->update(['vlan_default' => 42]);
 
     $graph = app(TopologyService::class)->buildGraph(vlan: 42);
 
     $labels = collect($graph['nodes'])->pluck('data.label')->all();
     expect($labels)->toContain('SW-X')
-        ->and($labels)->not->toContain('RTR-X');
+        ->and($labels)->toContain('RTR-X')
+        ->and($graph['edges'])->toHaveCount(1);
 });
 
 it('emits a rack compound parent and sets parent on children when groupByRack is true', function (): void {
@@ -521,4 +526,217 @@ it('leaves non-passthrough connections untouched and excludes only patch panels'
     expect($edges)->toHaveCount(1);
     $e = $edges->first()['data'];
     expect($e['passthrough'] ?? false)->toBeFalse();
+});
+
+// --------------------------------------------------------------------------
+// Strict per-cable VLAN filter + transparent passthrough
+// --------------------------------------------------------------------------
+
+it('emits a VLAN-filtered edge only when both endpoints declare the VLAN', function (): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+
+    $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW-T']);
+    $rt = Equipment::factory()->ofType(EquipmentType::Router)->create(['name' => 'RT-T']);
+
+    $a = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $sw->getKey(), 'name' => 'Gi0/1',
+        'vlan_mode' => 'trunk', 'vlan_default' => 1, 'vlans_allowed' => [1, 60],
+    ]);
+    $b = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $rt->getKey(), 'name' => 'Gi0/0',
+        'vlan_mode' => 'trunk', 'vlan_default' => 1, 'vlans_allowed' => [1, 60],
+    ]);
+    Connection::create([
+        'tenant_id' => $tenant->getKey(), 'from_interface_id' => $a->getKey(),
+        'to_interface_id' => $b->getKey(), 'cable_type' => 'utp_cat6', 'status' => 'active',
+    ]);
+
+    expect(app(TopologyService::class)->buildGraph(vlan: 60)['edges'])->toHaveCount(1);
+});
+
+it('drops a cable for VLAN N when one endpoint does not handle that VLAN', function (): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+
+    // Equipment passes the node filter via a non-uplink VLAN-60 interface.
+    $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW-CB']);
+    $rt = Equipment::factory()->ofType(EquipmentType::Router)->create(['name' => 'RT-CB']);
+
+    // Sub-interfaces in VLAN 60 (not the cabled ones), so equipment is "visible".
+    NetworkInterface::factory()->create([
+        'equipment_id' => $sw->getKey(), 'name' => 'sw.60',
+        'type' => 'virtual', 'media' => 'copper',
+        'vlan_mode' => 'access', 'vlan_default' => 60,
+    ]);
+    NetworkInterface::factory()->create([
+        'equipment_id' => $rt->getKey(), 'name' => 'rt.60',
+        'type' => 'virtual', 'media' => 'copper',
+        'vlan_mode' => 'access', 'vlan_default' => 60,
+    ]);
+
+    // Physical uplink in VLAN 1 (no allowed list) → strict filter rejects it for VLAN 60.
+    $a = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $sw->getKey(), 'name' => 'Gi0/1',
+        'vlan_mode' => 'access', 'vlan_default' => 1, 'vlans_allowed' => null,
+    ]);
+    $b = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $rt->getKey(), 'name' => 'Gi0/0',
+        'vlan_mode' => 'access', 'vlan_default' => 1, 'vlans_allowed' => null,
+    ]);
+    Connection::create([
+        'tenant_id' => $tenant->getKey(), 'from_interface_id' => $a->getKey(),
+        'to_interface_id' => $b->getKey(), 'cable_type' => 'utp_cat6', 'status' => 'active',
+    ]);
+
+    $graph = app(TopologyService::class)->buildGraph(vlan: 60);
+
+    // The cable is dropped because endpoints don't handle VLAN 60.
+    // Pruning orphans then removes both equipment nodes — they have a
+    // VLAN-60 sub-interface but no VLAN-60-carrying cable reaches them.
+    expect($graph['edges'])->toEqual([]);
+    expect($graph['nodes'])->toEqual([]);
+});
+
+it('keeps the cable when an endpoint is transparent (any VLAN passes)', function (): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+
+    $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW-T2']);
+    $hub = Equipment::factory()->ofType(EquipmentType::Other)->create(['name' => 'HUB']);
+
+    $a = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $sw->getKey(), 'name' => 'Gi0/1',
+        'vlan_mode' => 'trunk', 'vlan_default' => 1, 'vlans_allowed' => [1, 60],
+    ]);
+    $b = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $hub->getKey(), 'name' => 'uplink',
+        'vlan_mode' => 'transparent', 'vlan_default' => null, 'vlans_allowed' => null,
+    ]);
+    Connection::create([
+        'tenant_id' => $tenant->getKey(), 'from_interface_id' => $a->getKey(),
+        'to_interface_id' => $b->getKey(), 'cable_type' => 'utp_cat6', 'status' => 'active',
+    ]);
+
+    expect(app(TopologyService::class)->buildGraph(vlan: 60)['edges'])->toHaveCount(1);
+});
+
+it('treats keystone interfaces on patch panels as VLAN-transparent', function (): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+
+    $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW-PP']);
+    $pp = Equipment::factory()->ofType(EquipmentType::PatchPanel)->create(['name' => 'PP-K']);
+
+    $swPort = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $sw->getKey(), 'name' => 'Gi0/1',
+        'vlan_mode' => 'trunk', 'vlan_default' => 1, 'vlans_allowed' => [1, 60],
+    ]);
+    [$ppFront, $ppRear] = app(CreateKeystonePair::class)
+        ->execute($pp, ['name' => 'P3']);
+
+    app(ConnectionService::class)->connect($swPort, $ppFront, ['cable_type' => 'utp_cat6']);
+
+    // Both endpoints handle VLAN 60: switch via vlans_allowed, keystone via
+    // patch-panel passthrough.
+    expect(app(TopologyService::class)->buildGraph(vlan: 60)['edges'])->toHaveCount(1);
+});
+
+it('prunes equipment nodes that have no VLAN-compatible incident edge', function (): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+
+    // Scenario "Casa Bigagli" semplificato: AP con sotto-interfaccia
+    // VLAN 60 (vlan_default=60) ma cavo fisico in VLAN 1 senza vlans_allowed.
+    $ap = Equipment::factory()->ofType(EquipmentType::AccessPoint)->create(['name' => 'AP-ORPHAN']);
+    $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW-ORPHAN']);
+
+    // Sub-interfaces VLAN 60 (rendono "candidate" entrambe le equipment al filtro VLAN).
+    NetworkInterface::factory()->create([
+        'equipment_id' => $ap->getKey(), 'name' => 'wl0.60',
+        'type' => 'virtual', 'media' => 'wireless',
+        'vlan_mode' => 'access', 'vlan_default' => 60,
+    ]);
+    NetworkInterface::factory()->create([
+        'equipment_id' => $sw->getKey(), 'name' => 'p1.60',
+        'type' => 'virtual', 'media' => 'copper',
+        'vlan_mode' => 'access', 'vlan_default' => 60,
+    ]);
+
+    // Cavo fisico in VLAN 1, vlans_allowed=null (caso reale).
+    $a = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $ap->getKey(), 'name' => 'eth0',
+        'vlan_mode' => 'access', 'vlan_default' => 1, 'vlans_allowed' => null,
+    ]);
+    $b = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $sw->getKey(), 'name' => 'p19',
+        'vlan_mode' => 'access', 'vlan_default' => 1, 'vlans_allowed' => null,
+    ]);
+    Connection::create([
+        'tenant_id' => $tenant->getKey(), 'from_interface_id' => $a->getKey(),
+        'to_interface_id' => $b->getKey(), 'cable_type' => 'utp_cat6', 'status' => 'active',
+    ]);
+
+    $graph = app(TopologyService::class)->buildGraph(vlan: 60);
+
+    // Edge dropped (strict VLAN filter) → both equipment orphaned →
+    // pruning removes them from nodes too.
+    expect($graph['edges'])->toEqual([]);
+    expect($graph['nodes'])->toEqual([]);
+});
+
+it('keeps both endpoints when the cable explicitly carries the VLAN', function (): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+
+    $ap = Equipment::factory()->ofType(EquipmentType::AccessPoint)->create(['name' => 'AP-OK']);
+    $sw = Equipment::factory()->ofType(EquipmentType::Switch)->create(['name' => 'SW-OK']);
+
+    $a = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $ap->getKey(), 'name' => 'eth0',
+        'vlan_mode' => 'trunk', 'vlan_default' => 1, 'vlans_allowed' => [1, 60],
+    ]);
+    $b = NetworkInterface::factory()->ethernet()->create([
+        'equipment_id' => $sw->getKey(), 'name' => 'p19',
+        'vlan_mode' => 'trunk', 'vlan_default' => 1, 'vlans_allowed' => [1, 60],
+    ]);
+    Connection::create([
+        'tenant_id' => $tenant->getKey(), 'from_interface_id' => $a->getKey(),
+        'to_interface_id' => $b->getKey(), 'cable_type' => 'utp_cat6', 'status' => 'active',
+    ]);
+
+    $graph = app(TopologyService::class)->buildGraph(vlan: 60);
+    $nodeIds = collect($graph['nodes'])->pluck('data.id')->all();
+
+    expect($graph['edges'])->toHaveCount(1);
+    expect($nodeIds)->toContain('eq-'.$ap->getKey());
+    expect($nodeIds)->toContain('eq-'.$sw->getKey());
+});
+
+it('prunes empty compound parents after the VLAN filter removes their children', function (): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+
+    $site = Site::factory()->create();
+    $room = Room::factory()->create(['site_id' => $site->getKey()]);
+    $rack = Rack::factory()->create(['room_id' => $room->getKey()]);
+
+    // Orphaned VLAN 60 device in rack: passes equipment filter, no edge.
+    $ap = Equipment::factory()->ofType(EquipmentType::AccessPoint)->create([
+        'name' => 'AP-LONE',
+        'rack_id' => $rack->getKey(),
+    ]);
+    NetworkInterface::factory()->create([
+        'equipment_id' => $ap->getKey(), 'name' => 'wl0.60',
+        'type' => 'virtual', 'media' => 'wireless',
+        'vlan_mode' => 'access', 'vlan_default' => 60,
+    ]);
+
+    $graph = app(TopologyService::class)->buildGraph(vlan: 60, groupByRack: true);
+
+    // Both the equipment node and the rack compound disappear because
+    // the rack has no remaining children.
+    $ids = collect($graph['nodes'])->pluck('data.id')->all();
+    expect($ids)->not->toContain('eq-'.$ap->getKey());
+    expect($ids)->not->toContain('rack-'.$rack->getKey());
 });

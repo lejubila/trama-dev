@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\EquipmentType;
+use App\Enums\InterfaceType;
+use App\Enums\InterfaceVlanMode;
 use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
@@ -113,9 +115,21 @@ class TopologyService
         }
 
         if ($vlan !== null) {
-            $equipmentQuery->whereHas('interfaces', function ($q) use ($vlan): void {
-                $q->where('vlan_default', $vlan)
-                    ->orWhereJsonContains('vlans_allowed', $vlan);
+            // An equipment "speaks" the VLAN when at least one of its
+            // interfaces matches via explicit default, allowed list, or
+            // transparent passthrough — OR when it's a patch panel / wall
+            // outlet (their keystone ports are physical pass-throughs that
+            // carry any tag).
+            $equipmentQuery->where(function ($q) use ($vlan): void {
+                $q->whereIn('type', [
+                    EquipmentType::PatchPanel->value,
+                    EquipmentType::WallOutlet->value,
+                ])
+                    ->orWhereHas('interfaces', function ($qq) use ($vlan): void {
+                        $qq->where('vlan_default', $vlan)
+                            ->orWhereJsonContains('vlans_allowed', $vlan)
+                            ->orWhere('vlan_mode', InterfaceVlanMode::Transparent->value);
+                    });
             });
         }
 
@@ -273,10 +287,10 @@ class TopologyService
 
         $edges = [];
         if ($hidePatchPanels) {
-            $edges = $this->buildPassthroughEdges($equipmentIds);
+            $edges = $this->buildPassthroughEdges($equipmentIds, $vlan);
         } elseif ($equipmentIds !== []) {
             $connections = Connection::query()
-                ->with(['fromInterface', 'toInterface'])
+                ->with(['fromInterface.equipment', 'toInterface.equipment'])
                 ->where('status', 'active')
                 ->whereHas('fromInterface', function ($q) use ($equipmentIds): void {
                     $q->whereIn('equipment_id', $equipmentIds);
@@ -287,14 +301,93 @@ class TopologyService
                 ->get();
 
             foreach ($connections as $c) {
+                // Strict per-cable VLAN filter: emit only when BOTH
+                // endpoints handle the requested VLAN. Without this guard,
+                // the equipment-level filter above would still let a cable
+                // through whose two physical ports don't carry the tag.
+                if ($vlan !== null
+                    && (! $this->interfaceHandlesVlan($c->fromInterface, $vlan)
+                        || ! $this->interfaceHandlesVlan($c->toInterface, $vlan))) {
+                    continue;
+                }
                 $edges[] = ['data' => $this->edgeData($c)];
             }
+        }
+
+        // Final pass: when a VLAN filter is active, drop nodes that
+        // survived the equipment filter but ended up without any incident
+        // edge (i.e. they "speak" the VLAN only via virtual sub-interfaces
+        // that aren't actually cabled with a VLAN-compatible link).
+        if ($vlan !== null) {
+            $nodes = $this->pruneVlanOrphans($nodes, $edges);
         }
 
         return [
             'nodes' => $nodes,
             'edges' => $edges,
         ];
+    }
+
+    /**
+     * Drop equipment nodes that have no incident edge in the filtered set,
+     * then drop compound parents that no longer contain any visible child.
+     * Compound nesting (site → room → rack) is pruned iteratively so empty
+     * parents cascade upward.
+     *
+     * @param  list<array<string, mixed>>  $nodes
+     * @param  list<array<string, mixed>>  $edges
+     * @return list<array<string, mixed>>
+     */
+    private function pruneVlanOrphans(array $nodes, array $edges): array
+    {
+        $endpoints = [];
+        foreach ($edges as $e) {
+            $endpoints[$e['data']['source']] = true;
+            $endpoints[$e['data']['target']] = true;
+        }
+
+        // 1) Keep only equipment nodes with at least one incident edge.
+        $survivors = [];
+        foreach ($nodes as $n) {
+            $kind = $n['data']['kind'] ?? null;
+            if (in_array($kind, ['rack', 'room', 'site'], true)) {
+                // Compound parents handled in step 2.
+                $survivors[] = $n;
+
+                continue;
+            }
+            if (isset($endpoints[$n['data']['id']])) {
+                $survivors[] = $n;
+            }
+        }
+
+        // 2) Iteratively prune compound parents that no longer contain any
+        //    child (equipment or nested compound).
+        $changed = true;
+        while ($changed) {
+            $changed = false;
+            $usedParents = [];
+            foreach ($survivors as $n) {
+                $p = $n['data']['parent'] ?? null;
+                if ($p !== null) {
+                    $usedParents[$p] = true;
+                }
+            }
+            $survivors = array_values(array_filter($survivors, function ($n) use ($usedParents, &$changed) {
+                $kind = $n['data']['kind'] ?? null;
+                if (! in_array($kind, ['rack', 'room', 'site'], true)) {
+                    return true;
+                }
+                $keep = isset($usedParents[$n['data']['id']]);
+                if (! $keep) {
+                    $changed = true;
+                }
+
+                return $keep;
+            }));
+        }
+
+        return $survivors;
     }
 
     /**
@@ -346,9 +439,10 @@ class TopologyService
      * resolved pair, labelled with the transit ports (e.g. "via PP1.P3").
      *
      * @param  list<int>  $visibleEquipmentIds  ids of equipment still in the node payload
+     * @param  int|null  $vlan  if set, only collapse chains whose two outer terminals handle this VLAN
      * @return list<array<string, mixed>>
      */
-    private function buildPassthroughEdges(array $visibleEquipmentIds): array
+    private function buildPassthroughEdges(array $visibleEquipmentIds, ?int $vlan = null): array
     {
         $visibleSet = array_flip($visibleEquipmentIds);
 
@@ -403,6 +497,15 @@ class TopologyService
                 continue;
             }
             if (! isset($visibleSet[$eqA]) || ! isset($visibleSet[$eqB])) {
+                continue;
+            }
+
+            // Strict per-cable VLAN filter on the resolved outer terminals
+            // (the transit hops inside patch panels always handle every
+            // VLAN by definition, so we only check the two endpoints).
+            if ($vlan !== null
+                && (! $this->interfaceHandlesVlan($termA, $vlan)
+                    || ! $this->interfaceHandlesVlan($termB, $vlan))) {
                 continue;
             }
 
@@ -503,5 +606,42 @@ class TopologyService
             : $next->fromInterface;
 
         return $this->resolveTerminal($other, $byInterface, $visited, $transit);
+    }
+
+    /**
+     * True when the given interface "handles" the requested VLAN. Used by
+     * the strict per-cable VLAN filter. The rules, in order:
+     *  - keystone interfaces on patch panel / wall outlet equipment are
+     *    physical pass-throughs ⇒ any VLAN passes;
+     *  - vlan_mode = transparent (unmanaged ports) ⇒ any tag passes;
+     *  - vlan_default equals the requested VLAN;
+     *  - vlans_allowed contains the requested VLAN.
+     */
+    private function interfaceHandlesVlan(?NetworkInterface $if, int $vlan): bool
+    {
+        if ($if === null) {
+            return false;
+        }
+
+        $eqType = $if->equipment?->type;
+        if ($if->type === InterfaceType::Keystone
+            && in_array($eqType, [EquipmentType::PatchPanel, EquipmentType::WallOutlet], true)) {
+            return true;
+        }
+
+        if ($if->vlan_mode === InterfaceVlanMode::Transparent) {
+            return true;
+        }
+
+        if ($if->vlan_default === $vlan) {
+            return true;
+        }
+
+        $allowed = $if->vlans_allowed ?? [];
+        if (is_array($allowed) && in_array($vlan, $allowed, true)) {
+            return true;
+        }
+
+        return false;
     }
 }

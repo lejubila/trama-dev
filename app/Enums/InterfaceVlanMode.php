@@ -10,4 +10,5 @@ enum InterfaceVlanMode: string
     case Access = 'access';
     case Trunk = 'trunk';
     case Hybrid = 'hybrid';
+    case Transparent = 'transparent';
 }
