@@ -1,6 +1,6 @@
 # Trama Network — Set Icone
 
-Set di **19 icone isometriche** per dispositivi di rete, pensate per essere utilizzate su planimetrie 2D e diagrammi di topologia.
+Set di **23 icone isometriche** per dispositivi di rete, pensate per essere utilizzate su planimetrie 2D e diagrammi di topologia.
 
 ## Contenuto
 
@@ -37,22 +37,30 @@ Set di **19 icone isometriche** per dispositivi di rete, pensate per essere util
 | `ups.svg` | UPS | Fulmine giallo |
 | `pdu.svg` | PDU | Presa elettrica |
 
-### Videosorveglianza ✨ NUOVO
+### Videosorveglianza
 | File | Oggetto | Simbolo |
 |------|---------|---------|
 | `telecamera.svg` | Telecamera bullet | Lente blu + cono visione |
-| `nvr.svg` | NVR (Network Video Recorder) | REC rosso + play blu |
+| `nvr.svg` | NVR | REC rosso + play blu |
 
-### Comunicazioni ✨ NUOVO
+### Comunicazioni
 | File | Oggetto | Simbolo |
 |------|---------|---------|
-| `centralino.svg` | Centralino telefonico (PBX/VoIP) | Cornetta orizzontale blu |
+| `centralino.svg` | Centralino telefonico | Cornetta orizzontale blu |
 | `citofono.svg` | Citofono | Casa verde |
 
-### Controllo Accessi ✨ NUOVO
+### Controllo Accessi
 | File | Oggetto | Simbolo |
 |------|---------|---------|
 | `controllo_accessi.svg` | Terminale controllo accessi | Lucchetto giallo |
+
+### Endpoint ✨ NUOVO
+| File | Oggetto | Simbolo |
+|------|---------|---------|
+| `computer.svg` | Computer (postazione) | Monitor + tastiera |
+| `tv.svg` | TV | Schermo blu + piedistallo |
+| `stampante.svg` | Stampante | Foglio in uscita |
+| `iot.svg` | Dispositivo IoT | Chip viola + onde wireless |
 
 ### Altro
 | File | Oggetto | Simbolo |
@@ -70,40 +78,45 @@ Set di **19 icone isometriche** per dispositivi di rete, pensate per essere util
 
 ### In HTML
 ```html
-<img src="telecamera.svg" alt="Telecamera" width="48" height="48">
+<img src="computer.svg" alt="Computer" width="48" height="48">
 ```
 
-### Inline (modificabili via CSS)
-Apri il file SVG con un editor di testo, copia il contenuto `<svg>...</svg>` e incollalo direttamente nell'HTML. Da lì puoi cambiare colori o dimensioni con CSS.
-
-### In React
-```jsx
-import TelecameraIcon from './icons/telecamera.svg';
-<img src={TelecameraIcon} alt="Telecamera" />
-```
-
-### Esempio: componente generico per device
+### In React (componente generico)
 
 ```jsx
 const DEVICE_ICONS = {
+  // Infrastruttura
   rack: '/icons/rack.svg',
+  patch_panel: '/icons/patch_panel.svg',
+  // Networking
   switch: '/icons/switch.svg',
   router: '/icons/router.svg',
-  firewall: '/icons/firewall.svg',
   access_point: '/icons/access_point.svg',
   controller: '/icons/controller.svg',
-  patch_panel: '/icons/patch_panel.svg',
-  server: '/icons/server.svg',
-  ups: '/icons/ups.svg',
-  pdu: '/icons/pdu.svg',
   media_converter: '/icons/media_converter.svg',
+  // Security
+  firewall: '/icons/firewall.svg',
+  // Compute & Storage
+  server: '/icons/server.svg',
   nas: '/icons/nas.svg',
   kvm: '/icons/kvm.svg',
-  centralino: '/icons/centralino.svg',
-  nvr: '/icons/nvr.svg',
+  // Power
+  ups: '/icons/ups.svg',
+  pdu: '/icons/pdu.svg',
+  // Videosorveglianza
   telecamera: '/icons/telecamera.svg',
+  nvr: '/icons/nvr.svg',
+  // Comunicazioni
+  centralino: '/icons/centralino.svg',
   citofono: '/icons/citofono.svg',
+  // Controllo Accessi
   controllo_accessi: '/icons/controllo_accessi.svg',
+  // Endpoint
+  computer: '/icons/computer.svg',
+  tv: '/icons/tv.svg',
+  stampante: '/icons/stampante.svg',
+  iot: '/icons/iot.svg',
+  // Altro
   generica: '/icons/generica.svg',
 };
 
@@ -115,12 +128,11 @@ function DeviceIcon({ type, size = 48 }) {
 
 ## Anteprima
 
-Apri `anteprima.html` in un browser per vedere tutte le icone affiancate, organizzate per categoria, con uno slider per testarne la leggibilità a diverse dimensioni (da 24 px a 160 px). Le icone nuove sono evidenziate con un badge "NEW".
+Apri `anteprima.html` in un browser per vedere tutte le icone affiancate, organizzate per categoria, con uno slider per testarne la leggibilità a diverse dimensioni (da 24 px a 160 px).
 
 ## Personalizzazione
 
-Le icone sono SVG aperti, quindi puoi:
-- Cambiare i colori modificando gli attributi `fill` e `stroke`
-- Scalare a qualsiasi dimensione senza perdita di qualità
-- Aggiungere classi CSS per gestire stati (es. `.offline { opacity: 0.4; }`)
-- Animare singoli elementi via CSS o JavaScript
+Le icone sono SVG aperti:
+- Cambia i colori modificando gli attributi `fill` e `stroke`
+- Scala a qualsiasi dimensione senza perdita di qualità
+- Aggiungi classi CSS per gestire stati (es. `.offline { opacity: 0.4; }`)

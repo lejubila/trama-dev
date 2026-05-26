@@ -24,6 +24,11 @@ enum EquipmentType: string
     case Nvr = 'nvr';
     case Camera = 'camera';
     case Intercom = 'intercom';
+    case Tv = 'tv';
+    case Computer = 'computer';
+    case Notebook = 'notebook';
+    case IotDevice = 'iot_device';
+    case Printer = 'printer';
     case Other = 'other';
 
     public function label(): string
@@ -47,6 +52,11 @@ enum EquipmentType: string
             self::Nvr => 'NVR',
             self::Camera => 'Telecamera',
             self::Intercom => 'Citofono',
+            self::Tv => 'TV',
+            self::Computer => 'Computer',
+            self::Notebook => 'Notebook',
+            self::IotDevice => 'Dispositivo IoT',
+            self::Printer => 'Stampante',
             self::Other => 'Altro',
         };
     }
@@ -71,6 +81,11 @@ enum EquipmentType: string
             self::Nvr => 'sky',
             self::Camera => 'pink',
             self::Intercom => 'rose',
+            self::Tv => 'purple',
+            self::Computer => 'green',
+            self::Notebook => 'lime',
+            self::IotDevice => 'neutral',
+            self::Printer => 'zinc',
             self::Other => 'gray',
         };
     }

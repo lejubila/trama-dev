@@ -79,6 +79,11 @@ class EquipmentFactory extends Factory
             EquipmentType::Nvr => 'NVR',
             EquipmentType::Camera => 'CAM',
             EquipmentType::Intercom => 'INT',
+            EquipmentType::Tv => 'TV',
+            EquipmentType::Computer => 'PC',
+            EquipmentType::Notebook => 'NB',
+            EquipmentType::IotDevice => 'IOT',
+            EquipmentType::Printer => 'PRN',
             EquipmentType::Other => 'DEV',
         };
     }

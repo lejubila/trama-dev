@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Stampante</title>
+  <desc>Stampante con foglio in uscita dall'alto</desc>
+  <!-- Ombra -->
+  <ellipse cx="64" cy="112" rx="42" ry="4" fill="#2C2C2A" opacity="0.12"/>
+
+  <!-- Foglio che esce dall'alto -->
+  <g transform="translate(64, 30)">
+    <!-- Foglio bianco -->
+    <rect x="-16" y="0" width="32" height="22" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="1.2" stroke-linejoin="round"/>
+    <!-- Righe di testo -->
+    <line x1="-12" y1="6" x2="12" y2="6" stroke="#888780" stroke-width="0.7"/>
+    <line x1="-12" y1="10" x2="8" y2="10" stroke="#888780" stroke-width="0.7"/>
+    <line x1="-12" y1="14" x2="12" y2="14" stroke="#888780" stroke-width="0.7"/>
+    <line x1="-12" y1="18" x2="6" y2="18" stroke="#888780" stroke-width="0.7"/>
+  </g>
+
+  <!-- Case stampante -->
+  <g transform="translate(64, 78)">
+    <!-- TOP -->
+    <path d="M -40 -16 L 0 -34 L 40 -16 L 0 2 Z" fill="#E8E6DE" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- Fessura uscita carta sul top -->
+    <path d="M -18 -18 L 18 -34 L 18 -30 L -18 -14 Z" fill="#2C2C2A" stroke="#1A1918" stroke-width="0.8"/>
+
+    <!-- FRONT -->
+    <path d="M -40 -16 L 0 2 L 0 26 L -40 8 Z" fill="#B4B2A9" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- SIDE -->
+    <path d="M 0 2 L 40 -16 L 40 8 L 0 26 Z" fill="#888780" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- Dettagli front -->
+    <g transform="translate(-40, -16) skewY(26.5)">
+      <!-- Display piccolo -->
+      <rect x="6" y="9" width="10" height="4" fill="#04342C" stroke="#5F5E5A" stroke-width="0.5" rx="0.3"/>
+      <!-- LED status verde -->
+      <circle cx="19" cy="11" r="0.9" fill="#1D9E75"/>
+      <!-- Pulsanti -->
+      <circle cx="24" cy="13" r="1" fill="none" stroke="#5F5E5A" stroke-width="0.5"/>
+      <circle cx="28" cy="15" r="1" fill="none" stroke="#5F5E5A" stroke-width="0.5"/>
+      <!-- Vassoio carta (fessura scura) -->
+      <rect x="6" y="19" width="30" height="5" fill="#2C2C2A" rx="0.3"/>
+      <!-- Linguetta vassoio -->
+      <rect x="14" y="24" width="16" height="2" fill="#5F5E5A"/>
+    </g>
+  </g>
+</svg>
