@@ -36,16 +36,22 @@
                 <p class="text-sm text-gray-500 dark:text-slate-400">{{ __('dashboard.no_equipment') }}</p>
             @else
                 <ul class="space-y-1">
-                    @foreach ($types as $t)
-                        @php $count = (int) ($kpi['by_type'][$t->value] ?? 0); @endphp
-                        @if ($count > 0)
-                            <li class="grid grid-cols-[8rem_1fr_3rem] items-center gap-x-3 text-xs">
-                                <span class="text-gray-700 dark:text-slate-300">{{ $t->label() }}</span>
-                                <div class="h-2 bg-gray-100 dark:bg-slate-700 rounded">
-                                    <div class="h-2 bg-indigo-500 rounded" style="width: {{ round($count / $maxCount * 100) }}%"></div>
-                                </div>
-                                <span class="text-gray-700 dark:text-slate-300 text-right font-mono">{{ $count }}</span>
-                            </li>
+                    @foreach (\App\Enums\EquipmentType::groupedCases() as $group => $items)
+                        @php
+                            $visible = array_filter($items, fn ($t) => (int) ($kpi['by_type'][$t->value] ?? 0) > 0);
+                        @endphp
+                        @if (! empty($visible))
+                            <li class="pt-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">{{ $group }}</li>
+                            @foreach ($visible as $t)
+                                @php $count = (int) ($kpi['by_type'][$t->value] ?? 0); @endphp
+                                <li class="grid grid-cols-[8rem_1fr_3rem] items-center gap-x-3 text-xs">
+                                    <span class="text-gray-700 dark:text-slate-300">{{ $t->label() }}</span>
+                                    <div class="h-2 bg-gray-100 dark:bg-slate-700 rounded">
+                                        <div class="h-2 bg-indigo-500 rounded" style="width: {{ round($count / $maxCount * 100) }}%"></div>
+                                    </div>
+                                    <span class="text-gray-700 dark:text-slate-300 text-right font-mono">{{ $count }}</span>
+                                </li>
+                            @endforeach
                         @endif
                     @endforeach
                 </ul>

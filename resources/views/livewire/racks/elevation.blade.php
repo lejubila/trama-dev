@@ -48,8 +48,12 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">{{ __('racks.label_type') }}</label>
                             <select wire:model="type" class="mt-1 block w-full rounded-md border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 shadow-sm text-sm">
-                                @foreach ($types as $t)
-                                    <option value="{{ $t->value }}">{{ $t->label() }}</option>
+                                @foreach (\App\Enums\EquipmentType::groupedCases() as $group => $items)
+                                    <optgroup label="{{ $group }}">
+                                        @foreach ($items as $t)
+                                            <option value="{{ $t->value }}">{{ $t->label() }}</option>
+                                        @endforeach
+                                    </optgroup>
                                 @endforeach
                             </select>
                             @error('type')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror

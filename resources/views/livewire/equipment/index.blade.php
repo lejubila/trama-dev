@@ -13,8 +13,12 @@
         <input type="text" wire:model.live.debounce.300ms="search" placeholder="Nome, modello, seriale…" class="rounded-md border-gray-300 shadow-sm text-sm w-64" />
         <select wire:model.live="typeFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
             <option value="">Tutti i tipi</option>
-            @foreach ($types as $t)
-                <option value="{{ $t->value }}">{{ $t->label() }}</option>
+            @foreach (\App\Enums\EquipmentType::groupedCases() as $group => $items)
+                <optgroup label="{{ $group }}">
+                    @foreach ($items as $t)
+                        <option value="{{ $t->value }}">{{ $t->label() }}</option>
+                    @endforeach
+                </optgroup>
             @endforeach
         </select>
         <select wire:model.live="rackFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
@@ -124,8 +128,12 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Tipo</label>
                             <select wire:model="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
-                                @foreach ($types as $t)
-                                    <option value="{{ $t->value }}">{{ $t->label() }}</option>
+                                @foreach (\App\Enums\EquipmentType::groupedCases() as $group => $items)
+                                    <optgroup label="{{ $group }}">
+                                        @foreach ($items as $t)
+                                            <option value="{{ $t->value }}">{{ $t->label() }}</option>
+                                        @endforeach
+                                    </optgroup>
                                 @endforeach
                             </select>
                             @error('type')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror

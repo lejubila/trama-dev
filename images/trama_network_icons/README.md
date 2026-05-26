@@ -1,6 +1,6 @@
 # Trama Network — Set Icone
 
-Set di **23 icone isometriche** per dispositivi di rete, pensate per essere utilizzate su planimetrie 2D e diagrammi di topologia.
+Set di **24 icone isometriche** per dispositivi di rete, pensate per essere utilizzate su planimetrie 2D e diagrammi di topologia.
 
 ## Contenuto
 
@@ -54,10 +54,11 @@ Set di **23 icone isometriche** per dispositivi di rete, pensate per essere util
 |------|---------|---------|
 | `controllo_accessi.svg` | Terminale controllo accessi | Lucchetto giallo |
 
-### Endpoint ✨ NUOVO
+### Endpoint
 | File | Oggetto | Simbolo |
 |------|---------|---------|
 | `computer.svg` | Computer (postazione) | Monitor + tastiera |
+| `notebook.svg` | Notebook | Clamshell aperto con tastiera ✨ NUOVO |
 | `tv.svg` | TV | Schermo blu + piedistallo |
 | `stampante.svg` | Stampante | Foglio in uscita |
 | `iot.svg` | Dispositivo IoT | Chip viola + onde wireless |
@@ -78,7 +79,7 @@ Set di **23 icone isometriche** per dispositivi di rete, pensate per essere util
 
 ### In HTML
 ```html
-<img src="computer.svg" alt="Computer" width="48" height="48">
+<img src="notebook.svg" alt="Notebook" width="48" height="48">
 ```
 
 ### In React (componente generico)
@@ -113,6 +114,7 @@ const DEVICE_ICONS = {
   controllo_accessi: '/icons/controllo_accessi.svg',
   // Endpoint
   computer: '/icons/computer.svg',
+  notebook: '/icons/notebook.svg',
   tv: '/icons/tv.svg',
   stampante: '/icons/stampante.svg',
   iot: '/icons/iot.svg',

@@ -60,17 +60,20 @@
                     <button type="button" wire:click="$set('filterTypes', [])"
                         class="block w-full text-left px-2 py-1 text-xs text-indigo-600 hover:underline">Seleziona tutti</button>
                 @endif
-                @foreach ($types as $t)
-                    @php $checked = $filterTypes === [] || in_array($t->value, $filterTypes, true); @endphp
-                    <button type="button" wire:click="toggleType('{{ $t->value }}')"
-                        wire:key="ft-{{ $t->value }}"
-                        class="w-full flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-50 text-left">
-                        <span class="inline-flex h-4 w-4 items-center justify-center rounded border {{ $checked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300 bg-white' }}">
-                            @if ($checked) <span class="text-xs leading-none">✓</span> @endif
-                        </span>
-                        <span class="inline-block h-2.5 w-2.5 rounded-full bg-{{ $t->color() }}-500"></span>
-                        {{ $t->label() }}
-                    </button>
+                @foreach (\App\Enums\EquipmentType::groupedCases() as $group => $items)
+                    <div class="px-2 pt-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">{{ $group }}</div>
+                    @foreach ($items as $t)
+                        @php $checked = $filterTypes === [] || in_array($t->value, $filterTypes, true); @endphp
+                        <button type="button" wire:click="toggleType('{{ $t->value }}')"
+                            wire:key="ft-{{ $t->value }}"
+                            class="w-full flex items-center gap-2 px-2 py-1 text-sm hover:bg-gray-50 text-left">
+                            <span class="inline-flex h-4 w-4 items-center justify-center rounded border {{ $checked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300 bg-white' }}">
+                                @if ($checked) <span class="text-xs leading-none">✓</span> @endif
+                            </span>
+                            <span class="inline-block h-2.5 w-2.5 rounded-full bg-{{ $t->color() }}-500"></span>
+                            {{ $t->label() }}
+                        </button>
+                    @endforeach
                 @endforeach
             </div>
         </div>
