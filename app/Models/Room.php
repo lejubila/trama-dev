@@ -25,6 +25,7 @@ class Room extends Model
         'width_m',
         'depth_m',
         'floor_plan_path',
+        'floor_plan_drawing',
         'rack_icon_size_px',
         'notes',
     ];
@@ -37,6 +38,7 @@ class Room extends Model
         return [
             'width_m' => 'decimal:2',
             'depth_m' => 'decimal:2',
+            'floor_plan_drawing' => 'array',
         ];
     }
 

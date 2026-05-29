@@ -7,8 +7,48 @@
     // Root-relative URL on purpose: Storage::url() prepends APP_URL, which
     // breaks when the app is reached from a host other than the one in .env.
     $floorPlanUrl = $room->floor_plan_path ? '/storage/'.ltrim($room->floor_plan_path, '/') : null;
+    $drawing = is_array($room->floor_plan_drawing) ? $room->floor_plan_drawing : null;
+    $wallsById = [];
+    foreach ($drawing['walls'] ?? [] as $w) {
+        $wallsById[$w['id']] = $w;
+    }
+    $wallParam = function (array $wall, float $t): array {
+        $pts = $wall['points'] ?? [];
+        if (count($pts) < 2) return ['x' => 0.0, 'y' => 0.0, 'seg' => 0];
+        $total = 0.0;
+        $segLens = [];
+        for ($i = 0; $i < count($pts) - 1; $i++) {
+            $d = hypot($pts[$i+1][0] - $pts[$i][0], $pts[$i+1][1] - $pts[$i][1]);
+            $segLens[] = $d;
+            $total += $d;
+        }
+        if ($total === 0.0) return ['x' => (float) $pts[0][0], 'y' => (float) $pts[0][1], 'seg' => 0];
+        $target = max(0.0, min(1.0, $t)) * $total;
+        for ($i = 0; $i < count($segLens); $i++) {
+            if ($target <= $segLens[$i] || $i === count($segLens) - 1) {
+                $u = $segLens[$i] === 0.0 ? 0.0 : $target / $segLens[$i];
+                return [
+                    'x' => $pts[$i][0] + ($pts[$i+1][0] - $pts[$i][0]) * $u,
+                    'y' => $pts[$i][1] + ($pts[$i+1][1] - $pts[$i][1]) * $u,
+                    'seg' => $i,
+                ];
+            }
+            $target -= $segLens[$i];
+        }
+        return ['x' => (float) $pts[0][0], 'y' => (float) $pts[0][1], 'seg' => 0];
+    };
+    $wallAngleDeg = function (array $wall, int $seg): float {
+        $pts = $wall['points'] ?? [];
+        if (! isset($pts[$seg], $pts[$seg + 1])) return 0.0;
+        return rad2deg(atan2($pts[$seg + 1][1] - $pts[$seg][1], $pts[$seg + 1][0] - $pts[$seg][0]));
+    };
 @endphp
 <div x-data="roomMapDnD" x-init="init($el)">
+    @if ($canEdit)
+        <div class="mb-2 text-right">
+            <a href="{{ route('rooms.plan.edit', $room) }}" class="text-xs text-indigo-600 hover:underline">{{ $drawing ? __('rooms.plan_editor_edit') : __('rooms.plan_editor_open') }}</a>
+        </div>
+    @endif
     @if ($racks->isEmpty() && $equipments->isEmpty())
         <div class="text-sm text-gray-500 dark:text-slate-400 italic">
             {{ __('rooms.map_empty') }}
@@ -31,6 +71,60 @@
         >
             @if ($floorPlanUrl)
                 <image href="{{ $floorPlanUrl }}" x="0" y="0" width="{{ $vbW }}" height="{{ $vbH }}" preserveAspectRatio="none" opacity="0.85" />
+            @endif
+
+            @if ($drawing)
+                <g class="floor-plan" style="pointer-events: none;">
+                    @foreach ($drawing['walls'] ?? [] as $w)
+                        @php
+                            $pointsAttr = implode(' ', array_map(fn ($p) => ($p[0] * $scale).','.($p[1] * $scale), $w['points']));
+                            $strokeW = (float) ($w['thickness_m'] ?? 0.15) * $scale;
+                        @endphp
+                        <polyline points="{{ $pointsAttr }}" fill="none" stroke="#0f172a" stroke-width="{{ $strokeW }}" stroke-linecap="square" stroke-linejoin="miter" />
+                    @endforeach
+                    @foreach ($drawing['windows'] ?? [] as $wn)
+                        @php
+                            $wall = $wallsById[$wn['wall_id']] ?? null;
+                            if (! $wall) continue;
+                            $p = $wallParam($wall, (float) $wn['t']);
+                            $cxp = $p['x'] * $scale;
+                            $cyp = $p['y'] * $scale;
+                            $angle = $wallAngleDeg($wall, $p['seg']);
+                            $wpx = (float) ($wn['width_m'] ?? 1.2) * $scale;
+                        @endphp
+                        <g transform="translate({{ $cxp }},{{ $cyp }}) rotate({{ $angle }})">
+                            <rect x="{{ -$wpx / 2 }}" y="-3" width="{{ $wpx }}" height="6" fill="#bfdbfe" stroke="#2563eb" stroke-width="1" />
+                        </g>
+                    @endforeach
+                    @foreach ($drawing['doors'] ?? [] as $d)
+                        @php
+                            $wall = $wallsById[$d['wall_id']] ?? null;
+                            if (! $wall) continue;
+                            $p = $wallParam($wall, (float) $d['t']);
+                            $cxp = $p['x'] * $scale;
+                            $cyp = $p['y'] * $scale;
+                            $angle = $wallAngleDeg($wall, $p['seg']);
+                            $wpx = (float) ($d['width_m'] ?? 0.9) * $scale;
+                            $swing = $d['swing'] ?? 'left_in';
+                            $sweepDir = str_starts_with($swing, 'left') ? -1 : 1;
+                            $inOut = str_ends_with($swing, 'in') ? 1 : -1;
+                        @endphp
+                        @php
+                            $hingeX = -$wpx / 2 * $sweepDir;
+                            $jambX = $wpx / 2 * $sweepDir;
+                            $leafEndY = $wpx * $inOut;
+                            $arcFlag = $sweepDir === $inOut ? 0 : 1;
+                        @endphp
+                        <g transform="translate({{ $cxp }},{{ $cyp }}) rotate({{ $angle }})">
+                            <line x1="{{ $hingeX }}" y1="0" x2="{{ $jambX }}" y2="0" stroke="#ffffff" stroke-width="2.2" />
+                            <line x1="{{ $hingeX }}" y1="0" x2="{{ $hingeX }}" y2="{{ $leafEndY }}" stroke="#dc2626" stroke-width="1.2" stroke-linecap="round" />
+                            <path d="M {{ $hingeX }} {{ $leafEndY }} A {{ $wpx }} {{ $wpx }} 0 0 {{ $arcFlag }} {{ $jambX }} 0" fill="none" stroke="#dc2626" stroke-width="0.6" />
+                        </g>
+                    @endforeach
+                    @foreach ($drawing['labels'] ?? [] as $l)
+                        <text x="{{ $l['pos'][0] * $scale }}" y="{{ $l['pos'][1] * $scale }}" text-anchor="middle" font-size="11" font-weight="600" fill="#111827">{{ $l['text'] }}</text>
+                    @endforeach
+                </g>
             @endif
 
             @for ($i = 1; $i * $scale < $vbW; $i++)

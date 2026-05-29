@@ -1,14 +1,15 @@
 # Trama Network — Set Icone
 
-Set di **24 icone isometriche** per dispositivi di rete, pensate per essere utilizzate su planimetrie 2D e diagrammi di topologia.
+Set di **25 icone isometriche** per dispositivi di rete, pensate per essere utilizzate su planimetrie 2D e diagrammi di topologia.
 
 ## Contenuto
 
 ### Infrastruttura
-| File | Oggetto |
-|------|---------|
-| `rack.svg` | Rack (armadio di rete) |
-| `patch_panel.svg` | Patch Panel |
+| File | Oggetto | Note |
+|------|---------|------|
+| `rack.svg` | Rack (armadio di rete) | — |
+| `patch_panel.svg` | Patch Panel | — |
+| `presa_rete.svg` | Presa di rete a muro | Placca doppia con 2 porte RJ45 |
 
 ### Networking
 | File | Oggetto | Simbolo |
@@ -58,7 +59,7 @@ Set di **24 icone isometriche** per dispositivi di rete, pensate per essere util
 | File | Oggetto | Simbolo |
 |------|---------|---------|
 | `computer.svg` | Computer (postazione) | Monitor + tastiera |
-| `notebook.svg` | Notebook | Clamshell aperto con tastiera ✨ NUOVO |
+| `notebook.svg` | Notebook | Clamshell aperto con tastiera |
 | `tv.svg` | TV | Schermo blu + piedistallo |
 | `stampante.svg` | Stampante | Foglio in uscita |
 | `iot.svg` | Dispositivo IoT | Chip viola + onde wireless |
@@ -79,7 +80,7 @@ Set di **24 icone isometriche** per dispositivi di rete, pensate per essere util
 
 ### In HTML
 ```html
-<img src="notebook.svg" alt="Notebook" width="48" height="48">
+<img src="presa_rete.svg" alt="Presa di rete" width="48" height="48">
 ```
 
 ### In React (componente generico)
@@ -89,6 +90,7 @@ const DEVICE_ICONS = {
   // Infrastruttura
   rack: '/icons/rack.svg',
   patch_panel: '/icons/patch_panel.svg',
+  presa_rete: '/icons/presa_rete.svg',
   // Networking
   switch: '/icons/switch.svg',
   router: '/icons/router.svg',

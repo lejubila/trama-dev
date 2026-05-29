@@ -117,6 +117,11 @@
                         <p class="text-xs text-gray-500 mt-1">{{ __('sites.floorplan_help') }}</p>
                         @error('roomFloorPlan')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         <div wire:loading wire:target="roomFloorPlan" class="text-xs text-indigo-600 mt-1">{{ __('sites.uploading') }}</div>
+                        @if ($editingRoomId !== null)
+                            <a href="{{ route('rooms.plan.edit', $editingRoomId) }}" class="inline-block mt-2 text-xs text-indigo-600 hover:underline">
+                                {{ __('rooms.plan_editor_open') }}
+                            </a>
+                        @endif
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">{{ __('sites.label_notes') }}</label>

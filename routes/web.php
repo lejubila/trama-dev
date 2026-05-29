@@ -19,6 +19,7 @@ use App\Livewire\Icons\Index as IconsIndex;
 use App\Livewire\Imports\Index as ImportsIndex;
 use App\Livewire\Racks\Index as RacksIndex;
 use App\Livewire\Racks\Show as RacksShow;
+use App\Livewire\Rooms\PlanEditor as RoomsPlanEditor;
 use App\Livewire\Rooms\Show as RoomsShow;
 use App\Livewire\Settings\ApiTokens as SettingsApiTokens;
 use App\Livewire\Sites\Index as SitesIndex;
@@ -54,6 +55,7 @@ Route::middleware(['auth'])->group(function (): void {
 
     // Rooms
     Route::get('rooms/{room}', RoomsShow::class)->name('rooms.show');
+    Route::get('rooms/{room}/plan/edit', RoomsPlanEditor::class)->name('rooms.plan.edit');
 
     // Racks
     Route::get('racks', RacksIndex::class)->name('racks.index');
