@@ -72,6 +72,27 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
         globalIconSize: iconSize || 44,
         // Mini-map (navigator) is hidden by default; toggled via the corner button.
         showNavigator: false,
+        // Right-click context menu on equipment nodes. View transitions:
+        // 'root' → 'ports' (list of interfaces) → 'port-detail' (checkboxes
+        // for the selected interface). Coordinates are container-local so
+        // the overlay can be placed with absolute positioning.
+        contextMenu: { open: false, x: 0, y: 0, nodeId: null, nodeName: '', nodeIsHiddenDb: false, nodeIsHiddenSession: false, view: 'root', interfaces: null, loading: false, currentInterfaceId: null },
+        // Per-node position of the device name label relative to the icon.
+        // Allowed values: 'top' | 'bottom' (default) | 'left' | 'right'.
+        // Shape: { [equipmentId]: 'top'|'bottom'|'left'|'right' }
+        nodeLabelPositions: {},
+        // Equipment IDs hidden "Solo ora" — purely client-side, cleared on
+        // page refresh, but persisted in topology snapshots.
+        sessionHiddenNodeIds: [],
+        // Per-interface display toggles. Persisted in localStorage so the
+        // chosen labels survive refresh; also restorable from a snapshot.
+        // Shape: { [interfaceId]: { ip: bool, mac: bool, vlan: bool, description: bool } }
+        portSettings: {},
+        // Cache of interface payloads fetched lazily from the server.
+        // Shape: { [equipmentId]: [ { id, name, ip_address, ... } ] }
+        _interfacesCache: {},
+        // Flattened cache by interface id for O(1) edge label refresh.
+        _interfacesById: {},
 
         init(rootEl) {
             registerExtensions();
@@ -85,7 +106,23 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                 maxZoom: 4,
             });
 
+            // Hydrate port-label preferences from localStorage BEFORE
+            // applying restore so a snapshot's settings can override the
+            // local copy.
+            this._loadPortSettingsFromLocal();
+            this._loadNodeLabelPositionsFromLocal();
             const restored = this._applyRestore(restore);
+            this._applyNodeLabelPositions();
+            this._applySessionHidden();
+            // Reflect the persisted/local settings into every edge label
+            // already in the cy instance.
+            this._refreshEdgeLabels();
+            this._publishPortSettings();
+            // Some snapshots may carry portSettings for interfaces whose
+            // details (ip/mac/vlan) aren't yet loaded client-side; pre-fetch
+            // them so the labels show up immediately instead of on first
+            // context-menu open.
+            this._prefetchInterfacesForSettings();
             this._computeIdealLengths();
             if (!restored) {
                 this._runLayout(this._layout);
@@ -337,6 +374,12 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             }
 
             this._applyIconSizes();
+            // The graph swap blew away per-edge fromLabel/toLabel; reapply the
+            // persisted port-label settings so the user's chosen IP/MAC/VLAN
+            // overlays survive a filter/grouping change.
+            this._refreshEdgeLabels();
+            this._applyNodeLabelPositions();
+            this._applySessionHidden();
             this.cy.style().update();
         },
 
@@ -347,7 +390,23 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
          * from _refresh(), because changing filters intentionally relayouts.
          */
         _applyRestore(restore) {
-            if (!restore || !restore.nodePositions) return false;
+            if (!restore) return false;
+            // Port label settings persist independently of node positions —
+            // an old snapshot may carry only one of the two. Apply them
+            // first; positions may still be skipped further down.
+            if (restore.portSettings && typeof restore.portSettings === 'object') {
+                this.portSettings = { ...restore.portSettings };
+                this._savePortSettingsToLocal();
+            }
+            if (restore.nodeLabelPositions && typeof restore.nodeLabelPositions === 'object') {
+                this.nodeLabelPositions = { ...restore.nodeLabelPositions };
+                this._saveNodeLabelPositionsToLocal();
+            }
+            if (Array.isArray(restore.sessionHiddenIds)) {
+                this.sessionHiddenNodeIds = restore.sessionHiddenIds.slice();
+                this._publishSessionHidden();
+            }
+            if (!restore.nodePositions) return false;
             const positions = restore.nodePositions;
             const knownIds = Object.keys(positions);
             if (knownIds.length === 0) return false;
@@ -487,6 +546,9 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                     window.Livewire.dispatch('equipment-clicked', { id: num });
                 }
                 this._highlightNeighborhood(evt.target);
+                // Left-click anywhere closes the context menu (the user has
+                // clearly moved on to another interaction).
+                this.closeContextMenu();
             });
 
             this.cy.on('dbltap', 'node', (evt) => {
@@ -494,12 +556,33 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                 if (rackId) window.location.href = `/racks/${rackId}`;
             });
 
+            // Right-click on a node → context menu. We swallow the browser's
+            // native menu via a one-shot contextmenu handler on the cy canvas
+            // wrapper, since Cytoscape does not capture it for us.
+            this.cy.on('cxttap', 'node', (evt) => {
+                const id = String(evt.target.data('id') || '').replace('eq-', '');
+                const eqId = parseInt(id, 10);
+                if (Number.isNaN(eqId) || evt.target.isParent()) return;
+                // renderedPosition is in container-local pixels — perfect for
+                // absolutely-positioning the overlay <div>.
+                const pos = evt.renderedPosition || evt.position;
+                const name = String(evt.target.data('label') || '');
+                const hiddenDb = !!evt.target.data('hidden');
+                const hiddenSession = this.sessionHiddenNodeIds.includes(eqId);
+                this.openContextMenu(eqId, name, pos.x, pos.y, hiddenDb, hiddenSession);
+            });
+            // Native browser context menu suppression on the cy canvas.
+            if (this.$refs && this.$refs.cy) {
+                this.$refs.cy.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
             this.cy.on('tap', (evt) => {
                 if (evt.target === this.cy) {
                     // Tap on empty canvas: drop selection AND restore full
                     // opacity on every node and edge.
                     this.cy.elements(':selected').unselect();
                     this._clearHighlight();
+                    this.closeContextMenu();
                 }
             });
 
@@ -618,6 +701,367 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             this.cy.elements().removeClass('faded');
         },
 
+        // --- context menu + port labels ----------------------------------
+
+        openContextMenu(eqId, name, x, y, hiddenDb = false, hiddenSession = false) {
+            this.contextMenu = {
+                open: true,
+                x,
+                y,
+                nodeId: eqId,
+                nodeName: name,
+                nodeIsHiddenDb: hiddenDb,
+                nodeIsHiddenSession: hiddenSession,
+                view: 'root',
+                interfaces: this._interfacesCache[eqId] || null,
+                loading: false,
+                currentInterfaceId: null,
+            };
+        },
+
+        closeContextMenu() {
+            if (!this.contextMenu.open) return;
+            this.contextMenu = { ...this.contextMenu, open: false };
+        },
+
+        async openPortsView() {
+            const eqId = this.contextMenu.nodeId;
+            if (!eqId) return;
+            this.contextMenu = { ...this.contextMenu, view: 'ports' };
+            if (this._interfacesCache[eqId]) {
+                this.contextMenu = { ...this.contextMenu, interfaces: this._interfacesCache[eqId] };
+                return;
+            }
+            this.contextMenu = { ...this.contextMenu, loading: true };
+            try {
+                const list = await this.$wire.fetchInterfaces(eqId);
+                this._interfacesCache[eqId] = Array.isArray(list) ? list : [];
+                this._interfacesCache[eqId].forEach((i) => {
+                    this._interfacesById[i.id] = i;
+                });
+                this.contextMenu = { ...this.contextMenu, interfaces: this._interfacesCache[eqId], loading: false };
+                // Once we know the interface payload, edges anchored to those
+                // ports may have richer labels we haven't drawn yet (settings
+                // could have been restored from a snapshot before the data
+                // was loaded). Refresh now.
+                this._refreshEdgeLabels();
+            } catch (e) {
+                this.contextMenu = { ...this.contextMenu, loading: false, interfaces: [] };
+            }
+        },
+
+        openPortDetail(intId) {
+            this.contextMenu = { ...this.contextMenu, view: 'port-detail', currentInterfaceId: intId };
+        },
+
+        backToPorts() {
+            this.contextMenu = { ...this.contextMenu, view: 'ports', currentInterfaceId: null };
+        },
+
+        backToRoot() {
+            this.contextMenu = { ...this.contextMenu, view: 'root', currentInterfaceId: null };
+        },
+
+        isPortAttrOn(intId, attr) {
+            const s = this.portSettings[intId];
+            return !!(s && s[attr]);
+        },
+
+        togglePortAttr(intId, attr) {
+            const prev = this.portSettings[intId] || {};
+            const next = { ...prev, [attr]: !prev[attr] };
+            // Drop the entry entirely when no attribute is on, keeping the
+            // localStorage payload small.
+            const hasAny = ['ip', 'mac', 'vlan', 'description'].some((k) => next[k]);
+            const merged = { ...this.portSettings };
+            if (hasAny) merged[intId] = next; else delete merged[intId];
+            this.portSettings = merged;
+            this._savePortSettingsToLocal();
+            this._publishPortSettings();
+            this._refreshEdgeLabels(intId);
+        },
+
+        _publishPortSettings() {
+            // Bridge for the snapshot save button (lives outside this Alpine
+            // scope on the Blade — see graph.blade.php).
+            window._topologyPortSettings = this.portSettings;
+        },
+
+        // --- node label position -----------------------------------------
+
+        openNamePositionView() {
+            this.contextMenu = { ...this.contextMenu, view: 'name-position' };
+        },
+
+        currentNodeLabelPosition() {
+            return this.nodeLabelPositions['eq-' + this.contextMenu.nodeId] || 'bottom';
+        },
+
+        setNodeLabelPosition(pos) {
+            const eqId = this.contextMenu.nodeId;
+            if (!eqId) return;
+            const key = 'eq-' + eqId;
+            const merged = { ...this.nodeLabelPositions };
+            if (pos === 'bottom') {
+                // 'bottom' is the default — keep the entry out of the persisted
+                // payload so the map stays small and forward-compat.
+                delete merged[key];
+            } else {
+                merged[key] = pos;
+            }
+            this.nodeLabelPositions = merged;
+            this._saveNodeLabelPositionsToLocal();
+            this._publishNodeLabelPositions();
+            this._applyNodeLabelPositions();
+        },
+
+        _publishNodeLabelPositions() {
+            window._topologyNodeLabelPositions = this.nodeLabelPositions;
+        },
+
+        _localStorageKeyForNodeLabels() {
+            return 'trama:topology:node-label-positions';
+        },
+
+        _loadNodeLabelPositionsFromLocal() {
+            try {
+                const raw = window.localStorage.getItem(this._localStorageKeyForNodeLabels());
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object') {
+                    this.nodeLabelPositions = parsed;
+                }
+            } catch (e) { /* ignore */ }
+        },
+
+        _saveNodeLabelPositionsToLocal() {
+            try {
+                window.localStorage.setItem(this._localStorageKeyForNodeLabels(), JSON.stringify(this.nodeLabelPositions));
+            } catch (e) { /* ignore */ }
+        },
+
+        /**
+         * Stamp the chosen position onto each node as a data attribute so
+         * the Cytoscape style functions for text-valign/halign/margin can
+         * read it. Called on init, on every refresh, and after each toggle.
+         */
+        _applyNodeLabelPositions() {
+            if (!this.cy) return;
+            this.cy.nodes().forEach((n) => {
+                if (n.isParent()) return;
+                const pos = this.nodeLabelPositions[n.id()] || 'bottom';
+                n.data('labelPos', pos);
+            });
+            this.cy.style().update();
+            this._publishNodeLabelPositions();
+        },
+
+        // --- hide / show (session-only + persistent) ---------------------
+
+        openHideView() {
+            this.contextMenu = { ...this.contextMenu, view: 'hide' };
+        },
+
+        hideNodeSessionOnly() {
+            const eqId = this.contextMenu.nodeId;
+            if (!eqId) return;
+            if (!this.sessionHiddenNodeIds.includes(eqId)) {
+                this.sessionHiddenNodeIds = [...this.sessionHiddenNodeIds, eqId];
+            }
+            this.closeContextMenu();
+            this._applySessionHidden();
+            this._publishSessionHidden();
+        },
+
+        async hideNodeAlways() {
+            const eqId = this.contextMenu.nodeId;
+            if (!eqId) return;
+            this.closeContextMenu();
+            try {
+                await this.$wire.hideAlways(eqId);
+                await this._refresh();
+            } catch (e) { /* toast surfaces failure */ }
+        },
+
+        async showNodeAlways() {
+            const eqId = this.contextMenu.nodeId;
+            if (!eqId) return;
+            this.closeContextMenu();
+            try {
+                await this.$wire.showAlways(eqId);
+                await this._refresh();
+            } catch (e) { /* toast surfaces failure */ }
+        },
+
+        /**
+         * Walk every node, tag those in sessionHiddenNodeIds (plus their
+         * connected edges) with the `session-hidden` class so they get
+         * display:none from the stylesheet. Idempotent: removes the class
+         * everywhere first, then re-applies.
+         *
+         * Special case: when the user enables the "Includi nascosti" filter
+         * we make the session-hidden devices appear too (faded), so they
+         * can be inspected and the "Solo ora" hide undone from their
+         * context menu. Otherwise a user could not bring back a Solo-ora
+         * hidden device without a full page refresh.
+         */
+        _applySessionHidden() {
+            if (!this.cy) return;
+            this.cy.elements().removeClass('session-hidden').removeClass('session-hidden-shown');
+            if (this.sessionHiddenNodeIds.length === 0) return;
+            const includeHidden = !!(this.$wire && this.$wire.includeHidden);
+            const idSet = new Set(this.sessionHiddenNodeIds.map((id) => 'eq-' + id));
+            this.cy.nodes().forEach((n) => {
+                if (!idSet.has(n.id())) return;
+                if (includeHidden) {
+                    // Reveal but fade so the user can tell which nodes are
+                    // currently "Solo ora" hidden.
+                    n.addClass('session-hidden-shown');
+                    n.connectedEdges().addClass('session-hidden-shown');
+                } else {
+                    n.addClass('session-hidden');
+                    n.connectedEdges().addClass('session-hidden');
+                }
+            });
+        },
+
+        unhideNodeSessionOnly() {
+            const eqId = this.contextMenu.nodeId;
+            if (!eqId) return;
+            this.sessionHiddenNodeIds = this.sessionHiddenNodeIds.filter((id) => id !== eqId);
+            this.closeContextMenu();
+            this._applySessionHidden();
+            this._publishSessionHidden();
+        },
+
+        _publishSessionHidden() {
+            window._topologySessionHiddenIds = this.sessionHiddenNodeIds.slice();
+        },
+
+        async _prefetchInterfacesForSettings() {
+            const want = new Set(Object.keys(this.portSettings).map(Number).filter(Number.isFinite));
+            if (want.size === 0) return;
+            const eqIds = new Set();
+            this.cy.edges().forEach((edge) => {
+                const fromId = parseInt(edge.data('fromIfaceId') || 0, 10) || null;
+                const toId = parseInt(edge.data('toIfaceId') || 0, 10) || null;
+                if (fromId && want.has(fromId)) {
+                    const srcEqId = parseInt(String(edge.data('source')).replace('eq-', ''), 10);
+                    if (Number.isFinite(srcEqId)) eqIds.add(srcEqId);
+                }
+                if (toId && want.has(toId)) {
+                    const tgtEqId = parseInt(String(edge.data('target')).replace('eq-', ''), 10);
+                    if (Number.isFinite(tgtEqId)) eqIds.add(tgtEqId);
+                }
+            });
+            for (const eqId of eqIds) {
+                if (this._interfacesCache[eqId]) continue;
+                try {
+                    const list = await this.$wire.fetchInterfaces(eqId);
+                    this._interfacesCache[eqId] = Array.isArray(list) ? list : [];
+                    this._interfacesCache[eqId].forEach((i) => { this._interfacesById[i.id] = i; });
+                } catch (e) { /* ignore single-node failures */ }
+            }
+            this._refreshEdgeLabels();
+        },
+
+        _localStorageKey() {
+            // Coarse, per-browser key. Topology snapshot persistence handles
+            // the cross-device case explicitly.
+            return 'trama:topology:port-labels';
+        },
+
+        _loadPortSettingsFromLocal() {
+            try {
+                const raw = window.localStorage.getItem(this._localStorageKey());
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object') {
+                    this.portSettings = parsed;
+                }
+            } catch (e) { /* ignore quota / disabled storage */ }
+        },
+
+        _savePortSettingsToLocal() {
+            try {
+                window.localStorage.setItem(this._localStorageKey(), JSON.stringify(this.portSettings));
+            } catch (e) { /* ignore quota / disabled storage */ }
+        },
+
+        /**
+         * Recompute `fromLabel` / `toLabel` on edges. When intId is given we
+         * touch only edges anchored to that interface; otherwise we sweep
+         * everything (used at init and on snapshot restore).
+         */
+        _refreshEdgeLabels(intId) {
+            if (!this.cy) return;
+            const intIdNum = typeof intId === 'number' ? intId : null;
+            this.cy.edges().forEach((edge) => {
+                const fromId = parseInt(edge.data('fromIfaceId') || 0, 10) || null;
+                const toId = parseInt(edge.data('toIfaceId') || 0, 10) || null;
+                if (intIdNum !== null && fromId !== intIdNum && toId !== intIdNum) return;
+                if (fromId) {
+                    edge.data('fromLabel', this._composePortLabel(fromId, edge.data('fromIface')));
+                }
+                if (toId) {
+                    edge.data('toLabel', this._composePortLabel(toId, edge.data('toIface')));
+                }
+            });
+            // Force a style re-evaluation so the new labels and offsets
+            // appear immediately.
+            this.cy.style().update();
+        },
+
+        /**
+         * Build the multi-line label for one port. The first line is always
+         * the port name; configured attributes follow, one per line.
+         */
+        _composePortLabel(intId, fallbackName) {
+            const s = this.portSettings[intId];
+            const iface = this._interfacesById[intId] || null;
+            const name = (iface && iface.name) || fallbackName || '';
+            if (!s || !iface) return name;
+            const lines = [name];
+            if (s.ip) lines.push(iface.ip_address ? String(iface.ip_address) : '—');
+            if (s.mac) lines.push(iface.mac_address ? String(iface.mac_address) : '—');
+            if (s.vlan) lines.push(this._formatVlan(iface));
+            if (s.description) lines.push(iface.description ? String(iface.description) : '');
+            return lines.filter((l) => l !== '').join('\n');
+        },
+
+        /**
+         * Format: "VLAN {mode} {default} ({allowed_list})".
+         * - "VLAN" is always the leading word.
+         * - {default} is omitted when null.
+         * - The parenthesised list is omitted when there are no allowed VLANs.
+         */
+        _formatVlan(iface) {
+            const mode = iface.vlan_mode || 'none';
+            const def = iface.vlan_default;
+            const allowed = Array.isArray(iface.vlans_allowed) ? iface.vlans_allowed : [];
+            const head = ['VLAN', mode];
+            if (def != null) head.push(String(def));
+            let s = head.join(' ');
+            if (allowed.length) s += ` (${this._compressVlans(allowed)})`;
+            return s;
+        },
+
+        _compressVlans(list) {
+            const sorted = [...new Set(list.map(Number).filter((n) => Number.isFinite(n)))].sort((a, b) => a - b);
+            if (sorted.length === 0) return '';
+            const ranges = [];
+            let start = sorted[0];
+            let prev = start;
+            for (let i = 1; i < sorted.length; i++) {
+                if (sorted[i] === prev + 1) { prev = sorted[i]; continue; }
+                ranges.push(start === prev ? String(start) : `${start}-${prev}`);
+                start = sorted[i];
+                prev = start;
+            }
+            ranges.push(start === prev ? String(start) : `${start}-${prev}`);
+            return ranges.join(',');
+        },
+
         _stylesheet() {
             return [
                 {
@@ -630,8 +1074,29 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                         'color': '#111827',
                         // Node label scales with the node's iconSize.
                         'font-size': (ele) => Math.max(6, (ele.data('iconSize') || 44) * 0.25),
-                        'text-valign': 'bottom',
-                        'text-margin-y': (ele) => Math.max(2, (ele.data('iconSize') || 44) * 0.12),
+                        // Position of the device name relative to the icon.
+                        // Per-node override via data('labelPos'); default is
+                        // 'bottom' so existing layouts don't move. Mapping
+                        // covers the four cardinal positions selectable from
+                        // the context menu.
+                        'text-valign': (ele) => {
+                            const p = ele.data('labelPos') || 'bottom';
+                            return p === 'top' ? 'top' : p === 'bottom' ? 'bottom' : 'center';
+                        },
+                        'text-halign': (ele) => {
+                            const p = ele.data('labelPos') || 'bottom';
+                            return p === 'left' ? 'left' : p === 'right' ? 'right' : 'center';
+                        },
+                        'text-margin-y': (ele) => {
+                            const p = ele.data('labelPos') || 'bottom';
+                            const m = Math.max(2, (ele.data('iconSize') || 44) * 0.12);
+                            return p === 'top' ? -m : p === 'bottom' ? m : 0;
+                        },
+                        'text-margin-x': (ele) => {
+                            const p = ele.data('labelPos') || 'bottom';
+                            const m = Math.max(2, (ele.data('iconSize') || 44) * 0.12);
+                            return p === 'left' ? -m : p === 'right' ? m : 0;
+                        },
                         'width': 36,
                         'height': 36,
                     },
@@ -669,39 +1134,63 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                     },
                 },
                 {
-                    // Source port name, only when present on the edge.
+                    // Source-side port info: defaults to the port name alone
+                    // (set by the server as data.fromIface). When the user
+                    // toggles extra attributes via the context menu, the
+                    // factory writes a multi-line string into data.fromLabel;
+                    // the style function below prefers it when present.
                     selector: 'edge[fromIface]',
                     style: {
-                        'source-label': 'data(fromIface)',
+                        'source-label': (ele) => ele.data('fromLabel') || ele.data('fromIface') || '',
+                        'text-wrap': 'wrap',
                         'source-text-offset': (ele) => {
                             const size = ele.source().data('iconSize') || 44;
                             const fontPx = Math.max(6, size * 0.20);
-                            const chars = (ele.data('fromIface') || '').length;
-                            // Monospace ratio ≈ 0.6 → half-width = chars * font * 0.30.
-                            // Position the label so its near edge sits just
-                            // past the icon: offset = icon radius + half
-                            // label + small padding. The autorotate keeps
-                            // the label parallel to the cable, not to the
-                            // node name beneath the icon, so we don't need
-                            // to clear the node-label height.
+                            const text = ele.data('fromLabel') || ele.data('fromIface') || '';
+                            // For multi-line labels the offset has to clear
+                            // the WIDEST line; otherwise a long IP would
+                            // overlap the icon while the short port name
+                            // would look fine.
+                            const chars = text.split('\n').reduce((m, l) => Math.max(m, l.length), 0);
                             const halfLabel = chars * fontPx * 0.30;
                             return size / 2 + halfLabel + 3;
                         },
                         'source-text-rotation': 'autorotate',
+                        // Lift the whole port label block above the cable
+                        // line so it doesn't sit on top of the cable label
+                        // (the center label uses autorotate too and would
+                        // overlap otherwise). Negative y = above in the
+                        // rotated local frame, regardless of cable angle.
+                        'source-text-margin-y': (ele) => {
+                            const size = ele.source().data('iconSize') || 44;
+                            const fontPx = Math.max(6, size * 0.20);
+                            const text = ele.data('fromLabel') || ele.data('fromIface') || '';
+                            const lines = text.split('\n').length;
+                            return -(fontPx * lines * 0.6 + 3);
+                        },
                     },
                 },
                 {
                     selector: 'edge[toIface]',
                     style: {
-                        'target-label': 'data(toIface)',
+                        'target-label': (ele) => ele.data('toLabel') || ele.data('toIface') || '',
+                        'text-wrap': 'wrap',
                         'target-text-offset': (ele) => {
                             const size = ele.target().data('iconSize') || 44;
                             const fontPx = Math.max(6, size * 0.20);
-                            const chars = (ele.data('toIface') || '').length;
+                            const text = ele.data('toLabel') || ele.data('toIface') || '';
+                            const chars = text.split('\n').reduce((m, l) => Math.max(m, l.length), 0);
                             const halfLabel = chars * fontPx * 0.30;
                             return size / 2 + halfLabel + 3;
                         },
                         'target-text-rotation': 'autorotate',
+                        'target-text-margin-y': (ele) => {
+                            const size = ele.target().data('iconSize') || 44;
+                            const fontPx = Math.max(6, size * 0.20);
+                            const text = ele.data('toLabel') || ele.data('toIface') || '';
+                            const lines = text.split('\n').length;
+                            return -(fontPx * lines * 0.6 + 3);
+                        },
                     },
                 },
                 {
@@ -729,6 +1218,20 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                 {
                     selector: '.faded',
                     style: { 'opacity': 0.2 },
+                },
+                {
+                    // Client-side "Solo ora" hide: drops the element from the
+                    // canvas without touching the DB flag. Reapplied on every
+                    // _refresh() (see graph data swap).
+                    selector: '.session-hidden',
+                    style: { 'display': 'none' },
+                },
+                {
+                    // "Solo ora" hidden but revealed because the
+                    // "Includi nascosti" filter is on — show it faded so it
+                    // is recognisable as a Solo-ora hide.
+                    selector: '.session-hidden-shown',
+                    style: { 'opacity': 0.35 },
                 },
                 {
                     // Generic compound fallback — covers any future kind and

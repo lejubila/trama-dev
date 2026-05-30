@@ -162,6 +162,11 @@ class TopologyService
                 'vendor' => $eq->vendor,
                 'model' => $eq->model,
                 'status' => $eq->status?->value,
+                // True when the device carries hidden_in_topology=true and
+                // is included only because includeHidden is on. The client
+                // uses this to swap the context menu between "hide" and
+                // "show" actions.
+                'hidden' => (bool) $eq->hidden_in_topology,
             ];
 
             // Resolve the site this device belongs to (racked → via rack.room;
@@ -419,6 +424,8 @@ class TopologyService
             'color' => $c->color,
             'status' => $c->status?->value,
             'idealLength' => $idealLength,
+            'fromIfaceId' => $c->from_interface_id,
+            'toIfaceId' => $c->to_interface_id,
         ];
         if ($label !== '') {
             $data['label'] = $label;
@@ -539,6 +546,8 @@ class TopologyService
                 'color' => $c->color,
                 'status' => $c->status?->value,
                 'idealLength' => $idealLength,
+                'fromIfaceId' => $termA?->id,
+                'toIfaceId' => $termB?->id,
             ];
             if ($viaLabel !== '') {
                 $data['label'] = $viaLabel;

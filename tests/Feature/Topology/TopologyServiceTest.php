@@ -52,6 +52,19 @@ function makeWiredScene(): array
     return [$tenant, $site, $sw, $rt];
 }
 
+it('emits the interface IDs on each edge so the client can attach port-label overlays', function (): void {
+    [$tenant, $site, $sw, $rt] = makeWiredScene();
+
+    $graph = app(TopologyService::class)->buildGraph();
+
+    expect($graph['edges'])->toHaveCount(1);
+    $edge = $graph['edges'][0]['data'];
+    expect($edge)->toHaveKeys(['fromIfaceId', 'toIfaceId'])
+        ->and($edge['fromIfaceId'])->toBeInt()
+        ->and($edge['toIfaceId'])->toBeInt()
+        ->and($edge['fromIfaceId'])->not->toBe($edge['toIfaceId']);
+});
+
 it('returns nodes and edges for the active tenant only', function (): void {
     [$tenantA, $siteA] = makeWiredScene();
 

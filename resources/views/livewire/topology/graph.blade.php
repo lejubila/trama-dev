@@ -170,6 +170,9 @@
                             : {},
                         zoom: window.cy ? window.cy.zoom() : 1,
                         pan:  window.cy ? [Math.round(window.cy.pan().x), Math.round(window.cy.pan().y)] : [0, 0],
+                        portSettings: window._topologyPortSettings || {},
+                        nodeLabelPositions: window._topologyNodeLabelPositions || {},
+                        sessionHiddenIds: window._topologySessionHiddenIds || [],
                     }})"
                     class="text-xs px-2 py-1 rounded border bg-white text-gray-700"
                 >Salva snapshot</button>
@@ -250,6 +253,130 @@
                 />
                 <span class="font-mono text-gray-700 pointer-events-none" x-text="globalIconSize + ' px'"></span>
             @endif
+        </div>
+
+        {{-- Context menu (right-click on a node). Positioned absolutely
+             inside the cy container at click coordinates; coordinates are
+             container-local (renderedPosition) so transforms compose
+             naturally with pan/zoom changes after opening. --}}
+        <div
+            x-show="contextMenu.open"
+            x-cloak
+            :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
+            class="absolute z-30 min-w-[16rem] max-w-[22rem] rounded-md bg-white shadow-lg ring-1 ring-black/10 text-sm select-none"
+            @click.outside="closeContextMenu()"
+        >
+            <div class="px-3 py-2 border-b text-xs font-semibold text-gray-700 truncate" x-text="contextMenu.nodeName || 'Dispositivo'"></div>
+
+            {{-- Root view --}}
+            <div x-show="contextMenu.view === 'root'">
+                <button type="button" @click="openNamePositionView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
+                    <span>Nome</span>
+                    <span class="text-gray-400">▸</span>
+                </button>
+                <button type="button" @click="openPortsView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
+                    <span>Porte</span>
+                    <span class="text-gray-400">▸</span>
+                </button>
+                <button type="button" @click="openHideView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
+                    <span>Nascondi</span>
+                    <span class="text-gray-400">▸</span>
+                </button>
+            </div>
+
+            {{-- Hide / Show view --}}
+            <div x-show="contextMenu.view === 'hide'">
+                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">← Indietro</button>
+                {{-- Default: device is currently visible and not hidden by anything → offer hide options. --}}
+                <template x-if="!contextMenu.nodeIsHiddenDb && !contextMenu.nodeIsHiddenSession">
+                    <div class="p-2 grid grid-cols-1 gap-1">
+                        <button type="button" @click="hideNodeSessionOnly()" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs text-left">Solo ora</button>
+                        <button type="button" @click="hideNodeAlways()" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs text-left">Sempre</button>
+                    </div>
+                </template>
+                {{-- Session-only hide: shown only when "Includi nascosti" is on (otherwise the node isn't clickable). --}}
+                <template x-if="contextMenu.nodeIsHiddenSession">
+                    <div class="p-2 space-y-2">
+                        <p class="text-[11px] text-gray-500 italic">Questo dispositivo è nascosto solo nella sessione corrente.</p>
+                        <button type="button" @click="unhideNodeSessionOnly()" class="w-full px-2 py-1 rounded bg-emerald-600 text-white text-xs text-left">Riporta visibile (Solo ora)</button>
+                    </div>
+                </template>
+                {{-- Persistent DB-flag hide: also shown only when "Includi nascosti" is on. --}}
+                <template x-if="contextMenu.nodeIsHiddenDb">
+                    <div class="p-2 space-y-2">
+                        <p class="text-[11px] text-gray-500 italic">Questo dispositivo è nascosto nella topologia. È visibile solo perché "Includi nascosti" è attivo.</p>
+                        <button type="button" @click="showNodeAlways()" class="w-full px-2 py-1 rounded bg-indigo-600 text-white text-xs text-left">Mostra (rimuovi flag)</button>
+                    </div>
+                </template>
+            </div>
+
+            {{-- Name position view --}}
+            <div x-show="contextMenu.view === 'name-position'">
+                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">← Indietro</button>
+                <div class="px-3 py-2 border-t border-b text-xs font-semibold text-gray-600">Posizione del nome</div>
+                <div class="grid grid-cols-2 gap-1 p-2">
+                    <template x-for="opt in [
+                        { key: 'top', label: 'Sopra' },
+                        { key: 'bottom', label: 'Sotto' },
+                        { key: 'left', label: 'Sinistra' },
+                        { key: 'right', label: 'Destra' },
+                    ]" :key="opt.key">
+                        <button type="button" @click="setNodeLabelPosition(opt.key)"
+                            :class="currentNodeLabelPosition() === opt.key ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                            class="px-2 py-1 rounded text-xs font-medium"
+                            x-text="opt.label"></button>
+                    </template>
+                </div>
+            </div>
+
+            {{-- Ports list view --}}
+            <div x-show="contextMenu.view === 'ports'">
+                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">← Indietro</button>
+                <div class="max-h-72 overflow-y-auto border-t">
+                    <div x-show="contextMenu.loading" class="px-3 py-2 text-xs text-gray-500 italic">Caricamento porte…</div>
+                    <template x-for="iface in (contextMenu.interfaces || [])" :key="iface.id">
+                        <button type="button" @click="openPortDetail(iface.id)"
+                            class="w-full text-left px-3 py-1.5 hover:bg-gray-50 flex items-center justify-between text-xs">
+                            <span class="font-mono" x-text="iface.name"></span>
+                            <span class="text-gray-400">▸</span>
+                        </button>
+                    </template>
+                    <div x-show="!contextMenu.loading && (contextMenu.interfaces || []).length === 0" class="px-3 py-2 text-xs text-gray-500 italic">Nessuna interfaccia.</div>
+                </div>
+            </div>
+
+            {{-- Port detail view --}}
+            <div x-show="contextMenu.view === 'port-detail'">
+                <button type="button" @click="backToPorts()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">← Indietro</button>
+                <div class="px-3 py-2 border-t border-b text-xs font-semibold text-gray-600 font-mono"
+                     x-text="(contextMenu.interfaces || []).find(i => i.id === contextMenu.currentInterfaceId)?.name || ''"></div>
+                <div class="px-3 py-2 space-y-1.5">
+                    <label class="flex items-center gap-2 text-xs cursor-pointer">
+                        <input type="checkbox" class="rounded border-gray-300 text-indigo-600"
+                            :checked="isPortAttrOn(contextMenu.currentInterfaceId, 'ip')"
+                            @change="togglePortAttr(contextMenu.currentInterfaceId, 'ip')" />
+                        Indirizzo IP
+                    </label>
+                    <label class="flex items-center gap-2 text-xs cursor-pointer">
+                        <input type="checkbox" class="rounded border-gray-300 text-indigo-600"
+                            :checked="isPortAttrOn(contextMenu.currentInterfaceId, 'mac')"
+                            @change="togglePortAttr(contextMenu.currentInterfaceId, 'mac')" />
+                        MAC
+                    </label>
+                    <label class="flex items-center gap-2 text-xs cursor-pointer">
+                        <input type="checkbox" class="rounded border-gray-300 text-indigo-600"
+                            :checked="isPortAttrOn(contextMenu.currentInterfaceId, 'vlan')"
+                            @change="togglePortAttr(contextMenu.currentInterfaceId, 'vlan')" />
+                        VLAN (modalità, default, ammesse)
+                    </label>
+                    <label class="flex items-center gap-2 text-xs cursor-pointer">
+                        <input type="checkbox" class="rounded border-gray-300 text-indigo-600"
+                            :checked="isPortAttrOn(contextMenu.currentInterfaceId, 'description')"
+                            @change="togglePortAttr(contextMenu.currentInterfaceId, 'description')" />
+                        Descrizione
+                    </label>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -383,7 +383,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Descrizione</label>
-                        <input type="text" wire:model="ifDescription" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                        <textarea wire:model="ifDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                     </div>
                     @php
                         $bulkInvalid = $ifBulk && $editingIfId === null

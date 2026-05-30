@@ -78,9 +78,12 @@ class SnapshotShow extends Component
         if (! empty($state['hidePatchPanels'])) {
             $params['hidePatchPanels'] = true;
         }
-        // Only attach the snapshotPreset hint when there are positions to
-        // restore; old snapshots without nodePositions keep the URL clean.
-        if (! empty($state['nodePositions']) && is_array($state['nodePositions'])) {
+        // Attach the snapshotPreset hint when there is anything for the live
+        // graph to restore (node positions OR port-label settings). Old
+        // snapshots without either keep the URL clean.
+        $hasPositions = ! empty($state['nodePositions']) && is_array($state['nodePositions']);
+        $hasPortSettings = ! empty($state['portSettings']) && is_array($state['portSettings']);
+        if ($hasPositions || $hasPortSettings) {
             $params['snapshotPreset'] = (int) $this->snapshot->id;
         }
 

@@ -7,6 +7,8 @@ namespace App\Livewire\Topology;
 use App\Enums\EquipmentStatus;
 use App\Enums\EquipmentType;
 use App\Models\DeviceIcon;
+use App\Models\Equipment;
+use App\Models\NetworkInterface;
 use App\Models\Room;
 use App\Models\Site;
 use App\Models\Tag;
@@ -131,6 +133,62 @@ class Graph extends Component
         }
     }
 
+    /**
+     * Mark an equipment as hidden in the topology view.
+     *
+     * Mirror of the toggle in Equipment\Index but exposed here so the
+     * topology context menu can "Nascondi → Sempre" without leaving the
+     * page. The DB flag is the same `hidden_in_topology` already filtered
+     * by TopologyService::buildGraph().
+     */
+    public function hideAlways(int $equipmentId): void
+    {
+        $eq = Equipment::query()->findOrFail($equipmentId);
+        $this->authorize('update', $eq);
+        $eq->update(['hidden_in_topology' => true]);
+        $this->dispatch('toast', type: 'success', message: 'Dispositivo nascosto nella topologia.');
+    }
+
+    /** Counterpart of hideAlways: drops the persistent hidden flag. */
+    public function showAlways(int $equipmentId): void
+    {
+        $eq = Equipment::query()->findOrFail($equipmentId);
+        $this->authorize('update', $eq);
+        $eq->update(['hidden_in_topology' => false]);
+        $this->dispatch('toast', type: 'success', message: 'Dispositivo visibile nella topologia.');
+    }
+
+    /**
+     * Lazy-fetch the interfaces of one equipment, used by the topology
+     * context menu to populate the "Porte" submenu with the attributes
+     * the user may toggle on the cable junctions.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function fetchInterfaces(int $equipmentId): array
+    {
+        /** @var Equipment $eq */
+        $eq = Equipment::query()->findOrFail($equipmentId);
+        $this->authorize('view', $eq);
+
+        return NetworkInterface::query()
+            ->where('equipment_id', $eq->getKey())
+            ->orderBy('index')
+            ->orderBy('name')
+            ->get(['id', 'name', 'ip_address', 'mac_address', 'vlan_mode', 'vlan_default', 'vlans_allowed', 'description'])
+            ->map(fn (NetworkInterface $i) => [
+                'id' => $i->id,
+                'name' => $i->name,
+                'ip_address' => $i->ip_address,
+                'mac_address' => $i->mac_address,
+                'vlan_mode' => $i->vlan_mode?->value,
+                'vlan_default' => $i->vlan_default,
+                'vlans_allowed' => is_array($i->vlans_allowed) ? array_values($i->vlans_allowed) : [],
+                'description' => $i->description,
+            ])
+            ->all();
+    }
+
     public function setTopologyIconSize(int $sizePx): void
     {
         Gate::authorize('manage', DeviceIcon::class);
@@ -181,12 +239,27 @@ class Graph extends Component
             if ($snap !== null) {
                 $state = is_array($snap->view_state) ? $snap->view_state : [];
                 $positions = $state['nodePositions'] ?? null;
+                $portSettings = is_array($state['portSettings'] ?? null) ? $state['portSettings'] : null;
+                $nodeLabelPositions = is_array($state['nodeLabelPositions'] ?? null) ? $state['nodeLabelPositions'] : null;
+                $sessionHiddenIds = is_array($state['sessionHiddenIds'] ?? null)
+                    ? array_values(array_map('intval', $state['sessionHiddenIds']))
+                    : null;
+                $anyDisplayPref = $portSettings !== null || $nodeLabelPositions !== null || $sessionHiddenIds !== null;
                 if (is_array($positions) && count($positions) > 0) {
                     $restore = [
                         // Cast to object so JSON-encodes as {} not [] when empty.
                         'nodePositions' => (object) $positions,
                         'zoom' => $state['zoom'] ?? null,
                         'pan' => $state['pan'] ?? null,
+                        'portSettings' => $portSettings !== null ? (object) $portSettings : null,
+                        'nodeLabelPositions' => $nodeLabelPositions !== null ? (object) $nodeLabelPositions : null,
+                        'sessionHiddenIds' => $sessionHiddenIds,
+                    ];
+                } elseif ($anyDisplayPref) {
+                    $restore = [
+                        'portSettings' => $portSettings !== null ? (object) $portSettings : null,
+                        'nodeLabelPositions' => $nodeLabelPositions !== null ? (object) $nodeLabelPositions : null,
+                        'sessionHiddenIds' => $sessionHiddenIds,
                     ];
                 }
             }
