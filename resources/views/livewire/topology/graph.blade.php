@@ -276,7 +276,7 @@
                     <span>Nome</span>
                     <span class="text-gray-400">▸</span>
                 </button>
-                <template x-if="contextMenu.nodeKind !== 'wifi'">
+                <template x-if="contextMenu.nodeKind === 'equipment'">
                     <div>
                         <button type="button" @click="openPortsView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
                             <span>Porte</span>

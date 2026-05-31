@@ -35,7 +35,7 @@ class Graph extends Component
     public string $statusFilter = '';
 
     #[Url(except: 0)]
-    public int $vlanFilter = 0;
+    public ?int $vlanFilter = 0;
 
     /**
      * Selected tag ids; a device shows if it has at least one (OR).
@@ -113,6 +113,17 @@ class Graph extends Component
     public function clearFilters(): void
     {
         $this->reset(['siteId', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom', 'roomFilter', 'hidePatchPanels']);
+    }
+
+    /**
+     * Coerce an empty / null VLAN input into 0 ("no filter") so clearing
+     * the number field via Backspace doesn't trip the property's type
+     * (number inputs send "" when emptied, which crashes a strict `int`
+     * property — see PropertyNotFoundException reported in topology.graph).
+     */
+    public function updatingVlanFilter(mixed &$value): void
+    {
+        $value = ($value === '' || $value === null) ? 0 : (int) $value;
     }
 
     /**

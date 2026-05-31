@@ -51,6 +51,7 @@
                             <x-nav-item :href="route('equipment.index')" :active="request()->routeIs('equipment.*')" icon="cpu">{{ __('nav.equipment') }}</x-nav-item>
                             <x-nav-item :href="route('connections.index')" :active="request()->routeIs('connections.*')" icon="link">{{ __('nav.connections') }}</x-nav-item>
                             <x-nav-item :href="route('wifi-networks.index')" :active="request()->routeIs('wifi-networks.*')" icon="wifi">{{ __('nav.wifi') }}</x-nav-item>
+                            <x-nav-item :href="route('vpns.index')" :active="request()->routeIs('vpns.*')" icon="lock-closed">{{ __('nav.vpn') }}</x-nav-item>
                             <x-nav-item :href="route('topology.index')" :active="request()->routeIs('topology.index')" icon="topology">{{ __('nav.topology') }}</x-nav-item>
                             <x-nav-item :href="route('topology.snapshots.index')" :active="request()->routeIs('topology.snapshots.*')" icon="eye">{{ __('nav.topology_snapshots') }}</x-nav-item>
                             <x-nav-item :href="route('documents.index')" :active="request()->routeIs('documents.*')" icon="document">{{ __('nav.documents') }}</x-nav-item>

@@ -11,6 +11,8 @@ use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
 use App\Models\Tenant;
+use App\Models\VpnRemoteAccess;
+use App\Models\VpnSiteToSite;
 use App\Models\WifiNetwork;
 use App\Services\Icons\IconResolver;
 use App\Support\Tenancy\TenantContext;
@@ -328,6 +330,10 @@ class TopologyService
         // by the passthrough logic.
         $this->emitWifiLayer($nodes, $edges, $equipmentIds, $vlan, $iconSize);
 
+        // VPN layer: synthetic nodes (cloud+lock) for remote-access and
+        // site-to-site tunnels, edges to the firewall(s) and clients.
+        $this->emitVpnLayer($nodes, $edges, $equipmentIds, $vlan, $iconSize);
+
         // Final pass: when a VLAN filter is active, drop nodes that
         // survived the equipment filter but ended up without any incident
         // edge (i.e. they "speak" the VLAN only via virtual sub-interfaces
@@ -501,6 +507,173 @@ class TopologyService
             foreach ($associationEdges as $e) {
                 $edges[] = $e;
             }
+        }
+    }
+
+    /**
+     * Emit synthetic VPN nodes (remote-access + site-to-site) into $nodes /
+     * $edges by reference. Each VPN node is a `kind='vpn'` cloud-with-lock
+     * tile rendered between its firewall(s) and clients. The VLAN filter
+     * drops VPNs whose `routed_vlans` (or sides A/B for site-to-site) do
+     * not intersect the filter — but null/empty arrays mean "unspecified"
+     * and tolerate any filter, like the Wi-Fi behaviour.
+     *
+     * @param  list<array<string, mixed>>  $nodes
+     * @param  list<array<string, mixed>>  $edges
+     * @param  list<int>  $equipmentIds
+     */
+    private function emitVpnLayer(array &$nodes, array &$edges, array $equipmentIds, ?int $vlan, int $iconSize): void
+    {
+        $equipmentSet = array_flip($equipmentIds);
+        $tenantId = TenantContext::id();
+
+        // -- Remote access (client-to-LAN) --------------------------------
+        $remotes = VpnRemoteAccess::query()
+            ->with([
+                'firewallInterface.equipment',
+                'clients.clientInterface.equipment',
+            ])
+            ->get();
+
+        foreach ($remotes as $vpn) {
+            if ($vlan !== null && is_array($vpn->routed_vlans) && $vpn->routed_vlans !== []
+                && ! in_array($vlan, array_map('intval', $vpn->routed_vlans), true)) {
+                continue;
+            }
+
+            $fwIface = $vpn->firewallInterface;
+            $fwEqId = (int) ($fwIface?->equipment_id ?? 0);
+            $hasFw = $fwEqId > 0 && isset($equipmentSet[$fwEqId]);
+
+            $clientEdges = [];
+            foreach ($vpn->clients as $c) {
+                $iface = $c->clientInterface;
+                if ($iface === null) {
+                    continue;
+                }
+                $eqId = (int) $iface->equipment_id;
+                if (! isset($equipmentSet[$eqId])) {
+                    continue;
+                }
+                $clientEdges[] = [
+                    'data' => [
+                        'id' => 'vpn-ra-cli-'.$c->id,
+                        'source' => 'vpn-ra-'.$vpn->id,
+                        'target' => 'eq-'.$eqId,
+                        'media' => 'virtual',
+                        'cableType' => 'vpn',
+                        'idealLength' => 140,
+                        'fromIfaceId' => null,
+                        'toIfaceId' => $iface->id,
+                        'toIface' => $iface->name,
+                    ],
+                ];
+            }
+
+            if (! $hasFw && $clientEdges === []) {
+                continue;
+            }
+
+            $nodes[] = [
+                'data' => [
+                    'id' => 'vpn-ra-'.$vpn->id,
+                    'label' => $vpn->name,
+                    'kind' => 'vpn',
+                    'type' => 'vpn_remote_access',
+                    'vpnId' => $vpn->id,
+                    'protocol' => $vpn->protocol?->value,
+                    'routedVlans' => is_array($vpn->routed_vlans) ? array_values($vpn->routed_vlans) : [],
+                    'icon' => $this->iconResolver->urlForKind('vpn_remote_access', $tenantId),
+                    'iconSize' => $iconSize,
+                ],
+            ];
+
+            if ($hasFw) {
+                $edges[] = [
+                    'data' => [
+                        'id' => 'vpn-ra-fw-'.$vpn->id,
+                        'source' => 'eq-'.$fwEqId,
+                        'target' => 'vpn-ra-'.$vpn->id,
+                        'media' => 'virtual',
+                        'cableType' => 'vpn',
+                        'idealLength' => 140,
+                        'fromIfaceId' => $fwIface->id,
+                        'toIfaceId' => null,
+                        'fromIface' => $fwIface->name,
+                    ],
+                ];
+            }
+            foreach ($clientEdges as $e) {
+                $edges[] = $e;
+            }
+        }
+
+        // -- Site-to-site -------------------------------------------------
+        $tunnels = VpnSiteToSite::query()
+            ->with([
+                'endpointAInterface.equipment',
+                'endpointBInterface.equipment',
+            ])
+            ->get();
+
+        foreach ($tunnels as $vpn) {
+            if ($vlan !== null) {
+                $a = is_array($vpn->routed_vlans_a) ? array_map('intval', $vpn->routed_vlans_a) : [];
+                $b = is_array($vpn->routed_vlans_b) ? array_map('intval', $vpn->routed_vlans_b) : [];
+                if (($a !== [] || $b !== []) && ! in_array($vlan, $a, true) && ! in_array($vlan, $b, true)) {
+                    continue;
+                }
+            }
+
+            $ifaceA = $vpn->endpointAInterface;
+            $ifaceB = $vpn->endpointBInterface;
+            $eqAId = (int) ($ifaceA?->equipment_id ?? 0);
+            $eqBId = (int) ($ifaceB?->equipment_id ?? 0);
+            if (! isset($equipmentSet[$eqAId]) || ! isset($equipmentSet[$eqBId])) {
+                continue;
+            }
+
+            $nodes[] = [
+                'data' => [
+                    'id' => 'vpn-stos-'.$vpn->id,
+                    'label' => $vpn->name,
+                    'kind' => 'vpn',
+                    'type' => 'vpn_site_to_site',
+                    'vpnId' => $vpn->id,
+                    'protocol' => $vpn->protocol?->value,
+                    'routedVlansA' => $vpn->routed_vlans_a ?: [],
+                    'routedVlansB' => $vpn->routed_vlans_b ?: [],
+                    'icon' => $this->iconResolver->urlForKind('vpn_site_to_site', $tenantId),
+                    'iconSize' => $iconSize,
+                ],
+            ];
+
+            $edges[] = [
+                'data' => [
+                    'id' => 'vpn-stos-a-'.$vpn->id,
+                    'source' => 'eq-'.$eqAId,
+                    'target' => 'vpn-stos-'.$vpn->id,
+                    'media' => 'virtual',
+                    'cableType' => 'vpn',
+                    'idealLength' => 140,
+                    'fromIfaceId' => $ifaceA->id,
+                    'toIfaceId' => null,
+                    'fromIface' => $ifaceA->name,
+                ],
+            ];
+            $edges[] = [
+                'data' => [
+                    'id' => 'vpn-stos-b-'.$vpn->id,
+                    'source' => 'vpn-stos-'.$vpn->id,
+                    'target' => 'eq-'.$eqBId,
+                    'media' => 'virtual',
+                    'cableType' => 'vpn',
+                    'idealLength' => 140,
+                    'fromIfaceId' => null,
+                    'toIfaceId' => $ifaceB->id,
+                    'toIface' => $ifaceB->name,
+                ],
+            ];
         }
     }
 

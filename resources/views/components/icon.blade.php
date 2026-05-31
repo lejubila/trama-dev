@@ -21,6 +21,8 @@
         'topology' => '<path stroke-linecap="round" stroke-linejoin="round" d="M13.2 6.7 6.8 15.3M10.8 6.7l6.4 8.6M7 18h10" /><circle cx="12" cy="5" r="2.25" /><circle cx="5" cy="18" r="2.25" /><circle cx="19" cy="18" r="2.25" />',
         // Heroicons "wifi": three arcs above a dot, classic Wi-Fi pictogram.
         'wifi' => '<path stroke-linecap="round" stroke-linejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />',
+        // Heroicons "lock-closed": padlock — used for the VPN nav entry.
+        'lock-closed' => '<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />',
         default => '<circle cx="12" cy="12" r="9" />',
     };
 @endphp

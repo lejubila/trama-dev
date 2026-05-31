@@ -45,6 +45,8 @@ const TYPE_COLOR = {
     camera: '#db2777',
     intercom: '#e11d48',
     wifi_network: '#0ea5e9',
+    vpn_remote_access: '#7c3aed',
+    vpn_site_to_site: '#7c3aed',
     other: '#6b7280',
 };
 
@@ -55,17 +57,36 @@ const MEDIA_COLOR = {
     virtual: '#a855f7',
 };
 
-// Wi-Fi pictogram (Heroicons "wifi") embedded as a data URL so synthetic
-// SSID nodes always render with the canonical icon, even on tenants that
-// haven't uploaded a custom kind icon.
+// VPN pictogram (padlock) embedded as a data URL. The <g translate(0,-2)>
+// shifts the content up so the padlock is geometrically centered inside
+// the 24×24 viewBox; explicit width/height = 256 raise the raster
+// resolution so Cytoscape's zoom doesn't show jagged scaling steps.
+const VPN_NODE_ICON = 'data:image/svg+xml;utf8,'
+    + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="256" height="256" fill="none" '
+        + 'stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+        + '<g transform="translate(0,-2)">'
+        + '<rect x="6" y="11" width="12" height="9" rx="1.5"/>'
+        + '<path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/>'
+        + '<circle cx="12" cy="15.5" r="1.2"/>'
+        + '<path d="M12 16.7v1.6"/>'
+        + '</g>'
+        + '</svg>'
+    );
+
+// Wi-Fi pictogram (Heroicons "wifi") embedded as a data URL. As above:
+// content wrapped in a translate to vertically center inside the 24×24
+// viewBox, plus a high explicit raster resolution.
 const WIFI_NODE_ICON = 'data:image/svg+xml;utf8,'
     + encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="256" height="256" fill="none" '
         + 'stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+        + '<g transform="translate(0,-1.8)">'
         + '<path d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0"/>'
         + '<path d="M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0"/>'
         + '<path d="M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0"/>'
         + '<path d="M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z"/>'
+        + '</g>'
         + '</svg>'
     );
 
@@ -91,7 +112,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
         // 'root' → 'ports' (list of interfaces) → 'port-detail' (checkboxes
         // for the selected interface). Coordinates are container-local so
         // the overlay can be placed with absolute positioning.
-        contextMenu: { open: false, x: 0, y: 0, nodeId: null, nodeName: '', nodeKind: null, nodeIsHiddenDb: false, nodeIsHiddenSession: false, view: 'root', interfaces: null, loading: false, currentInterfaceId: null },
+        contextMenu: { open: false, x: 0, y: 0, nodeId: null, nodeFullId: null, nodeName: '', nodeKind: null, nodeIsHiddenDb: false, nodeIsHiddenSession: false, view: 'root', interfaces: null, loading: false, currentInterfaceId: null },
         // Per-node position of the device name label relative to the icon.
         // Allowed values: 'top' | 'bottom' (default) | 'left' | 'right'.
         // Shape: { [equipmentId]: 'top'|'bottom'|'left'|'right' }
@@ -577,16 +598,22 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             this.cy.on('cxttap', 'node', (evt) => {
                 if (evt.target.isParent()) return;
                 const rawId = String(evt.target.data('id') || '');
-                const kind = String(evt.target.data('kind') || '') || (rawId.startsWith('wifi-') ? 'wifi' : 'equipment');
-                // Strip the prefix to get the numeric primary key. Both
-                // equipment ("eq-") and Wi-Fi ("wifi-") nodes are supported.
-                const numericId = parseInt(rawId.replace(/^[a-z]+-/, ''), 10);
+                let kind = String(evt.target.data('kind') || '');
+                if (!kind) {
+                    kind = rawId.startsWith('wifi-') ? 'wifi'
+                        : rawId.startsWith('vpn-') ? 'vpn'
+                        : 'equipment';
+                }
+                // Trailing numeric id — works for eq-N, wifi-N, vpn-ra-N,
+                // vpn-stos-N alike.
+                const m = rawId.match(/(\d+)$/);
+                const numericId = m ? parseInt(m[1], 10) : NaN;
                 if (Number.isNaN(numericId)) return;
                 const pos = evt.renderedPosition || evt.position;
                 const name = String(evt.target.data('label') || '');
                 const hiddenDb = !!evt.target.data('hidden');
                 const hiddenSession = kind === 'equipment' && this.sessionHiddenNodeIds.includes(numericId);
-                this.openContextMenu(numericId, name, pos.x, pos.y, hiddenDb, hiddenSession, kind);
+                this.openContextMenu(numericId, name, pos.x, pos.y, hiddenDb, hiddenSession, kind, rawId);
             });
             // Native browser context menu suppression on the cy canvas.
             if (this.$refs && this.$refs.cy) {
@@ -720,12 +747,13 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
 
         // --- context menu + port labels ----------------------------------
 
-        openContextMenu(eqId, name, x, y, hiddenDb = false, hiddenSession = false, kind = 'equipment') {
+        openContextMenu(eqId, name, x, y, hiddenDb = false, hiddenSession = false, kind = 'equipment', fullId = null) {
             this.contextMenu = {
                 open: true,
                 x,
                 y,
                 nodeId: eqId,
+                nodeFullId: fullId || (kind === 'wifi' ? 'wifi-' : kind === 'vpn' ? 'vpn-ra-' : 'eq-') + eqId,
                 nodeName: name,
                 nodeKind: kind,
                 nodeIsHiddenDb: hiddenDb,
@@ -812,7 +840,13 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
         },
 
         _contextMenuNodeKey() {
-            const prefix = this.contextMenu.nodeKind === 'wifi' ? 'wifi-' : 'eq-';
+            // Prefer the full cy node id (already prefixed by the server).
+            // Falls back to the legacy "eq-N" / "wifi-N" composition for
+            // tests / programmatic callers that don't supply fullId.
+            if (this.contextMenu.nodeFullId) return this.contextMenu.nodeFullId;
+            const prefix = this.contextMenu.nodeKind === 'wifi' ? 'wifi-'
+                : this.contextMenu.nodeKind === 'vpn' ? 'vpn-ra-'
+                : 'eq-';
             return prefix + this.contextMenu.nodeId;
         },
 
@@ -1238,9 +1272,27 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                     style: {
                         'background-image': WIFI_NODE_ICON,
                         'background-fit': 'contain',
+                        'background-clip': 'none',
+                        'background-image-smoothing': 'yes',
                         'background-color': '#0ea5e9',
                         'background-opacity': 1,
                         'border-color': '#0369a1',
+                    },
+                },
+                {
+                    // Synthetic VPN node (remote-access OR site-to-site):
+                    // violet disc with a white padlock pictogram. Both VPN
+                    // node types share the same shape — the topology label
+                    // and the routedVlans data tell them apart.
+                    selector: 'node[kind = "vpn"]',
+                    style: {
+                        'background-image': VPN_NODE_ICON,
+                        'background-fit': 'contain',
+                        'background-clip': 'none',
+                        'background-image-smoothing': 'yes',
+                        'background-color': '#7c3aed',
+                        'background-opacity': 1,
+                        'border-color': '#4c1d95',
                     },
                 },
                 {

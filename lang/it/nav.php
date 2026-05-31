@@ -12,6 +12,7 @@ return [
     'equipment' => 'Dispositivi',
     'connections' => 'Connessioni',
     'wifi' => 'Reti Wi-Fi',
+    'vpn' => 'VPN',
     'topology' => 'Topologia',
     'topology_snapshots' => 'Snapshot topologia',
     'documents' => 'Documentazione',
