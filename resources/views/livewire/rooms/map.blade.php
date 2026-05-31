@@ -44,16 +44,20 @@
     };
 @endphp
 <div x-data="roomMapDnD" x-init="init($el)">
-    @if ($canEdit)
-        <div class="mb-2 text-right">
-            <a href="{{ route('rooms.plan.edit', $room) }}" class="text-xs text-indigo-600 hover:underline">{{ $drawing ? __('rooms.plan_editor_edit') : __('rooms.plan_editor_open') }}</a>
-        </div>
-    @endif
-    @if ($racks->isEmpty() && $equipments->isEmpty())
+    @php
+        $hasFloorPlan = $floorPlanUrl !== null || $drawing !== null;
+        $hasItems = $racks->isNotEmpty() || $equipments->isNotEmpty();
+    @endphp
+    @if (! $hasItems && ! $hasFloorPlan)
         <div class="text-sm text-gray-500 dark:text-slate-400 italic">
             {{ __('rooms.map_empty') }}
         </div>
     @else
+        @if (! $hasItems)
+            <div class="mb-2 text-xs text-gray-500 dark:text-slate-400 italic">
+                {{ __('rooms.map_empty') }}
+            </div>
+        @endif
         <svg
             wire:ignore
             class="room-map w-full bg-gray-50 dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 select-none"

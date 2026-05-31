@@ -57,9 +57,20 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 @foreach ($rooms as $room)
                     <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md p-4">
-                        <h3 class="text-sm font-semibold mb-2">
-                            <a href="{{ route('rooms.show', $room) }}" wire:navigate class="text-indigo-700 hover:underline">{{ $room->name }}</a>
-                        </h3>
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-sm font-semibold">
+                                <a href="{{ route('rooms.show', $room) }}" wire:navigate class="text-indigo-700 hover:underline">{{ $room->name }}</a>
+                            </h3>
+                            @can('update', $room)
+                                <a href="{{ route('rooms.plan.edit', $room) }}"
+                                   class="inline-flex items-center gap-1 rounded-md bg-indigo-600 text-white text-xs font-medium px-2 py-1 hover:bg-indigo-500"
+                                   title="{{ __('rooms.plan_editor_open') }}"
+                                >
+                                    <x-icon name="pencil" class="h-3.5 w-3.5" />
+                                    {{ __('rooms.plan_editor_open') }}
+                                </a>
+                            @endcan
+                        </div>
                         <livewire:rooms.map :room="$room" :key="'rmap-'.$room->id" />
                     </div>
                 @endforeach

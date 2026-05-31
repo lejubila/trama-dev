@@ -3,16 +3,16 @@
 declare(strict_types=1);
 
 return [
-    'map_empty' => 'No racks in this room.',
-    'map_hint_edit' => 'Drag the racks to position them. Short click to open the rack.',
-    'map_hint_view' => 'Click a rack to open it.',
+    'map_empty' => 'No items in this room.',
+    'map_hint_edit' => 'Drag devices to position them. Short click to open.',
+    'map_hint_view' => 'Click a device to open it.',
     'map_dimensions' => 'Room: :w m × :h m',
     'map_default_dims' => '(default dimensions)',
 
-    'slider_label' => 'Rack size (room default)',
+    'slider_label' => 'Device size (room default)',
     'reset_all' => 'Reset all',
-    'reset_all_title' => 'Reset all racks to the room default',
-    'custom_note' => '— racks with a custom size keep their own.',
+    'reset_all_title' => 'Reset all devices to the room default',
+    'custom_note' => '— devices with a custom size keep their own.',
 
     'plan_editor_title' => 'Draw floor plan',
     'plan_editor_subtitle' => 'Draw walls, doors, windows and labels to scale (1 unit = 1 m).',

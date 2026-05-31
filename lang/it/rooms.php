@@ -3,16 +3,16 @@
 declare(strict_types=1);
 
 return [
-    'map_empty' => 'Nessun rack in questo locale.',
-    'map_hint_edit' => 'Trascina i rack per posizionarli. Click breve per aprire il rack.',
-    'map_hint_view' => 'Click su un rack per aprirlo.',
+    'map_empty' => 'Nessun elemento in questo locale.',
+    'map_hint_edit' => 'Trascina i dispositivi per posizionarli. Click breve per aprirlo.',
+    'map_hint_view' => 'Click su un dispositivo per aprirlo.',
     'map_dimensions' => 'Locale: :w m × :h m',
     'map_default_dims' => '(dimensioni di default)',
 
-    'slider_label' => 'Dim. rack (default stanza)',
+    'slider_label' => 'Dim. dispositivi (default locale)',
     'reset_all' => 'Reset tutti',
-    'reset_all_title' => 'Riporta tutti i rack al default della stanza',
-    'custom_note' => '— i rack con dimensione custom mantengono la propria.',
+    'reset_all_title' => 'Riporta tutti i dispositivi al default del locale',
+    'custom_note' => '— i dispositivi con dimensione custom mantengono la propria.',
 
     'plan_editor_title' => 'Disegna planimetria',
     'plan_editor_subtitle' => 'Disegna muri, porte, finestre ed etichette in scala (1 unità = 1 m).',
