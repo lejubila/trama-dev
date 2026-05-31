@@ -44,6 +44,7 @@ const TYPE_COLOR = {
     nvr: '#0284c7',
     camera: '#db2777',
     intercom: '#e11d48',
+    wifi_network: '#0ea5e9',
     other: '#6b7280',
 };
 
@@ -53,6 +54,20 @@ const MEDIA_COLOR = {
     wireless: '#3b82f6',
     virtual: '#a855f7',
 };
+
+// Wi-Fi pictogram (Heroicons "wifi") embedded as a data URL so synthetic
+// SSID nodes always render with the canonical icon, even on tenants that
+// haven't uploaded a custom kind icon.
+const WIFI_NODE_ICON = 'data:image/svg+xml;utf8,'
+    + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
+        + 'stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+        + '<path d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0"/>'
+        + '<path d="M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0"/>'
+        + '<path d="M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0"/>'
+        + '<path d="M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z"/>'
+        + '</svg>'
+    );
 
 export default function topologyGraph({ graph, layout, iconSize, restore }) {
     return {
@@ -76,7 +91,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
         // 'root' → 'ports' (list of interfaces) → 'port-detail' (checkboxes
         // for the selected interface). Coordinates are container-local so
         // the overlay can be placed with absolute positioning.
-        contextMenu: { open: false, x: 0, y: 0, nodeId: null, nodeName: '', nodeIsHiddenDb: false, nodeIsHiddenSession: false, view: 'root', interfaces: null, loading: false, currentInterfaceId: null },
+        contextMenu: { open: false, x: 0, y: 0, nodeId: null, nodeName: '', nodeKind: null, nodeIsHiddenDb: false, nodeIsHiddenSession: false, view: 'root', interfaces: null, loading: false, currentInterfaceId: null },
         // Per-node position of the device name label relative to the icon.
         // Allowed values: 'top' | 'bottom' (default) | 'left' | 'right'.
         // Shape: { [equipmentId]: 'top'|'bottom'|'left'|'right' }
@@ -560,16 +575,18 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             // native menu via a one-shot contextmenu handler on the cy canvas
             // wrapper, since Cytoscape does not capture it for us.
             this.cy.on('cxttap', 'node', (evt) => {
-                const id = String(evt.target.data('id') || '').replace('eq-', '');
-                const eqId = parseInt(id, 10);
-                if (Number.isNaN(eqId) || evt.target.isParent()) return;
-                // renderedPosition is in container-local pixels — perfect for
-                // absolutely-positioning the overlay <div>.
+                if (evt.target.isParent()) return;
+                const rawId = String(evt.target.data('id') || '');
+                const kind = String(evt.target.data('kind') || '') || (rawId.startsWith('wifi-') ? 'wifi' : 'equipment');
+                // Strip the prefix to get the numeric primary key. Both
+                // equipment ("eq-") and Wi-Fi ("wifi-") nodes are supported.
+                const numericId = parseInt(rawId.replace(/^[a-z]+-/, ''), 10);
+                if (Number.isNaN(numericId)) return;
                 const pos = evt.renderedPosition || evt.position;
                 const name = String(evt.target.data('label') || '');
                 const hiddenDb = !!evt.target.data('hidden');
-                const hiddenSession = this.sessionHiddenNodeIds.includes(eqId);
-                this.openContextMenu(eqId, name, pos.x, pos.y, hiddenDb, hiddenSession);
+                const hiddenSession = kind === 'equipment' && this.sessionHiddenNodeIds.includes(numericId);
+                this.openContextMenu(numericId, name, pos.x, pos.y, hiddenDb, hiddenSession, kind);
             });
             // Native browser context menu suppression on the cy canvas.
             if (this.$refs && this.$refs.cy) {
@@ -703,13 +720,14 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
 
         // --- context menu + port labels ----------------------------------
 
-        openContextMenu(eqId, name, x, y, hiddenDb = false, hiddenSession = false) {
+        openContextMenu(eqId, name, x, y, hiddenDb = false, hiddenSession = false, kind = 'equipment') {
             this.contextMenu = {
                 open: true,
                 x,
                 y,
                 nodeId: eqId,
                 nodeName: name,
+                nodeKind: kind,
                 nodeIsHiddenDb: hiddenDb,
                 nodeIsHiddenSession: hiddenSession,
                 view: 'root',
@@ -793,14 +811,18 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             this.contextMenu = { ...this.contextMenu, view: 'name-position' };
         },
 
+        _contextMenuNodeKey() {
+            const prefix = this.contextMenu.nodeKind === 'wifi' ? 'wifi-' : 'eq-';
+            return prefix + this.contextMenu.nodeId;
+        },
+
         currentNodeLabelPosition() {
-            return this.nodeLabelPositions['eq-' + this.contextMenu.nodeId] || 'bottom';
+            return this.nodeLabelPositions[this._contextMenuNodeKey()] || 'bottom';
         },
 
         setNodeLabelPosition(pos) {
-            const eqId = this.contextMenu.nodeId;
-            if (!eqId) return;
-            const key = 'eq-' + eqId;
+            if (!this.contextMenu.nodeId) return;
+            const key = this._contextMenuNodeKey();
             const merged = { ...this.nodeLabelPositions };
             if (pos === 'bottom') {
                 // 'bottom' is the default — keep the entry out of the persisted
@@ -1205,6 +1227,20 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                         'border-color': '#94a3b8',
                         'width': 44,
                         'height': 44,
+                    },
+                },
+                {
+                    // Synthetic Wi-Fi SSID node: cyan disc with the white
+                    // Wi-Fi pictogram embedded. Wins over node[icon] when no
+                    // custom kind icon was uploaded — and keeps a recognizable
+                    // shape regardless of tenant assets.
+                    selector: 'node[kind = "wifi"]',
+                    style: {
+                        'background-image': WIFI_NODE_ICON,
+                        'background-fit': 'contain',
+                        'background-color': '#0ea5e9',
+                        'background-opacity': 1,
+                        'border-color': '#0369a1',
                     },
                 },
                 {

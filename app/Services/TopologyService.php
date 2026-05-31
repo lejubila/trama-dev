@@ -11,6 +11,7 @@ use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
 use App\Models\Tenant;
+use App\Models\WifiNetwork;
 use App\Services\Icons\IconResolver;
 use App\Support\Tenancy\TenantContext;
 
@@ -322,6 +323,11 @@ class TopologyService
             }
         }
 
+        // Wi-Fi layer: synthetic SSID nodes + wireless edges to broadcasters
+        // and associated clients. Lives alongside cable edges; never collapsed
+        // by the passthrough logic.
+        $this->emitWifiLayer($nodes, $edges, $equipmentIds, $vlan, $iconSize);
+
         // Final pass: when a VLAN filter is active, drop nodes that
         // survived the equipment filter but ended up without any incident
         // edge (i.e. they "speak" the VLAN only via virtual sub-interfaces
@@ -396,6 +402,106 @@ class TopologyService
         }
 
         return $survivors;
+    }
+
+    /**
+     * Emit synthetic SSID nodes and wireless edges into $nodes / $edges by
+     * reference. A Wi-Fi network appears only if at least one of its
+     * broadcasters or clients survived the equipment-level filter; a VLAN
+     * filter drops networks whose `vlan_id` does not match (NULL vlan
+     * tolerates any filter, since the user simply didn't tag the network).
+     *
+     * @param  list<array<string, mixed>>  $nodes
+     * @param  list<array<string, mixed>>  $edges
+     * @param  list<int>  $equipmentIds
+     */
+    private function emitWifiLayer(array &$nodes, array &$edges, array $equipmentIds, ?int $vlan, int $iconSize): void
+    {
+        $equipmentSet = array_flip($equipmentIds);
+        $tenantId = TenantContext::id();
+
+        $networks = WifiNetwork::query()
+            ->with([
+                'broadcasters.equipment',
+                'associations.clientInterface.equipment',
+            ])
+            ->get();
+
+        foreach ($networks as $net) {
+            if ($vlan !== null && $net->vlan_id !== null && (int) $net->vlan_id !== $vlan) {
+                continue;
+            }
+
+            $broadcasterEdges = [];
+            foreach ($net->broadcasters as $iface) {
+                $eqId = (int) $iface->equipment_id;
+                if (! isset($equipmentSet[$eqId])) {
+                    continue;
+                }
+                $broadcasterEdges[] = [
+                    'data' => [
+                        'id' => 'wifi-bc-'.$net->id.'-'.$iface->id,
+                        'source' => 'eq-'.$eqId,
+                        'target' => 'wifi-'.$net->id,
+                        'media' => 'wireless',
+                        'cableType' => 'wireless',
+                        'idealLength' => 120,
+                        'fromIfaceId' => $iface->id,
+                        'toIfaceId' => null,
+                        'fromIface' => $iface->name,
+                    ],
+                ];
+            }
+
+            $associationEdges = [];
+            foreach ($net->associations as $assoc) {
+                $iface = $assoc->clientInterface;
+                if ($iface === null) {
+                    continue;
+                }
+                $eqId = (int) $iface->equipment_id;
+                if (! isset($equipmentSet[$eqId])) {
+                    continue;
+                }
+                $associationEdges[] = [
+                    'data' => [
+                        'id' => 'wifi-as-'.$assoc->id,
+                        'source' => 'wifi-'.$net->id,
+                        'target' => 'eq-'.$eqId,
+                        'media' => 'wireless',
+                        'cableType' => 'wireless',
+                        'idealLength' => 120,
+                        'fromIfaceId' => null,
+                        'toIfaceId' => $iface->id,
+                        'toIface' => $iface->name,
+                    ],
+                ];
+            }
+
+            if ($broadcasterEdges === [] && $associationEdges === []) {
+                continue;
+            }
+
+            $nodes[] = [
+                'data' => [
+                    'id' => 'wifi-'.$net->id,
+                    'label' => $net->ssid,
+                    'kind' => 'wifi',
+                    'type' => 'wifi_network',
+                    'wifiNetworkId' => $net->id,
+                    'vlanId' => $net->vlan_id,
+                    'security' => $net->security_type,
+                    'icon' => $this->iconResolver->urlForKind('wifi_network', $tenantId),
+                    'iconSize' => $iconSize,
+                ],
+            ];
+            foreach ($broadcasterEdges as $e) {
+                $edges[] = $e;
+            }
+            foreach ($associationEdges as $e) {
+                $edges[] = $e;
+            }
+        }
     }
 
     /**

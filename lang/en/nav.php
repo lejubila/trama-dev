@@ -11,6 +11,7 @@ return [
     'racks' => 'Racks',
     'equipment' => 'Devices',
     'connections' => 'Connections',
+    'wifi' => 'Wi-Fi networks',
     'topology' => 'Topology',
     'topology_snapshots' => 'Topology snapshots',
     'documents' => 'Documentation',

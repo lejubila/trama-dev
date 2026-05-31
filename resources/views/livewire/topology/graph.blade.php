@@ -270,18 +270,24 @@
 
             {{-- Root view --}}
             <div x-show="contextMenu.view === 'root'">
+                {{-- "Nome" è l'unica voce sensata per i nodi sintetici Wi-Fi
+                     (non hanno porte fisiche né flag hidden_in_topology). --}}
                 <button type="button" @click="openNamePositionView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
                     <span>Nome</span>
                     <span class="text-gray-400">▸</span>
                 </button>
-                <button type="button" @click="openPortsView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
-                    <span>Porte</span>
-                    <span class="text-gray-400">▸</span>
-                </button>
-                <button type="button" @click="openHideView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
-                    <span>Nascondi</span>
-                    <span class="text-gray-400">▸</span>
-                </button>
+                <template x-if="contextMenu.nodeKind !== 'wifi'">
+                    <div>
+                        <button type="button" @click="openPortsView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
+                            <span>Porte</span>
+                            <span class="text-gray-400">▸</span>
+                        </button>
+                        <button type="button" @click="openHideView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
+                            <span>Nascondi</span>
+                            <span class="text-gray-400">▸</span>
+                        </button>
+                    </div>
+                </template>
             </div>
 
             {{-- Hide / Show view --}}

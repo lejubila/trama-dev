@@ -31,6 +31,8 @@ use App\Livewire\Topology\Graph as TopologyGraph;
 use App\Livewire\Topology\SnapshotIndex as TopologySnapshotIndex;
 use App\Livewire\Topology\SnapshotShow as TopologySnapshotShow;
 use App\Livewire\Users\Index as UsersIndex;
+use App\Livewire\WifiNetworks\Index as WifiNetworksIndex;
+use App\Livewire\WifiNetworks\Show as WifiNetworksShow;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -72,6 +74,10 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('connections', ConnectionsIndex::class)->name('connections.index');
     Route::get('connections/create', ConnectionsWizard::class)->name('connections.create');
     Route::get('connections/{connection}/edit', ConnectionsEdit::class)->name('connections.edit');
+
+    // Wi-Fi networks
+    Route::get('wifi-networks', WifiNetworksIndex::class)->name('wifi-networks.index');
+    Route::get('wifi-networks/{network}', WifiNetworksShow::class)->name('wifi-networks.show');
 
     // Topology
     Route::get('topology', TopologyGraph::class)->name('topology.index');
