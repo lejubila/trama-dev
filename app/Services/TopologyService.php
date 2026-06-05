@@ -71,6 +71,8 @@ class TopologyService
         bool $groupByRoom = false,
         ?array $tagIds = null,
         bool $hidePatchPanels = false,
+        bool $hideWifi = false,
+        bool $hideVpn = false,
     ): array {
         $equipmentQuery = Equipment::query()->with(['rack.room.site', 'room.site']);
 
@@ -328,11 +330,15 @@ class TopologyService
         // Wi-Fi layer: synthetic SSID nodes + wireless edges to broadcasters
         // and associated clients. Lives alongside cable edges; never collapsed
         // by the passthrough logic.
-        $this->emitWifiLayer($nodes, $edges, $equipmentIds, $vlan, $iconSize);
+        if (! $hideWifi) {
+            $this->emitWifiLayer($nodes, $edges, $equipmentIds, $vlan, $iconSize);
+        }
 
         // VPN layer: synthetic nodes (cloud+lock) for remote-access and
         // site-to-site tunnels, edges to the firewall(s) and clients.
-        $this->emitVpnLayer($nodes, $edges, $equipmentIds, $vlan, $iconSize);
+        if (! $hideVpn) {
+            $this->emitVpnLayer($nodes, $edges, $equipmentIds, $vlan, $iconSize);
+        }
 
         // Final pass: when a VLAN filter is active, drop nodes that
         // survived the equipment filter but ended up without any incident
@@ -578,10 +584,14 @@ class TopologyService
                 'data' => [
                     'id' => 'vpn-ra-'.$vpn->id,
                     'label' => $vpn->name,
+                    'name' => $vpn->name,
                     'kind' => 'vpn',
+                    'vpnKind' => 'remote',
                     'type' => 'vpn_remote_access',
                     'vpnId' => $vpn->id,
                     'protocol' => $vpn->protocol?->value,
+                    'routingMode' => $vpn->routing_mode?->value,
+                    'networkCidr' => $vpn->client_network_cidr,
                     'routedVlans' => is_array($vpn->routed_vlans) ? array_values($vpn->routed_vlans) : [],
                     'icon' => $this->iconResolver->urlForKind('vpn_remote_access', $tenantId),
                     'iconSize' => $iconSize,
@@ -637,12 +647,16 @@ class TopologyService
                 'data' => [
                     'id' => 'vpn-stos-'.$vpn->id,
                     'label' => $vpn->name,
+                    'name' => $vpn->name,
                     'kind' => 'vpn',
+                    'vpnKind' => 'site',
                     'type' => 'vpn_site_to_site',
                     'vpnId' => $vpn->id,
                     'protocol' => $vpn->protocol?->value,
                     'routedVlansA' => $vpn->routed_vlans_a ?: [],
                     'routedVlansB' => $vpn->routed_vlans_b ?: [],
+                    'routedNetworksA' => is_array($vpn->routed_networks_a) ? array_values($vpn->routed_networks_a) : [],
+                    'routedNetworksB' => is_array($vpn->routed_networks_b) ? array_values($vpn->routed_networks_b) : [],
                     'icon' => $this->iconResolver->urlForKind('vpn_site_to_site', $tenantId),
                     'iconSize' => $iconSize,
                 ],
@@ -659,6 +673,11 @@ class TopologyService
                     'fromIfaceId' => $ifaceA->id,
                     'toIfaceId' => null,
                     'fromIface' => $ifaceA->name,
+                    // "A" / "B" sit at the vpn-node end of each edge so
+                    // the lettering identifies which firewall is which
+                    // *as you read the tunnel* rather than crowding the
+                    // firewall icon itself.
+                    'toIface' => 'A',
                 ],
             ];
             $edges[] = [
@@ -671,6 +690,7 @@ class TopologyService
                     'idealLength' => 140,
                     'fromIfaceId' => null,
                     'toIfaceId' => $ifaceB->id,
+                    'fromIface' => 'B',
                     'toIface' => $ifaceB->name,
                 ],
             ];

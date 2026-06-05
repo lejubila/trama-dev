@@ -250,6 +250,97 @@
             </div>
         </div>
 
+        {{-- Sezione: Reti Wi-Fi --}}
+        <div class="bg-white shadow ring-1 ring-black/5 rounded-md">
+            <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                <label class="inline-flex items-center gap-3">
+                    <input type="checkbox" wire:model.live="wifiEnabled" class="rounded border-gray-300 text-indigo-600">
+                    <span class="font-semibold text-gray-700">Reti Wi-Fi</span>
+                </label>
+                <span class="text-xs text-gray-500">Selezionate: {{ count($wifiIds) }} / {{ $allWifi->count() }}</span>
+            </div>
+            <div class="p-4 space-y-3 @if (!$wifiEnabled) opacity-50 pointer-events-none @endif">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Descrizione di sezione</label>
+                    <textarea wire:model="wifiDescription" rows="2"
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
+                </div>
+                @if ($allWifi->isEmpty())
+                    <p class="text-sm text-gray-500 italic">Nessuna rete Wi-Fi definita.</p>
+                @else
+                    <div class="space-y-1 max-h-72 overflow-y-auto border border-gray-200 rounded p-2">
+                        @foreach ($allWifi as $w)
+                            <label class="flex items-center gap-2 py-1 text-sm" wire:key="wifi-{{ $w->id }}">
+                                <input type="checkbox" wire:model.live="wifiIds" value="{{ $w->id }}"
+                                       class="rounded border-gray-300 text-indigo-600">
+                                <span class="font-medium">{{ $w->ssid }}</span>
+                                <span class="text-xs text-gray-500">
+                                    @if ($w->vlan_id) VLAN {{ $w->vlan_id }} @endif
+                                    @if ($w->security_type) · {{ $w->security_type }} @endif
+                                </span>
+                            </label>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Sezione: VPN --}}
+        <div class="bg-white shadow ring-1 ring-black/5 rounded-md">
+            <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                <label class="inline-flex items-center gap-3">
+                    <input type="checkbox" wire:model.live="vpnEnabled" class="rounded border-gray-300 text-indigo-600">
+                    <span class="font-semibold text-gray-700">VPN</span>
+                </label>
+                <span class="text-xs text-gray-500">
+                    Selezionate: {{ count($vpnRemoteIds) + count($vpnSiteIds) }} / {{ $allVpnRemote->count() + $allVpnSite->count() }}
+                </span>
+            </div>
+            <div class="p-4 space-y-3 @if (!$vpnEnabled) opacity-50 pointer-events-none @endif">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Descrizione di sezione</label>
+                    <textarea wire:model="vpnDescription" rows="2"
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <h4 class="text-xs font-semibold text-gray-600 uppercase mb-1">Remote access</h4>
+                        @if ($allVpnRemote->isEmpty())
+                            <p class="text-xs text-gray-500 italic">Nessuna VPN remote-access.</p>
+                        @else
+                            <div class="space-y-1 max-h-60 overflow-y-auto border border-gray-200 rounded p-2">
+                                @foreach ($allVpnRemote as $v)
+                                    <label class="flex items-center gap-2 py-1 text-sm" wire:key="vpn-ra-{{ $v->id }}">
+                                        <input type="checkbox" wire:model.live="vpnRemoteIds" value="{{ $v->id }}"
+                                               class="rounded border-gray-300 text-indigo-600">
+                                        <span class="font-medium">{{ $v->name }}</span>
+                                        <span class="text-xs text-gray-500">{{ $v->protocol?->label() }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold text-gray-600 uppercase mb-1">Site-to-Site</h4>
+                        @if ($allVpnSite->isEmpty())
+                            <p class="text-xs text-gray-500 italic">Nessuna VPN site-to-site.</p>
+                        @else
+                            <div class="space-y-1 max-h-60 overflow-y-auto border border-gray-200 rounded p-2">
+                                @foreach ($allVpnSite as $v)
+                                    <label class="flex items-center gap-2 py-1 text-sm" wire:key="vpn-stos-{{ $v->id }}">
+                                        <input type="checkbox" wire:model.live="vpnSiteIds" value="{{ $v->id }}"
+                                               class="rounded border-gray-300 text-indigo-600">
+                                        <span class="font-medium">{{ $v->name }}</span>
+                                        <span class="text-xs text-gray-500">{{ $v->protocol?->label() }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="flex items-center gap-3 pt-2">
             <button type="submit"
                     wire:loading.attr="disabled"

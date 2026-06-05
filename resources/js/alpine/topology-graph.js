@@ -124,6 +124,10 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
         // chosen labels survive refresh; also restorable from a snapshot.
         // Shape: { [interfaceId]: { ip: bool, mac: bool, vlan: bool, description: bool } }
         portSettings: {},
+        // Per-VPN-remote-access node toggles for the optional detail rows
+        // rendered under the node name (routing mode, client network CIDR).
+        // Shape: { 'vpn-ra-<id>': { routing: bool, cidr: bool } }
+        vpnNodeDetails: {},
         // Cache of interface payloads fetched lazily from the server.
         // Shape: { [equipmentId]: [ { id, name, ip_address, ... } ] }
         _interfacesCache: {},
@@ -147,9 +151,12 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             // local copy.
             this._loadPortSettingsFromLocal();
             this._loadNodeLabelPositionsFromLocal();
+            this._loadVpnNodeDetailsFromLocal();
             const restored = this._applyRestore(restore);
             this._applyNodeLabelPositions();
             this._applySessionHidden();
+            this._applyVpnLabels();
+            window._topologyVpnNodeDetails = this.vpnNodeDetails;
             // Reflect the persisted/local settings into every edge label
             // already in the cy instance.
             this._refreshEdgeLabels();
@@ -235,7 +242,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             // regardless of dataset delta. Compounds appear/disappear around
             // their children, hidden devices fade in/out, patch-panel
             // passthrough flips — never a relayout.
-            ['includeHidden', 'hidePatchPanels', 'groupByRack', 'groupBySite', 'groupByRoom']
+            ['includeHidden', 'hidePatchPanels', 'hideWifi', 'hideVpn', 'groupByRack', 'groupBySite', 'groupByRoom']
                 .forEach((k) => this.$watch('$wire.' + k, refreshNoLayout));
         },
 
@@ -416,6 +423,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             this._refreshEdgeLabels();
             this._applyNodeLabelPositions();
             this._applySessionHidden();
+            this._applyVpnLabels();
             this.cy.style().update();
         },
 
@@ -441,6 +449,10 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             if (Array.isArray(restore.sessionHiddenIds)) {
                 this.sessionHiddenNodeIds = restore.sessionHiddenIds.slice();
                 this._publishSessionHidden();
+            }
+            if (restore.vpnNodeDetails && typeof restore.vpnNodeDetails === 'object') {
+                this.vpnNodeDetails = { ...restore.vpnNodeDetails };
+                this._saveVpnNodeDetailsToLocal();
             }
             if (!restore.nodePositions) return false;
             const positions = restore.nodePositions;
@@ -610,10 +622,11 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                 const numericId = m ? parseInt(m[1], 10) : NaN;
                 if (Number.isNaN(numericId)) return;
                 const pos = evt.renderedPosition || evt.position;
-                const name = String(evt.target.data('label') || '');
+                const name = String(evt.target.data('name') || evt.target.data('label') || '');
                 const hiddenDb = !!evt.target.data('hidden');
                 const hiddenSession = kind === 'equipment' && this.sessionHiddenNodeIds.includes(numericId);
-                this.openContextMenu(numericId, name, pos.x, pos.y, hiddenDb, hiddenSession, kind, rawId);
+                const vpnKind = String(evt.target.data('vpnKind') || '');
+                this.openContextMenu(numericId, name, pos.x, pos.y, hiddenDb, hiddenSession, kind, rawId, vpnKind);
             });
             // Native browser context menu suppression on the cy canvas.
             if (this.$refs && this.$refs.cy) {
@@ -747,7 +760,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
 
         // --- context menu + port labels ----------------------------------
 
-        openContextMenu(eqId, name, x, y, hiddenDb = false, hiddenSession = false, kind = 'equipment', fullId = null) {
+        openContextMenu(eqId, name, x, y, hiddenDb = false, hiddenSession = false, kind = 'equipment', fullId = null, vpnKind = '') {
             this.contextMenu = {
                 open: true,
                 x,
@@ -756,6 +769,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                 nodeFullId: fullId || (kind === 'wifi' ? 'wifi-' : kind === 'vpn' ? 'vpn-ra-' : 'eq-') + eqId,
                 nodeName: name,
                 nodeKind: kind,
+                nodeVpnKind: vpnKind,
                 nodeIsHiddenDb: hiddenDb,
                 nodeIsHiddenSession: hiddenSession,
                 view: 'root',
@@ -763,6 +777,77 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                 loading: false,
                 currentInterfaceId: null,
             };
+        },
+
+        openVpnDetailsView() {
+            this.contextMenu = { ...this.contextMenu, view: 'vpn-details' };
+        },
+
+        isVpnDetailOn(attr) {
+            const key = this.contextMenu.nodeFullId;
+            if (!key) return false;
+            const s = this.vpnNodeDetails[key];
+            return !!(s && s[attr]);
+        },
+
+        toggleVpnDetail(attr) {
+            const key = this.contextMenu.nodeFullId;
+            if (!key) return;
+            const prev = this.vpnNodeDetails[key] || {};
+            const next = { ...prev, [attr]: !prev[attr] };
+            const hasAny = ['routing', 'cidr', 'netA', 'netB'].some((k) => next[k]);
+            const merged = { ...this.vpnNodeDetails };
+            if (hasAny) merged[key] = next; else delete merged[key];
+            this.vpnNodeDetails = merged;
+            this._saveVpnNodeDetailsToLocal();
+            window._topologyVpnNodeDetails = this.vpnNodeDetails;
+            this._applyVpnLabels();
+        },
+
+        _applyVpnLabels() {
+            if (!this.cy) return;
+            this.cy.nodes('[kind = "vpn"]').forEach((n) => {
+                const id = n.id();
+                const name = String(n.data('name') || n.data('label') || '');
+                const cfg = this.vpnNodeDetails[id] || {};
+                const vpnKind = String(n.data('vpnKind') || '');
+                const lines = [name];
+                if (vpnKind === 'remote') {
+                    if (cfg.routing) {
+                        const mode = String(n.data('routingMode') || '').toLowerCase();
+                        if (mode) lines.push(mode === 'bridged' ? 'Bridged' : 'Routed');
+                    }
+                    if (cfg.cidr) {
+                        const cidr = n.data('networkCidr');
+                        if (cidr) lines.push(String(cidr));
+                    }
+                } else if (vpnKind === 'site') {
+                    if (cfg.netA) {
+                        const nets = n.data('routedNetworksA');
+                        if (Array.isArray(nets) && nets.length > 0) lines.push('A: ' + nets.join(', '));
+                    }
+                    if (cfg.netB) {
+                        const nets = n.data('routedNetworksB');
+                        if (Array.isArray(nets) && nets.length > 0) lines.push('B: ' + nets.join(', '));
+                    }
+                }
+                n.data('label', lines.join('\n'));
+            });
+        },
+
+        _saveVpnNodeDetailsToLocal() {
+            try {
+                window.localStorage.setItem(this._localStorageKey() + ':vpnNodeDetails', JSON.stringify(this.vpnNodeDetails));
+            } catch (e) { /* ignore quota / private mode */ }
+        },
+
+        _loadVpnNodeDetailsFromLocal() {
+            try {
+                const raw = window.localStorage.getItem(this._localStorageKey() + ':vpnNodeDetails');
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object') this.vpnNodeDetails = parsed;
+            } catch (e) { /* ignore */ }
         },
 
         closeContextMenu() {
@@ -1163,7 +1248,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                         // Prefer per-connection color (hex from cable_color
                         // picker) when set; fall back to media-based palette.
                         'line-color': (ele) => ele.data('color') || MEDIA_COLOR[ele.data('media')] || '#94a3b8',
-                        'line-style': (ele) => (ele.data('media') === 'wireless' ? 'dashed' : 'solid'),
+                        'line-style': (ele) => (ele.data('cableType') === 'vpn' || ele.data('media') === 'wireless' ? 'dashed' : 'solid'),
                         'width': (ele) => Math.max(1.5, Math.log10((ele.data('speed') || 100)) - 0.5),
                         'curve-style': 'bezier',
                         'target-arrow-shape': 'none',
@@ -1293,6 +1378,11 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                         'background-color': '#7c3aed',
                         'background-opacity': 1,
                         'border-color': '#4c1d95',
+                        // Multi-line label (name + optional routing mode +
+                        // optional CIDR) needs explicit wrap so embedded \n
+                        // chars actually break the text.
+                        'text-wrap': 'wrap',
+                        'text-justification': 'center',
                     },
                 },
                 {

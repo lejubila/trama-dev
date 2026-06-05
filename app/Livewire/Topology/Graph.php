@@ -74,6 +74,12 @@ class Graph extends Component
     #[Url(except: false)]
     public bool $hidePatchPanels = false;
 
+    #[Url(except: false)]
+    public bool $hideWifi = false;
+
+    #[Url(except: false)]
+    public bool $hideVpn = false;
+
     public function toggleType(string $type): void
     {
         $allTypes = array_map(
@@ -112,7 +118,7 @@ class Graph extends Component
 
     public function clearFilters(): void
     {
-        $this->reset(['siteId', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom', 'roomFilter', 'hidePatchPanels']);
+        $this->reset(['siteId', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom', 'roomFilter', 'hidePatchPanels', 'hideWifi', 'hideVpn']);
     }
 
     /**
@@ -235,6 +241,8 @@ class Graph extends Component
             groupByRoom: $this->groupByRoom,
             tagIds: $this->tagFilters !== [] ? array_map('intval', $this->tagFilters) : null,
             hidePatchPanels: $this->hidePatchPanels,
+            hideWifi: $this->hideWifi,
+            hideVpn: $this->hideVpn,
         );
     }
 
@@ -255,7 +263,8 @@ class Graph extends Component
                 $sessionHiddenIds = is_array($state['sessionHiddenIds'] ?? null)
                     ? array_values(array_map('intval', $state['sessionHiddenIds']))
                     : null;
-                $anyDisplayPref = $portSettings !== null || $nodeLabelPositions !== null || $sessionHiddenIds !== null;
+                $vpnNodeDetails = is_array($state['vpnNodeDetails'] ?? null) ? $state['vpnNodeDetails'] : null;
+                $anyDisplayPref = $portSettings !== null || $nodeLabelPositions !== null || $sessionHiddenIds !== null || $vpnNodeDetails !== null;
                 if (is_array($positions) && count($positions) > 0) {
                     $restore = [
                         // Cast to object so JSON-encodes as {} not [] when empty.
@@ -265,12 +274,14 @@ class Graph extends Component
                         'portSettings' => $portSettings !== null ? (object) $portSettings : null,
                         'nodeLabelPositions' => $nodeLabelPositions !== null ? (object) $nodeLabelPositions : null,
                         'sessionHiddenIds' => $sessionHiddenIds,
+                        'vpnNodeDetails' => $vpnNodeDetails !== null ? (object) $vpnNodeDetails : null,
                     ];
                 } elseif ($anyDisplayPref) {
                     $restore = [
                         'portSettings' => $portSettings !== null ? (object) $portSettings : null,
                         'nodeLabelPositions' => $nodeLabelPositions !== null ? (object) $nodeLabelPositions : null,
                         'sessionHiddenIds' => $sessionHiddenIds,
+                        'vpnNodeDetails' => $vpnNodeDetails !== null ? (object) $vpnNodeDetails : null,
                     ];
                 }
             }

@@ -591,9 +591,23 @@ class Show extends Component
             ->orderBy('name')
             ->get();
 
+        // Map each iface id (front + rear + everything else) to its active
+        // connection so the per-row "Connessione" column avoids the N+1 hit
+        // of calling `activeConnection()` from inside the table loop.
+        $connByIfaceId = [];
+        foreach ($connections as $c) {
+            if ($c->from_interface_id !== null) {
+                $connByIfaceId[(int) $c->from_interface_id] = $c;
+            }
+            if ($c->to_interface_id !== null) {
+                $connByIfaceId[(int) $c->to_interface_id] = $c;
+            }
+        }
+
         return view('livewire.equipment.show', [
             'interfaces' => $interfaces,
             'connections' => $connections,
+            'connByIfaceId' => $connByIfaceId,
             'audits' => $this->equipment->audits()->latest()->limit(50)->get(),
             'isPatchLike' => in_array(
                 $this->equipment->type,

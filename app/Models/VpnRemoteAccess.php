@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\VpnProtocol;
+use App\Enums\VpnRoutingMode;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\TenantAuditable;
 use Database\Factories\VpnRemoteAccessFactory;
@@ -21,6 +22,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string $name
  * @property VpnProtocol $protocol
  * @property int $firewall_interface_id
+ * @property VpnRoutingMode $routing_mode
+ * @property string|null $client_network_cidr
  * @property array<int>|null $routed_vlans
  * @property string|null $notes
  */
@@ -36,6 +39,8 @@ class VpnRemoteAccess extends Model implements AuditableContract
         'name',
         'protocol',
         'firewall_interface_id',
+        'routing_mode',
+        'client_network_cidr',
         'routed_vlans',
         'notes',
     ];
@@ -44,6 +49,7 @@ class VpnRemoteAccess extends Model implements AuditableContract
     {
         return [
             'protocol' => VpnProtocol::class,
+            'routing_mode' => VpnRoutingMode::class,
             'routed_vlans' => 'array',
         ];
     }

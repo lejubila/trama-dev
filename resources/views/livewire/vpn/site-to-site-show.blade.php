@@ -14,6 +14,10 @@
                 {{ __('vpn.routed_vlans_label') }}:
                 {{ is_array($vpn->routed_vlans_a) ? implode(',', $vpn->routed_vlans_a) : '—' }}
             </p>
+            <p class="text-xs text-gray-500 mt-1 font-mono">
+                {{ __('vpn.label_routed_networks_a') }}:
+                {{ is_array($vpn->routed_networks_a) ? implode(', ', $vpn->routed_networks_a) : '—' }}
+            </p>
         </div>
         <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md p-4">
             <h3 class="text-sm font-semibold mb-3">{{ __('vpn.endpoint_b_heading') }}</h3>
@@ -24,6 +28,10 @@
             <p class="text-xs text-gray-500 mt-2">
                 {{ __('vpn.routed_vlans_label') }}:
                 {{ is_array($vpn->routed_vlans_b) ? implode(',', $vpn->routed_vlans_b) : '—' }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1 font-mono">
+                {{ __('vpn.label_routed_networks_b') }}:
+                {{ is_array($vpn->routed_networks_b) ? implode(', ', $vpn->routed_networks_b) : '—' }}
             </p>
         </div>
     </div>

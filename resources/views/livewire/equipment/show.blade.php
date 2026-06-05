@@ -80,10 +80,41 @@
                                     return ($other->equipment?->name ?? '?') . ' · ' . ($other->name ?? '?') . $sideLabel;
                                 };
                             @endphp
+                            @php
+                                $connAction = function ($conn, $localIf) use ($equipment) {
+                                    if (! $localIf) return null;
+                                    if ($conn) {
+                                        return [
+                                            'label' => 'Modifica',
+                                            'href' => route('connections.edit', ['connection' => $conn, 'from_equipment' => $equipment->id]),
+                                        ];
+                                    }
+                                    return [
+                                        'label' => 'Crea',
+                                        'href' => route('connections.create', ['from_equipment' => $equipment->id, 'from_iface' => $localIf->id]),
+                                    ];
+                                };
+                                $frontAction = $connAction($frontConn, $if);
+                                $rearAction = $connAction($rearConn, $rear);
+                            @endphp
                             <tr wire:key="if-{{ $if->id }}">
                                 <td class="px-4 py-3 font-mono text-gray-900">{{ $if->name }}</td>
-                                <td class="px-4 py-3 text-gray-700">{{ $describe($frontConn, $if) }}</td>
-                                <td class="px-4 py-3 text-gray-700">{{ $describe($rearConn, $rear) }}</td>
+                                <td class="px-4 py-3 text-gray-700">
+                                    <div>{{ $describe($frontConn, $if) }}</div>
+                                    @if ($frontAction)
+                                        @can('create', App\Models\Connection::class)
+                                            <a href="{{ $frontAction['href'] }}" wire:navigate class="text-xs text-indigo-600 hover:underline">{{ $frontAction['label'] }}</a>
+                                        @endcan
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 text-gray-700">
+                                    <div>{{ $describe($rearConn, $rear) }}</div>
+                                    @if ($rearAction)
+                                        @can('create', App\Models\Connection::class)
+                                            <a href="{{ $rearAction['href'] }}" wire:navigate class="text-xs text-indigo-600 hover:underline">{{ $rearAction['label'] }}</a>
+                                        @endcan
+                                    @endif
+                                </td>
                                 <td class="px-4 py-3 text-gray-600">{{ $if->connector ?? '—' }}</td>
                                 <td class="px-4 py-3 text-right space-x-2">
                                     @can('update', $if)
@@ -111,11 +142,19 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">VLAN</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Connessione</th>
                             <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200 text-sm">
                         @forelse ($interfaces as $if)
+                            @php
+                                $conn = $connByIfaceId[$if->id] ?? null;
+                                $remote = null;
+                                if ($conn) {
+                                    $remote = $conn->from_interface_id === $if->id ? $conn->toInterface : $conn->fromInterface;
+                                }
+                            @endphp
                             <tr wire:key="if-{{ $if->id }}">
                                 <td class="px-4 py-3 font-mono text-gray-900">{{ $if->name }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $if->type?->value }} / {{ $if->media?->value }}</td>
@@ -129,6 +168,20 @@
                                 </td>
                                 <td class="px-4 py-3 font-mono text-gray-600">{{ $if->ip_address ?? '—' }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $if->status?->value }}</td>
+                                <td class="px-4 py-3 text-gray-700">
+                                    @if ($conn && $remote?->equipment)
+                                        <a href="{{ route('equipment.show', $remote->equipment) }}" wire:navigate class="text-indigo-700 hover:underline">{{ $remote->equipment->name }}</a>
+                                        · <span class="font-mono">{{ $remote->name }}</span>
+                                        @can('update', $conn)
+                                            <a href="{{ route('connections.edit', ['connection' => $conn, 'from_equipment' => $equipment->id]) }}" wire:navigate class="ml-1 text-xs text-indigo-600 hover:underline">Modifica</a>
+                                        @endcan
+                                    @else
+                                        <span class="text-gray-400">—</span>
+                                        @can('create', App\Models\Connection::class)
+                                            <a href="{{ route('connections.create', ['from_equipment' => $equipment->id, 'from_iface' => $if->id]) }}" wire:navigate class="ml-1 text-xs text-indigo-600 hover:underline">Crea</a>
+                                        @endcan
+                                    @endif
+                                </td>
                                 <td class="px-4 py-3 text-right space-x-2">
                                     @can('update', $if)
                                         <button wire:click="openIfEdit({{ $if->id }})" class="text-indigo-600 hover:text-indigo-800"><x-icon name="pencil" class="h-4 w-4 inline" /></button>
@@ -139,7 +192,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">Nessuna interfaccia.</td></tr>
+                            <tr><td colspan="8" class="px-4 py-6 text-center text-gray-500">Nessuna interfaccia.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

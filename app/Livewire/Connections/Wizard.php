@@ -46,6 +46,12 @@ class Wizard extends Component
     #[Url(as: 'from_equipment')]
     public ?int $fromEquipmentId = null;
 
+    /** When ?from_iface=<id> lands on the page, pre-select Estremo A and jump
+     *  straight to step 2 — useful for the per-port "Crea connessione" button
+     *  on the equipment page. */
+    #[Url(as: 'from_iface')]
+    public ?int $fromInterfaceParam = null;
+
     /** Volatile toggle for step 2: when true, the destination list ignores
      *  the side/media compatibility filter and shows every interface. Reset
      *  on back() so a different origin always starts from the filtered view. */
@@ -54,6 +60,20 @@ class Wizard extends Component
     public function mount(): void
     {
         $this->authorize('create', Connection::class);
+
+        if ($this->fromInterfaceParam !== null && $this->fromInterfaceParam > 0) {
+            // Verify the iface exists (and is visible under the current
+            // tenant scope) before pre-selecting, so a stale URL doesn't
+            // ghost-fill the form with an unauthorised id.
+            $iface = NetworkInterface::query()->find($this->fromInterfaceParam);
+            if ($iface !== null) {
+                $this->fromInterfaceId = $iface->getKey();
+                if ($this->fromEquipmentId === null) {
+                    $this->fromEquipmentId = (int) $iface->equipment_id;
+                }
+                $this->step = 2;
+            }
+        }
     }
 
     public function next(): void

@@ -6,6 +6,7 @@ namespace App\Livewire\Vpn;
 
 use App\Enums\EquipmentType;
 use App\Enums\VpnProtocol;
+use App\Enums\VpnRoutingMode;
 use App\Models\NetworkInterface;
 use App\Models\VpnRemoteAccess;
 use App\Models\VpnSiteToSite;
@@ -31,6 +32,16 @@ class Index extends Component
     /** Remote-access only. */
     public int $firewallInterfaceId = 0;
 
+    /** Remote-access only: 'routed' | 'bridged'. */
+    #[Validate('required|string|in:routed,bridged')]
+    public string $routingMode = 'routed';
+
+    /** Remote-access only: IPv4 of the client subnet (without prefix). */
+    public string $clientNetworkIp = '';
+
+    /** Remote-access only: CIDR prefix length 0..32. -1 = unset. */
+    public int $clientNetworkPrefix = 24;
+
     /** Site-to-site only. */
     public int $endpointAInterfaceId = 0;
 
@@ -41,6 +52,12 @@ class Index extends Component
 
     /** Site-to-site only. */
     public string $routedVlansB = '';
+
+    /** Site-to-site only: CSV of CIDR strings exported by side A. */
+    public string $routedNetworksA = '';
+
+    /** Site-to-site only: CSV of CIDR strings exported by side B. */
+    public string $routedNetworksB = '';
 
     public string $notes = '';
 
@@ -58,6 +75,8 @@ class Index extends Component
         $this->name = $vpn->name;
         $this->protocol = $vpn->protocol?->value ?? 'wireguard';
         $this->firewallInterfaceId = (int) $vpn->firewall_interface_id;
+        $this->routingMode = $vpn->routing_mode?->value ?? 'routed';
+        [$this->clientNetworkIp, $this->clientNetworkPrefix] = $this->splitCidr($vpn->client_network_cidr);
         $this->routedVlans = $this->vlansToCsv($vpn->routed_vlans);
         $this->notes = (string) ($vpn->notes ?? '');
     }
@@ -79,12 +98,16 @@ class Index extends Component
         $this->endpointBInterfaceId = (int) $vpn->endpoint_b_interface_id;
         $this->routedVlans = $this->vlansToCsv($vpn->routed_vlans_a);
         $this->routedVlansB = $this->vlansToCsv($vpn->routed_vlans_b);
+        $this->routedNetworksA = $this->cidrListToCsv($vpn->routed_networks_a);
+        $this->routedNetworksB = $this->cidrListToCsv($vpn->routed_networks_b);
         $this->notes = (string) ($vpn->notes ?? '');
     }
 
     private function resetForm(string $type, ?int $editingId = null): void
     {
-        $this->reset(['name', 'firewallInterfaceId', 'endpointAInterfaceId', 'endpointBInterfaceId', 'routedVlans', 'routedVlansB', 'notes']);
+        $this->reset(['name', 'firewallInterfaceId', 'endpointAInterfaceId', 'endpointBInterfaceId', 'routedVlans', 'routedVlansB', 'routedNetworksA', 'routedNetworksB', 'notes', 'clientNetworkIp']);
+        $this->routingMode = 'routed';
+        $this->clientNetworkPrefix = 24;
         $this->resetErrorBag();
         $this->editingId = $editingId;
         $this->formType = $type;
@@ -103,10 +126,18 @@ class Index extends Component
 
                 return;
             }
+            $cidr = $this->buildCidr($this->clientNetworkIp, $this->clientNetworkPrefix);
+            if ($cidr === false) {
+                $this->addError('clientNetworkIp', __('vpn.err_cidr_invalid'));
+
+                return;
+            }
             $payload = [
                 'name' => $this->name,
                 'protocol' => $this->protocol,
                 'firewall_interface_id' => $this->firewallInterfaceId,
+                'routing_mode' => $this->routingMode,
+                'client_network_cidr' => $cidr,
                 'routed_vlans' => $this->csvToVlans($this->routedVlans),
                 'notes' => $this->notes !== '' ? $this->notes : null,
             ];
@@ -138,8 +169,22 @@ class Index extends Component
                 'endpoint_b_interface_id' => $this->endpointBInterfaceId,
                 'routed_vlans_a' => $this->csvToVlans($this->routedVlans),
                 'routed_vlans_b' => $this->csvToVlans($this->routedVlansB),
+                'routed_networks_a' => $this->csvToCidrList($this->routedNetworksA),
+                'routed_networks_b' => $this->csvToCidrList($this->routedNetworksB),
                 'notes' => $this->notes !== '' ? $this->notes : null,
             ];
+            $invalid = $this->firstInvalidCidr($this->routedNetworksA);
+            if ($invalid !== null) {
+                $this->addError('routedNetworksA', __('vpn.err_cidr_list_invalid', ['value' => $invalid]));
+
+                return;
+            }
+            $invalid = $this->firstInvalidCidr($this->routedNetworksB);
+            if ($invalid !== null) {
+                $this->addError('routedNetworksB', __('vpn.err_cidr_list_invalid', ['value' => $invalid]));
+
+                return;
+            }
             if ($this->editingId !== null) {
                 $vpn = VpnSiteToSite::query()->findOrFail($this->editingId);
                 $this->authorize('update', $vpn);
@@ -188,6 +233,131 @@ class Index extends Component
     }
 
     /**
+     * Split a stored CIDR ("10.0.0.0/24") into [ip, prefix]. Empty / null
+     * input falls back to the default "" + /24 so the form opens with a
+     * neutral state for new rows.
+     *
+     * @return array{0:string,1:int}
+     */
+    private function splitCidr(?string $cidr): array
+    {
+        if (! is_string($cidr) || $cidr === '' || ! str_contains($cidr, '/')) {
+            return ['', 24];
+        }
+        [$ip, $p] = explode('/', $cidr, 2);
+        $p = (int) $p;
+
+        return [$ip, ($p >= 0 && $p <= 32) ? $p : 24];
+    }
+
+    /**
+     * Validate + normalise the IP/prefix pair back into a CIDR string.
+     * Returns null when both fields are empty (treated as "no network").
+     * Returns false when the IP is not a valid IPv4 — the caller surfaces
+     * a form error in that case.
+     */
+    private function buildCidr(string $ip, int $prefix): string|false|null
+    {
+        $ip = trim($ip);
+        if ($ip === '') {
+            return null;
+        }
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false) {
+            return false;
+        }
+        $prefix = max(0, min(32, $prefix));
+
+        return $ip.'/'.$prefix;
+    }
+
+    /**
+     * Build the prefix-length combobox options: every /N from 0 to 32 with
+     * its dotted-quad netmask and 32-bit binary view, grouped in octets.
+     *
+     * @return list<array{prefix:int,netmask:string,bits:string}>
+     */
+    private function prefixOptions(): array
+    {
+        $out = [];
+        for ($p = 0; $p <= 32; $p++) {
+            $mask = $p === 0 ? 0 : (0xFFFFFFFF << (32 - $p)) & 0xFFFFFFFF;
+            $netmask = long2ip($mask);
+            $bits = str_pad(decbin($mask), 32, '0', STR_PAD_LEFT);
+            $bitsGrouped = implode('.', str_split($bits, 8));
+            $out[] = ['prefix' => $p, 'netmask' => $netmask, 'bits' => $bitsGrouped];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  array<string>|null  $list
+     */
+    private function cidrListToCsv(?array $list): string
+    {
+        return is_array($list) ? implode("\n", $list) : '';
+    }
+
+    /**
+     * Parse a CSV / whitespace-separated list of CIDRs and return only the
+     * syntactically valid ones (cheap pre-filter; the firstInvalidCidr()
+     * call surfaces a form error for tokens that *look* like a CIDR but
+     * fail validation).
+     *
+     * @return array<string>|null
+     */
+    private function csvToCidrList(string $csv): ?array
+    {
+        $values = [];
+        foreach (preg_split('/[\s,;]+/', trim($csv)) ?: [] as $tok) {
+            $tok = trim($tok);
+            if ($tok === '' || ! $this->isValidCidr($tok)) {
+                continue;
+            }
+            $values[] = $tok;
+        }
+
+        return $values !== [] ? array_values(array_unique($values)) : null;
+    }
+
+    /**
+     * Return the first token from the CSV input that *looks* like an
+     * attempted CIDR (has a "/") but doesn't parse — surfaced as a
+     * form-level error so the user sees what to fix.
+     */
+    private function firstInvalidCidr(string $csv): ?string
+    {
+        foreach (preg_split('/[\s,;]+/', trim($csv)) ?: [] as $tok) {
+            $tok = trim($tok);
+            if ($tok === '') {
+                continue;
+            }
+            if (! $this->isValidCidr($tok)) {
+                return $tok;
+            }
+        }
+
+        return null;
+    }
+
+    private function isValidCidr(string $cidr): bool
+    {
+        if (! str_contains($cidr, '/')) {
+            return false;
+        }
+        [$ip, $p] = explode('/', $cidr, 2);
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false) {
+            return false;
+        }
+        if (! ctype_digit($p)) {
+            return false;
+        }
+        $p = (int) $p;
+
+        return $p >= 0 && $p <= 32;
+    }
+
+    /**
      * @param  array<int>|null  $list
      */
     private function vlansToCsv(?array $list): string
@@ -229,6 +399,8 @@ class Index extends Component
                 ->get(),
             'firewallInterfaces' => $this->firewallInterfaces()->get(['id', 'name', 'equipment_id']),
             'protocols' => VpnProtocol::cases(),
+            'routingModes' => VpnRoutingMode::cases(),
+            'prefixOptions' => $this->prefixOptions(),
         ]);
     }
 }

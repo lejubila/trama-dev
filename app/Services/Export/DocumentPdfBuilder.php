@@ -10,6 +10,9 @@ use App\Models\Rack;
 use App\Models\Room;
 use App\Models\Site;
 use App\Models\TopologySnapshot;
+use App\Models\VpnRemoteAccess;
+use App\Models\VpnSiteToSite;
+use App\Models\WifiNetwork;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
@@ -129,6 +132,18 @@ class DocumentPdfBuilder
                 ),
             ),
             'topologies' => $this->loadTopologies($sections['topologies'] ?? null),
+            'wifi' => $this->loadSection(
+                $sections['wifi'] ?? null,
+                fn (array $ids) => $this->orderByIdList(
+                    WifiNetwork::query()
+                        ->with(['broadcasters.equipment'])
+                        ->withCount('associations')
+                        ->whereIn('id', $ids)
+                        ->get(),
+                    $ids,
+                ),
+            ),
+            'vpn' => $this->loadVpn($sections['vpn'] ?? null),
         ];
 
         $data['hierarchy'] = $this->buildHierarchy($document, $data);
@@ -248,6 +263,50 @@ class DocumentPdfBuilder
         }
 
         return $loader($ids);
+    }
+
+    /**
+     * Load the two VPN flavours into a single payload so the template can
+     * render them with a shared heading. Returns null when the section is
+     * disabled (so the print template can early-out with @if).
+     *
+     * @return array{remote: Collection<int, VpnRemoteAccess>, site: Collection<int, VpnSiteToSite>}|null
+     */
+    private function loadVpn(?array $section): ?array
+    {
+        if ($section === null || empty($section['enabled'])) {
+            return null;
+        }
+        $remoteIds = array_values(array_filter(
+            array_map('intval', $section['remote_ids'] ?? []),
+            fn (int $id) => $id > 0,
+        ));
+        $siteIds = array_values(array_filter(
+            array_map('intval', $section['site_ids'] ?? []),
+            fn (int $id) => $id > 0,
+        ));
+
+        $remote = $remoteIds === []
+            ? collect()
+            : $this->orderByIdList(
+                VpnRemoteAccess::query()
+                    ->with(['firewallInterface.equipment', 'clients.clientInterface.equipment'])
+                    ->whereIn('id', $remoteIds)
+                    ->get(),
+                $remoteIds,
+            );
+
+        $site = $siteIds === []
+            ? collect()
+            : $this->orderByIdList(
+                VpnSiteToSite::query()
+                    ->with(['endpointAInterface.equipment', 'endpointBInterface.equipment'])
+                    ->whereIn('id', $siteIds)
+                    ->get(),
+                $siteIds,
+            );
+
+        return ['remote' => $remote, 'site' => $site];
     }
 
     /**

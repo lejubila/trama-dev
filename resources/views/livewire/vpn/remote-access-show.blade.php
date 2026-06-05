@@ -11,6 +11,14 @@
                 <span class="font-mono">{{ $vpn->firewallInterface?->name }}</span>
             </p>
             <p class="text-xs text-gray-500 mt-2">
+                {{ __('vpn.label_routing_mode') }}:
+                {{ __('vpn.routing_mode_'.($vpn->routing_mode?->value ?? 'routed')) }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+                {{ __('vpn.label_client_network_cidr') }}:
+                <span class="font-mono">{{ $vpn->client_network_cidr ?? '—' }}</span>
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
                 {{ __('vpn.routed_vlans_label') }}:
                 {{ is_array($vpn->routed_vlans) ? implode(',', $vpn->routed_vlans) : '—' }}
             </p>

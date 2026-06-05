@@ -121,6 +121,16 @@
             Nascondi patch panel / prese
         </label>
 
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Non mostra le reti Wi-Fi e i relativi client wireless">
+            <input type="checkbox" wire:model.live="hideWifi" class="rounded border-gray-300 text-indigo-600" />
+            Nascondi Wi-Fi
+        </label>
+
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Non mostra le VPN remote-access e site-to-site">
+            <input type="checkbox" wire:model.live="hideVpn" class="rounded border-gray-300 text-indigo-600" />
+            Nascondi VPN
+        </label>
+
         <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Racchiude gli apparati di ogni rack in un contenitore visivo">
             <input type="checkbox" wire:model.live="groupByRack" class="rounded border-gray-300 text-indigo-600" />
             Raggruppa per rack
@@ -162,6 +172,8 @@
                         groupBySite: $wire.groupBySite,
                         groupByRoom: $wire.groupByRoom,
                         hidePatchPanels: $wire.hidePatchPanels,
+                        hideWifi: $wire.hideWifi,
+                        hideVpn: $wire.hideVpn,
                         nodePositions: window.cy
                             ? Object.fromEntries(window.cy.nodes().map(n => {
                                 const p = n.position();
@@ -173,6 +185,7 @@
                         portSettings: window._topologyPortSettings || {},
                         nodeLabelPositions: window._topologyNodeLabelPositions || {},
                         sessionHiddenIds: window._topologySessionHiddenIds || [],
+                        vpnNodeDetails: window._topologyVpnNodeDetails || {},
                     }})"
                     class="text-xs px-2 py-1 rounded border bg-white text-gray-700"
                 >Salva snapshot</button>
@@ -286,6 +299,42 @@
                             <span>Nascondi</span>
                             <span class="text-gray-400">▸</span>
                         </button>
+                    </div>
+                </template>
+                <template x-if="contextMenu.nodeKind === 'vpn' && (contextMenu.nodeVpnKind === 'remote' || contextMenu.nodeVpnKind === 'site')">
+                    <button type="button" @click="openVpnDetailsView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
+                        <span>Dettagli rete</span>
+                        <span class="text-gray-400">▸</span>
+                    </button>
+                </template>
+            </div>
+
+            {{-- VPN details view: per-vpnKind toggles (remote-access vs site-to-site) --}}
+            <div x-show="contextMenu.view === 'vpn-details'">
+                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">← Indietro</button>
+                <div class="px-3 py-2 border-t border-b text-xs font-semibold text-gray-600">Mostra sotto il nome</div>
+                <template x-if="contextMenu.nodeVpnKind === 'remote'">
+                    <div>
+                        <label class="flex items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50 text-xs cursor-pointer">
+                            <span>Tipologia di rete (routed/bridged)</span>
+                            <input type="checkbox" :checked="isVpnDetailOn('routing')" @change="toggleVpnDetail('routing')" class="rounded border-gray-300" />
+                        </label>
+                        <label class="flex items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50 text-xs cursor-pointer">
+                            <span>Classe di rete (CIDR)</span>
+                            <input type="checkbox" :checked="isVpnDetailOn('cidr')" @change="toggleVpnDetail('cidr')" class="rounded border-gray-300" />
+                        </label>
+                    </div>
+                </template>
+                <template x-if="contextMenu.nodeVpnKind === 'site'">
+                    <div>
+                        <label class="flex items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50 text-xs cursor-pointer">
+                            <span>Reti esportate da A</span>
+                            <input type="checkbox" :checked="isVpnDetailOn('netA')" @change="toggleVpnDetail('netA')" class="rounded border-gray-300" />
+                        </label>
+                        <label class="flex items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50 text-xs cursor-pointer">
+                            <span>Reti esportate da B</span>
+                            <input type="checkbox" :checked="isVpnDetailOn('netB')" @change="toggleVpnDetail('netB')" class="rounded border-gray-300" />
+                        </label>
                     </div>
                 </template>
             </div>

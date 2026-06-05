@@ -10,6 +10,9 @@ use App\Models\Rack;
 use App\Models\Room;
 use App\Models\Site;
 use App\Models\TopologySnapshot;
+use App\Models\VpnRemoteAccess;
+use App\Models\VpnSiteToSite;
+use App\Models\WifiNetwork;
 use App\Services\Export\DocumentPdfBuilder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
@@ -90,6 +93,25 @@ class Editor extends Component
      */
     public array $topologiesItems = [];
 
+    // Sections — Wi-Fi networks
+    public bool $wifiEnabled = false;
+
+    public string $wifiDescription = '';
+
+    /** @var array<int, int> */
+    public array $wifiIds = [];
+
+    // Sections — VPN (remote-access + site-to-site)
+    public bool $vpnEnabled = false;
+
+    public string $vpnDescription = '';
+
+    /** @var array<int, int> */
+    public array $vpnRemoteIds = [];
+
+    /** @var array<int, int> */
+    public array $vpnSiteIds = [];
+
     public bool $includeCover = true;
 
     public bool $includeToc = true;
@@ -145,6 +167,15 @@ class Editor extends Component
                     : 'portrait';
             }
         }
+
+        $this->wifiEnabled = (bool) ($sec['wifi']['enabled'] ?? false);
+        $this->wifiDescription = (string) ($sec['wifi']['description'] ?? '');
+        $this->wifiIds = array_values(array_map('intval', $sec['wifi']['ids'] ?? []));
+
+        $this->vpnEnabled = (bool) ($sec['vpn']['enabled'] ?? false);
+        $this->vpnDescription = (string) ($sec['vpn']['description'] ?? '');
+        $this->vpnRemoteIds = array_values(array_map('intval', $sec['vpn']['remote_ids'] ?? []));
+        $this->vpnSiteIds = array_values(array_map('intval', $sec['vpn']['site_ids'] ?? []));
 
         $opt = is_array($p['options'] ?? null) ? $p['options'] : [];
         $this->includeCover = (bool) ($opt['include_cover'] ?? true);
@@ -359,6 +390,8 @@ class Editor extends Component
             'racksDescription' => 'nullable|string|max:5000',
             'equipmentDescription' => 'nullable|string|max:5000',
             'topologiesDescription' => 'nullable|string|max:5000',
+            'wifiDescription' => 'nullable|string|max:5000',
+            'vpnDescription' => 'nullable|string|max:5000',
         ]);
 
         $parameters = [
@@ -388,6 +421,17 @@ class Editor extends Component
                     'enabled' => $this->topologiesEnabled,
                     'description' => $this->topologiesDescription,
                     'items' => $this->topologiesItemsPayload(),
+                ],
+                'wifi' => [
+                    'enabled' => $this->wifiEnabled,
+                    'description' => $this->wifiDescription,
+                    'ids' => array_values(array_map('intval', $this->wifiIds)),
+                ],
+                'vpn' => [
+                    'enabled' => $this->vpnEnabled,
+                    'description' => $this->vpnDescription,
+                    'remote_ids' => array_values(array_map('intval', $this->vpnRemoteIds)),
+                    'site_ids' => array_values(array_map('intval', $this->vpnSiteIds)),
                 ],
             ],
             'options' => [
@@ -542,11 +586,18 @@ class Editor extends Component
             ->filter(fn ($s) => ! isset($snapPos[$s->id]))
             ->values();
 
+        $allWifi = WifiNetwork::query()->orderBy('ssid')->get(['id', 'ssid', 'vlan_id', 'security_type']);
+        $allVpnRemote = VpnRemoteAccess::query()->orderBy('name')->get(['id', 'name', 'protocol', 'routing_mode', 'client_network_cidr']);
+        $allVpnSite = VpnSiteToSite::query()->orderBy('name')->get(['id', 'name', 'protocol']);
+
         return view('livewire.documents.editor', [
             'tree' => $this->buildTree(),
             'selectedSnaps' => $selectedSnaps,
             'restSnaps' => $restSnaps,
             'snapshotCount' => $allSnapshots->count(),
+            'allWifi' => $allWifi,
+            'allVpnRemote' => $allVpnRemote,
+            'allVpnSite' => $allVpnSite,
         ]);
     }
 }

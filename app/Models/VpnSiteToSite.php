@@ -23,6 +23,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property int $endpoint_b_interface_id
  * @property array<int>|null $routed_vlans_a
  * @property array<int>|null $routed_vlans_b
+ * @property array<string>|null $routed_networks_a
+ * @property array<string>|null $routed_networks_b
  */
 class VpnSiteToSite extends Model implements AuditableContract
 {
@@ -39,6 +41,8 @@ class VpnSiteToSite extends Model implements AuditableContract
         'endpoint_b_interface_id',
         'routed_vlans_a',
         'routed_vlans_b',
+        'routed_networks_a',
+        'routed_networks_b',
         'notes',
     ];
 
@@ -48,6 +52,8 @@ class VpnSiteToSite extends Model implements AuditableContract
             'protocol' => VpnProtocol::class,
             'routed_vlans_a' => 'array',
             'routed_vlans_b' => 'array',
+            'routed_networks_a' => 'array',
+            'routed_networks_b' => 'array',
         ];
     }
 

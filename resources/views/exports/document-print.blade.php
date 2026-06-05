@@ -109,5 +109,13 @@
     @if (! is_null($data['topologies']) && $data['topologies']->isNotEmpty())
         @include('exports.document.topologies', ['topologies' => $data['topologies'], 'description' => $sections['topologies']['description'] ?? ''])
     @endif
+
+    @if (! is_null($data['wifi'] ?? null) && $data['wifi']->isNotEmpty())
+        @include('exports.document.wifi', ['wifi' => $data['wifi'], 'description' => $sections['wifi']['description'] ?? ''])
+    @endif
+
+    @if (! is_null($data['vpn'] ?? null) && (($data['vpn']['remote'] ?? collect())->isNotEmpty() || ($data['vpn']['site'] ?? collect())->isNotEmpty()))
+        @include('exports.document.vpn', ['vpn' => $data['vpn'], 'description' => $sections['vpn']['description'] ?? ''])
+    @endif
 </body>
 </html>

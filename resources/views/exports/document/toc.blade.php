@@ -25,8 +25,15 @@
                 @endif
             </li>
         @endforeach
+        @php $tocNext = $hierarchy->count() + 1; @endphp
         @if (! is_null($data['topologies']) && $data['topologies']->isNotEmpty())
-            <li>{{ $hierarchy->count() + 1 }}. Topologie ({{ $data['topologies']->count() }})</li>
+            <li>{{ $tocNext++ }}. Topologie ({{ $data['topologies']->count() }})</li>
+        @endif
+        @if (! is_null($data['wifi'] ?? null) && $data['wifi']->isNotEmpty())
+            <li>{{ $tocNext++ }}. Reti Wi-Fi ({{ $data['wifi']->count() }})</li>
+        @endif
+        @if (! is_null($data['vpn'] ?? null) && (($data['vpn']['remote'] ?? collect())->isNotEmpty() || ($data['vpn']['site'] ?? collect())->isNotEmpty()))
+            <li>{{ $tocNext++ }}. VPN ({{ ($data['vpn']['remote'] ?? collect())->count() + ($data['vpn']['site'] ?? collect())->count() }})</li>
         @endif
     </ol>
 </section>

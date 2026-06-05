@@ -22,6 +22,8 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('vpn.col_name') }}</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('vpn.col_protocol') }}</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('vpn.col_firewall') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('vpn.col_routing') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('vpn.col_network') }}</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('vpn.col_clients') }}</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('vpn.col_routed_vlans') }}</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">{{ __('vpn.col_actions') }}</th>
@@ -35,6 +37,8 @@
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $r->protocol?->label() }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $r->firewallInterface?->equipment?->name }} · <span class="font-mono">{{ $r->firewallInterface?->name }}</span></td>
+                        <td class="px-4 py-3 text-gray-600">{{ __('vpn.routing_mode_'.($r->routing_mode?->value ?? 'routed')) }}</td>
+                        <td class="px-4 py-3 text-gray-600 font-mono text-xs">{{ $r->client_network_cidr ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $r->clients_count }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ is_array($r->routed_vlans) ? implode(',', $r->routed_vlans) : '—' }}</td>
                         <td class="px-4 py-3 text-right space-x-2">
@@ -47,7 +51,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">{{ __('vpn.empty_remote') }}</td></tr>
+                    <tr><td colspan="8" class="px-4 py-6 text-center text-gray-500">{{ __('vpn.empty_remote') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -130,6 +134,27 @@
                             @error('firewallInterfaceId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
+                            <label class="block text-sm font-medium text-gray-700">{{ __('vpn.label_routing_mode') }}</label>
+                            <select wire:model="routingMode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                                @foreach ($routingModes as $m)
+                                    <option value="{{ $m->value }}">{{ __('vpn.routing_mode_'.$m->value) }}</option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">{{ __('vpn.routing_mode_hint') }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">{{ __('vpn.label_client_network_cidr') }}</label>
+                            <div class="mt-1 flex gap-2">
+                                <input type="text" wire:model="clientNetworkIp" placeholder="es. 10.10.0.0" class="block w-1/2 rounded-md border-gray-300 shadow-sm text-sm font-mono" />
+                                <select wire:model="clientNetworkPrefix" class="block w-1/2 rounded-md border-gray-300 shadow-sm text-xs font-mono">
+                                    @foreach ($prefixOptions as $opt)
+                                        <option value="{{ $opt['prefix'] }}">/{{ $opt['prefix'] }} — {{ $opt['netmask'] }} — {{ $opt['bits'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @error('clientNetworkIp')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
                             <label class="block text-sm font-medium text-gray-700">{{ __('vpn.label_routed_vlans') }}</label>
                             <input type="text" wire:model="routedVlans" placeholder="es. 10,20,30" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                         </div>
@@ -164,6 +189,18 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">{{ __('vpn.label_routed_vlans_b') }}</label>
                                 <input type="text" wire:model="routedVlansB" placeholder="es. 100,200" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">{{ __('vpn.label_routed_networks_a') }}</label>
+                                <textarea wire:model="routedNetworksA" rows="3" placeholder="10.0.0.0/24&#10;10.1.0.0/16" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm font-mono"></textarea>
+                                @error('routedNetworksA')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">{{ __('vpn.label_routed_networks_b') }}</label>
+                                <textarea wire:model="routedNetworksB" rows="3" placeholder="192.168.10.0/24" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm font-mono"></textarea>
+                                @error('routedNetworksB')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                             </div>
                         </div>
                     @endif
