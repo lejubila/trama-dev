@@ -1,10 +1,10 @@
 <section class="section">
-    <h2>Reti Wi-Fi</h2>
+    <h2 id="sec-wifi">Reti Wi-Fi</h2>
     @if ($description)
         <p class="section-description">{!! nl2br(e($description)) !!}</p>
     @endif
 
-    <table class="data">
+    <table class="data compact">
         <thead>
             <tr>
                 <th>SSID</th>

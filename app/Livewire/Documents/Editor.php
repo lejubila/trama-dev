@@ -116,6 +116,10 @@ class Editor extends Component
 
     public bool $includeToc = true;
 
+    public bool $rackIncludeRear = false;
+
+    public bool $roomsIncludeFloorplan = true;
+
     public function mount(?Document $document = null): void
     {
         if ($document !== null && $document->exists) {
@@ -180,6 +184,8 @@ class Editor extends Component
         $opt = is_array($p['options'] ?? null) ? $p['options'] : [];
         $this->includeCover = (bool) ($opt['include_cover'] ?? true);
         $this->includeToc = (bool) ($opt['include_toc'] ?? true);
+        $this->rackIncludeRear = (bool) ($opt['rack_include_rear'] ?? false);
+        $this->roomsIncludeFloorplan = (bool) ($opt['rooms_include_floorplan'] ?? true);
     }
 
     public function selectAll(string $section): void
@@ -437,6 +443,8 @@ class Editor extends Component
             'options' => [
                 'include_cover' => $this->includeCover,
                 'include_toc' => $this->includeToc,
+                'rack_include_rear' => $this->rackIncludeRear,
+                'rooms_include_floorplan' => $this->roomsIncludeFloorplan,
             ],
         ];
 

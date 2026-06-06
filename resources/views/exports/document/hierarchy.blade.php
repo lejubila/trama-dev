@@ -1,43 +1,41 @@
+@php
+    $includeFloorplan = (bool) ($options['rooms_include_floorplan'] ?? true);
+@endphp
 @foreach ($hierarchy as $siteIdx => $siteNode)
     @php $site = $siteNode->site; @endphp
     <section class="section">
-        <h2>{{ ($siteIdx + 1) }}. Sede — {{ $site->name }}</h2>
+        <h2 id="sec-site-{{ $site->id }}">{{ ($siteIdx + 1) }}. Sede — {{ $site->name }}</h2>
+        @include('exports.document._metastrip', ['items' => [
+            ['Indirizzo', $site->address ?? null],
+        ]])
         @if ($siteNode->description)
             <p class="section-description">{{ $siteNode->description }}</p>
         @endif
-        <table class="data">
-            <tbody>
-                <tr><th style="width:25%">Indirizzo</th><td>{{ $site->address ?? '—' }}</td></tr>
-                @if ($site->notes)
-                    <tr><th>Note</th><td>{{ $site->notes }}</td></tr>
-                @endif
-            </tbody>
-        </table>
+        @if ($site->notes)
+            <p class="small muted">{{ $site->notes }}</p>
+        @endif
 
         @foreach ($siteNode->rooms as $roomIdx => $roomNode)
             @php $room = $roomNode->room; @endphp
-            <div class="room-page">
-            <h3>{{ ($siteIdx + 1) }}.{{ ($roomIdx + 1) }} Locale — {{ $room->name }}</h3>
+            <h3 id="sec-room-{{ $room->id }}">{{ ($siteIdx + 1) }}.{{ ($roomIdx + 1) }} Locale — {{ $room->name }}</h3>
+            @include('exports.document._metastrip', ['items' => [
+                ['Piano', $room->floor],
+                ['Rack', $roomNode->racks->count()],
+                ['Dispositivi non in rack', $roomNode->unracked->count()],
+            ]])
             @if ($roomNode->description)
                 <p class="section-description">{{ $roomNode->description }}</p>
             @endif
-            <table class="data">
-                <tbody>
-                    @if ($room->floor !== null && $room->floor !== '')
-                        <tr><th style="width:25%">Piano</th><td>{{ $room->floor }}</td></tr>
-                    @endif
-                    @if (! empty($room->notes))
-                        <tr><th style="width:25%">Note</th><td>{{ $room->notes }}</td></tr>
-                    @endif
-                    <tr><th style="width:25%">Rack inclusi</th><td>{{ $roomNode->racks->count() }}</td></tr>
-                    <tr><th style="width:25%">Dispositivi non in rack</th><td>{{ $roomNode->unracked->count() }}</td></tr>
-                </tbody>
-            </table>
+            @if ($room->notes)
+                <p class="small muted">{{ $room->notes }}</p>
+            @endif
 
-            @include('exports.document.room-floorplan', ['room' => $room, 'roomNode' => $roomNode])
+            @if ($includeFloorplan)
+                @include('exports.document.room-floorplan', ['room' => $room, 'roomNode' => $roomNode])
+            @endif
 
             @foreach ($roomNode->racks as $rackNode)
-                @include('exports.document.rack-spread', ['rack' => $rackNode->rack, 'equipment' => $rackNode->equipment])
+                @include('exports.document.rack-spread', ['rack' => $rackNode->rack, 'equipment' => $rackNode->equipment, 'options' => $options])
             @endforeach
 
             @if ($roomNode->unracked->isNotEmpty())
@@ -46,7 +44,6 @@
                     'heading' => 'Dispositivi non in rack',
                 ])
             @endif
-            </div>
         @endforeach
     </section>
 @endforeach

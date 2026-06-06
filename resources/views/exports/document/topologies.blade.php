@@ -33,7 +33,7 @@
         @endphp
         <div class="{{ implode(' ', $classes) }}">
             @if ($loop->first)
-                <h2>Topologie</h2>
+                <h2 id="sec-topologies">Topologie</h2>
                 @if ($description)
                     <p class="section-description">{{ $description }}</p>
                 @endif

@@ -1,12 +1,12 @@
 <section class="section">
-    <h2>VPN</h2>
+    <h2 id="sec-vpn">VPN</h2>
     @if ($description)
         <p class="section-description">{!! nl2br(e($description)) !!}</p>
     @endif
 
     @if ($vpn['remote']->isNotEmpty())
         <h3>Remote access (client-to-LAN)</h3>
-        <table class="data">
+        <table class="data compact">
             <thead>
                 <tr>
                     <th>Nome</th>
@@ -41,7 +41,7 @@
 
     @if ($vpn['site']->isNotEmpty())
         <h3 style="margin-top:14pt;">Site-to-Site (LAN-to-LAN)</h3>
-        <table class="data">
+        <table class="data compact">
             <thead>
                 <tr>
                     <th>Nome</th>

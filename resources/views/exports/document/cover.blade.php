@@ -1,8 +1,5 @@
 <section class="cover">
     <h1>{{ $document->title }}</h1>
-    @if ($document->description)
-        <p class="subtitle">{{ \Illuminate\Support\Str::limit($document->description, 120) }}</p>
-    @endif
     <p class="meta">
         Data: <strong>{{ $document->document_date->format('d/m/Y') }}</strong>
         @if ($document->tenant)

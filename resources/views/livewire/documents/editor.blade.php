@@ -30,7 +30,7 @@
                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                 @error('description')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
             </div>
-            <div class="flex items-center gap-6 text-sm pt-1">
+            <div class="flex items-center gap-x-6 gap-y-2 text-sm pt-1 flex-wrap">
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" wire:model="includeCover" class="rounded border-gray-300 text-indigo-600">
                     Includi copertina
@@ -38,6 +38,14 @@
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" wire:model="includeToc" class="rounded border-gray-300 text-indigo-600">
                     Includi indice
+                </label>
+                <label class="inline-flex items-center gap-2" title="Aggiunge una pagina dedicata con l'elevation Rear di ogni rack incluso">
+                    <input type="checkbox" wire:model="rackIncludeRear" class="rounded border-gray-300 text-indigo-600">
+                    Includi elevation Rear dei rack
+                </label>
+                <label class="inline-flex items-center gap-2" title="Per ogni locale, stampa la planimetria (disegno online o immagine caricata) quando presente">
+                    <input type="checkbox" wire:model="roomsIncludeFloorplan" class="rounded border-gray-300 text-indigo-600">
+                    Includi planimetria dei locali
                 </label>
             </div>
             <p class="mt-3 text-xs text-gray-500">

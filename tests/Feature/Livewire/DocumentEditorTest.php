@@ -44,7 +44,7 @@ function bindFakeDocumentPdfBuilder(): void
     app()->bind(DocumentPdfBuilder::class, function () {
         return new class extends DocumentPdfBuilder
         {
-            protected function renderPdf(string $html, string $absolutePath): void
+            protected function renderPdf(string $html, string $absolutePath, ?\App\Models\Document $document = null): void
             {
                 // Skip Chromium; write a placeholder so the file exists.
                 @mkdir(dirname($absolutePath), 0777, true);

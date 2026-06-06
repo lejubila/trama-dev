@@ -4,39 +4,22 @@
         'bottom_up' => 'Dal basso (U1 in basso)',
         default => '—',
     };
+    $includeRear = (bool) ($options['rack_include_rear'] ?? false);
 @endphp
 
-{{-- Page 1 (portrait): specs + front elevation. --}}
-<div class="rack-page with-specs">
-    <h2>Rack {{ $rack->name }}</h2>
-    <p class="muted small">
-        {{ $rack->room?->name ?? '—' }}
-        @if ($rack->room?->site) / {{ $rack->room->site->name }} @endif
-        · {{ $rack->height_units }}U
-    </p>
-
-    <table class="data">
-        <tbody>
-            <tr>
-                <th style="width:18%">Altezza</th>
-                <td style="width:32%">{{ $rack->height_units }}U</td>
-                <th style="width:18%">Numerazione</th>
-                <td>{{ $numberingLabel }}</td>
-            </tr>
-            <tr>
-                <th>Larghezza</th>
-                <td>{{ $rack->width_mm !== null ? $rack->width_mm.' mm' : '—' }}</td>
-                <th>Profondità</th>
-                <td>{{ $rack->depth_mm !== null ? $rack->depth_mm.' mm' : '—' }}</td>
-            </tr>
-            @if (! empty($rack->notes))
-                <tr>
-                    <th>Note</th>
-                    <td colspan="3">{{ $rack->notes }}</td>
-                </tr>
-            @endif
-        </tbody>
-    </table>
+{{-- Front card: specs strip + front elevation, kept on the same page when possible. --}}
+<div class="rack-card front">
+    <h4 id="sec-rack-{{ $rack->id }}">Rack {{ $rack->name }}</h4>
+    @include('exports.document._metastrip', ['items' => [
+        ['Locale', ($rack->room?->name ?? '—').($rack->room?->site ? ' / '.$rack->room->site->name : '')],
+        ['Altezza', $rack->height_units.'U'],
+        ['Numerazione', $numberingLabel],
+        ['Larghezza', $rack->width_mm !== null ? $rack->width_mm.' mm' : null],
+        ['Profondità', $rack->depth_mm !== null ? $rack->depth_mm.' mm' : null],
+    ]])
+    @if (! empty($rack->notes))
+        <p class="small muted">{{ $rack->notes }}</p>
+    @endif
 
     <div class="elevation">
         <h4>Front</h4>
@@ -44,13 +27,15 @@
     </div>
 </div>
 
-{{-- Page 2 (portrait): rear elevation. --}}
-<div class="rack-page">
-    <div class="elevation">
-        <h4>Rack {{ $rack->name }} — Rear</h4>
-        <x-rack-elevation :rack="$rack" :interactive="false" orient="rear" />
+{{-- Rear elevation: opt-in via document option (kept on its own page). --}}
+@if ($includeRear)
+    <div class="rack-card rear">
+        <div class="elevation">
+            <h4>Rack {{ $rack->name }} — Rear</h4>
+            <x-rack-elevation :rack="$rack" :interactive="false" orient="rear" />
+        </div>
     </div>
-</div>
+@endif
 
 {{-- One photo per page; page orientation follows the photo's form factor. --}}
 @foreach ($rack->photos as $photo)
@@ -84,10 +69,8 @@
 @endforeach
 
 @if ($equipment->isNotEmpty())
-    <div class="device-page">
-        @include('exports.document.device-list', [
-            'devices' => $equipment,
-            'heading' => 'Rack '.$rack->name.' — Dispositivi nel rack',
-        ])
-    </div>
+    @include('exports.document.device-list', [
+        'devices' => $equipment,
+        'heading' => 'Rack '.$rack->name.' — Dispositivi nel rack',
+    ])
 @endif

@@ -30,16 +30,20 @@ class DocumentPdfBuilder
         $tenantId = (int) $document->tenant_id;
         $data = $this->loadData($document);
 
+        $parameters = is_array($document->parameters) ? $document->parameters : [];
+        $options = is_array($parameters['options'] ?? null) ? $parameters['options'] : [];
+
         $html = View::make('exports.document-print', [
             'document' => $document,
             'data' => $data,
+            'options' => $options,
         ])->render();
 
         $relative = "documents/{$tenantId}/document-{$document->id}.pdf";
         Storage::disk('public')->makeDirectory("documents/{$tenantId}");
         $absolute = Storage::disk('public')->path($relative);
 
-        $this->renderPdf($html, $absolute);
+        $this->renderPdf($html, $absolute, $document);
 
         $document->update([
             'pdf_path' => $relative,
@@ -53,13 +57,26 @@ class DocumentPdfBuilder
      * Drive Browsershot. Extracted so tests can override / mock when
      * Chromium isn't available in the test environment.
      */
-    protected function renderPdf(string $html, string $absolutePath): void
+    protected function renderPdf(string $html, string $absolutePath, ?Document $document = null): void
     {
         // Browsershot's header/footer templates are rendered by Chromium
         // independently of the page CSS. The `.pageNumber` and `.totalPages`
         // spans are placeholders that Chromium fills at print time.
+        //
+        // Note: Chromium applies the same header/footer template to ALL pages,
+        // including cover/TOC. The header is a single thin 8pt line so the
+        // visual cost there is negligible.
+        $titleEsc = htmlspecialchars($document?->title ?? '', ENT_QUOTES);
+        $dateEsc = htmlspecialchars($document?->document_date?->format('d/m/Y') ?? '', ENT_QUOTES);
+        $header = <<<HTML
+            <div style="font-size:8pt; width:100%; padding:0 14mm; color:#6b7280; -webkit-print-color-adjust:exact; display:flex; justify-content:space-between;">
+                <span>{$titleEsc}</span>
+                <span>{$dateEsc}</span>
+            </div>
+        HTML;
+
         $footer = <<<'HTML'
-            <div style="font-size:8pt; width:100%; padding:0 12mm; text-align:right; color:#6b7280; -webkit-print-color-adjust:exact;">
+            <div style="font-size:8pt; width:100%; padding:0 14mm; text-align:right; color:#6b7280; -webkit-print-color-adjust:exact;">
                 Pagina <span class="pageNumber"></span> / <span class="totalPages"></span>
             </div>
         HTML;
@@ -70,7 +87,7 @@ class DocumentPdfBuilder
             ->showBackground()
             ->format('A4')
             ->showBrowserHeaderAndFooter()
-            ->hideHeader()
+            ->headerHtml($header)
             ->footerHtml($footer)
             ->save($absolutePath);
     }
