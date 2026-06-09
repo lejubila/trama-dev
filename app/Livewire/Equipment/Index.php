@@ -10,6 +10,7 @@ use App\Livewire\Concerns\RemembersFilters;
 use App\Models\Equipment;
 use App\Models\Rack;
 use App\Models\Room;
+use App\Models\Site;
 use App\Models\Tag;
 use App\Services\RackPlacementService;
 use Illuminate\Contracts\View\View;
@@ -35,6 +36,12 @@ class Index extends Component
 
     #[Url(except: 0)]
     public int $rackFilter = 0;
+
+    #[Url(except: 0)]
+    public int $siteFilter = 0;
+
+    #[Url(except: 0)]
+    public int $roomFilter = 0;
 
     #[Url(except: '')]
     public string $statusFilter = '';
@@ -152,6 +159,19 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatingSiteFilter(): void
+    {
+        $this->roomFilter = 0;
+        $this->rackFilter = 0;
+        $this->resetPage();
+    }
+
+    public function updatingRoomFilter(): void
+    {
+        $this->rackFilter = 0;
+        $this->resetPage();
+    }
+
     public function updatingStatusFilter(): void
     {
         $this->resetPage();
@@ -167,12 +187,12 @@ class Index extends Component
      */
     protected function rememberedFilters(): array
     {
-        return ['search', 'typeFilter', 'rackFilter', 'statusFilter', 'tagFilter'];
+        return ['search', 'typeFilter', 'siteFilter', 'roomFilter', 'rackFilter', 'statusFilter', 'tagFilter'];
     }
 
     public function clearFilters(): void
     {
-        $this->reset(['search', 'typeFilter', 'rackFilter', 'statusFilter', 'tagFilter']);
+        $this->reset(['search', 'typeFilter', 'siteFilter', 'roomFilter', 'rackFilter', 'statusFilter', 'tagFilter']);
         $this->persistFilters();
         $this->resetPage();
     }
@@ -405,15 +425,41 @@ class Index extends Component
             }))
             ->when($this->typeFilter !== '', fn ($q) => $q->where('type', $this->typeFilter))
             ->when($this->rackFilter > 0, fn ($q) => $q->where('rack_id', $this->rackFilter))
+            ->when($this->roomFilter > 0, fn ($q) => $q->where(function ($qq) {
+                $qq->where('room_id', $this->roomFilter)
+                    ->orWhereHas('rack', fn ($qr) => $qr->where('room_id', $this->roomFilter));
+            }))
+            ->when($this->siteFilter > 0, fn ($q) => $q->where(function ($qq) {
+                $qq->whereHas('room', fn ($qr) => $qr->where('site_id', $this->siteFilter))
+                    ->orWhereHas('rack.room', fn ($qr) => $qr->where('site_id', $this->siteFilter));
+            }))
             ->when($this->statusFilter !== '', fn ($q) => $q->where('status', $this->statusFilter))
             ->when($this->tagFilter > 0, fn ($q) => $q->whereHas('tags', fn ($qt) => $qt->where('tags.id', $this->tagFilter)))
             ->orderBy('name')
             ->paginate(20);
 
+        $allRooms = Room::query()->with('site')->orderBy('name')->get();
+        $allRacks = Rack::query()->with('room')->orderBy('name')->get();
+
+        $filterRooms = $this->siteFilter > 0
+            ? $allRooms->filter(fn ($r) => (int) ($r->site_id ?? 0) === $this->siteFilter)->values()
+            : $allRooms;
+
+        $filterRacks = $allRacks;
+        if ($this->roomFilter > 0) {
+            $filterRacks = $filterRacks->filter(fn ($r) => (int) ($r->room_id ?? 0) === $this->roomFilter)->values();
+        } elseif ($this->siteFilter > 0) {
+            $roomIds = $filterRooms->pluck('id')->all();
+            $filterRacks = $filterRacks->filter(fn ($r) => in_array((int) ($r->room_id ?? 0), $roomIds, true))->values();
+        }
+
         return view('livewire.equipment.index', [
             'equipment' => $equipment,
-            'racks' => Rack::query()->with('room')->orderBy('name')->get(),
-            'rooms' => Room::query()->with('site')->orderBy('name')->get(),
+            'racks' => $allRacks,
+            'rooms' => $allRooms,
+            'sites' => Site::query()->orderBy('name')->get(),
+            'filterRooms' => $filterRooms,
+            'filterRacks' => $filterRacks,
             'types' => EquipmentType::cases(),
             'statuses' => EquipmentStatus::cases(),
             'allTags' => Tag::query()->orderBy('name')->get(),

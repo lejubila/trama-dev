@@ -21,9 +21,21 @@
                 </optgroup>
             @endforeach
         </select>
+        <select wire:model.live="siteFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
+            <option value="0">Tutte le sedi</option>
+            @foreach ($sites as $s)
+                <option value="{{ $s->id }}">{{ $s->name }}</option>
+            @endforeach
+        </select>
+        <select wire:model.live="roomFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
+            <option value="0">Tutti i locali</option>
+            @foreach ($filterRooms as $r)
+                <option value="{{ $r->id }}">{{ $r->name }}@if ($r->site) ({{ $r->site->name }})@endif</option>
+            @endforeach
+        </select>
         <select wire:model.live="rackFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
             <option value="0">Tutti i rack</option>
-            @foreach ($racks as $r)
+            @foreach ($filterRacks as $r)
                 <option value="{{ $r->id }}">{{ $r->name }}</option>
             @endforeach
         </select>
@@ -39,7 +51,7 @@
                 <option value="{{ $tag->id }}">{{ $tag->name }}</option>
             @endforeach
         </select>
-        @if ($search !== '' || $typeFilter !== '' || $rackFilter > 0 || $statusFilter !== '' || $tagFilter > 0)
+        @if ($search !== '' || $typeFilter !== '' || $siteFilter > 0 || $roomFilter > 0 || $rackFilter > 0 || $statusFilter !== '' || $tagFilter > 0)
             <button wire:click="clearFilters" type="button" class="text-xs text-gray-500 hover:text-gray-700 underline">Reset filtri</button>
         @endif
     </div>
@@ -84,16 +96,22 @@
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $eq->vendor }} {{ $eq->model }}</td>
                         <td class="px-4 py-3 text-gray-600">
+                            @php
+                                $room = $eq->rack?->room ?? $eq->room;
+                                $site = $room?->site;
+                            @endphp
                             @if ($eq->rack)
                                 {{ $eq->rack->name }}@if ($eq->mounted) · U{{ $eq->position_u_start }}–{{ $eq->position_u_start + $eq->position_u_height - 1 }}@endif
-                                @if ($eq->rack->room)
-                                    <span class="block text-xs text-gray-400">{{ $eq->rack->room->name }}</span>
-                                @endif
-                            @elseif ($eq->room)
-                                <span class="italic text-gray-500">non rack-mounted</span>
-                                <span class="block text-xs text-gray-400">{{ $eq->room->name }}</span>
                             @else
-                                <span class="italic text-gray-400">non rack-mounted</span>
+                                <span class="italic text-gray-500">non rack-mounted</span>
+                            @endif
+                            @if ($room)
+                                <span class="block text-xs text-gray-400">{{ $room->name }}</span>
+                            @endif
+                            @if ($site)
+                                <span class="block text-xs text-gray-400">
+                                    {{ $site->name }}@if ($site->address) · {{ $site->address }}@endif
+                                </span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $eq->interfaces_count }}</td>
