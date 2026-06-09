@@ -9,6 +9,7 @@ use App\Models\Concerns\TenantAuditable;
 use Database\Factories\WifiNetworkFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -17,6 +18,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 /**
  * @property int $id
  * @property int $tenant_id
+ * @property int|null $site_id
  * @property string $ssid
  * @property string|null $security_type
  * @property int|null $vlan_id
@@ -30,6 +32,7 @@ class WifiNetwork extends Model implements AuditableContract
 
     protected $fillable = [
         'tenant_id',
+        'site_id',
         'ssid',
         'security_type',
         'vlan_id',
@@ -43,6 +46,14 @@ class WifiNetwork extends Model implements AuditableContract
             'hidden_ssid' => 'boolean',
             'vlan_id' => 'integer',
         ];
+    }
+
+    /**
+     * @return BelongsTo<Site, $this>
+     */
+    public function site(): BelongsTo
+    {
+        return $this->belongsTo(Site::class);
     }
 
     /**

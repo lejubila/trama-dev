@@ -1469,6 +1469,8 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                         'padding': 14,
                         'text-valign': 'top',
                         'text-halign': 'center',
+                        'text-wrap': 'wrap',
+                        'text-justification': 'center',
                         'font-size': 11,
                         'font-weight': 'bold',
                         'color': '#312e81',

@@ -224,9 +224,13 @@ class TopologyService
 
                 if ($level['kind'] === 'site') {
                     if (! isset($siteParents[$siteKey])) {
+                        $label = $eqSite->name;
+                        if (! empty($eqSite->address)) {
+                            $label .= "\n".$eqSite->address;
+                        }
                         $siteParents[$siteKey] = [
                             'id' => $siteKey,
-                            'label' => $eqSite->name,
+                            'label' => $label,
                             'kind' => 'site',
                             'siteId' => $eqSiteId,
                         ];
@@ -331,7 +335,7 @@ class TopologyService
         // and associated clients. Lives alongside cable edges; never collapsed
         // by the passthrough logic.
         if (! $hideWifi) {
-            $this->emitWifiLayer($nodes, $edges, $equipmentIds, $vlan, $iconSize);
+            $this->emitWifiLayer($nodes, $edges, $equipmentIds, $vlan, $siteId, $iconSize, $groupBySite, $siteParents);
         }
 
         // VPN layer: synthetic nodes (cloud+lock) for remote-access and
@@ -427,13 +431,14 @@ class TopologyService
      * @param  list<array<string, mixed>>  $edges
      * @param  list<int>  $equipmentIds
      */
-    private function emitWifiLayer(array &$nodes, array &$edges, array $equipmentIds, ?int $vlan, int $iconSize): void
+    private function emitWifiLayer(array &$nodes, array &$edges, array $equipmentIds, ?int $vlan, ?int $siteId, int $iconSize, bool $groupBySite = false, array &$siteParents = []): void
     {
         $equipmentSet = array_flip($equipmentIds);
         $tenantId = TenantContext::id();
 
         $networks = WifiNetwork::query()
             ->with([
+                'site',
                 'broadcasters.equipment',
                 'associations.clientInterface.equipment',
             ])
@@ -441,6 +446,13 @@ class TopologyService
 
         foreach ($networks as $net) {
             if ($vlan !== null && $net->vlan_id !== null && (int) $net->vlan_id !== $vlan) {
+                continue;
+            }
+            // Direct site association: if a wifi network declares its site
+            // and the topology filter is on a different one, drop it. When
+            // site_id is NULL we keep the legacy indirect filtering through
+            // broadcaster equipment.
+            if ($siteId !== null && $net->site_id !== null && (int) $net->site_id !== $siteId) {
                 continue;
             }
 
@@ -494,19 +506,44 @@ class TopologyService
                 continue;
             }
 
-            $nodes[] = [
-                'data' => [
-                    'id' => 'wifi-'.$net->id,
-                    'label' => $net->ssid,
-                    'kind' => 'wifi',
-                    'type' => 'wifi_network',
-                    'wifiNetworkId' => $net->id,
-                    'vlanId' => $net->vlan_id,
-                    'security' => $net->security_type,
-                    'icon' => $this->iconResolver->urlForKind('wifi_network', $tenantId),
-                    'iconSize' => $iconSize,
-                ],
+            $wifiData = [
+                'id' => 'wifi-'.$net->id,
+                'label' => $net->ssid,
+                'kind' => 'wifi',
+                'type' => 'wifi_network',
+                'wifiNetworkId' => $net->id,
+                'siteId' => $net->site_id,
+                'vlanId' => $net->vlan_id,
+                'security' => $net->security_type,
+                'icon' => $this->iconResolver->urlForKind('wifi_network', $tenantId),
+                'iconSize' => $iconSize,
             ];
+
+            // When the user groups by site and the Wi-Fi network declares
+            // its site, nest the synthetic SSID node inside the matching
+            // site compound. Lazily create the compound if no in-site
+            // equipment had triggered it earlier in the equipment loop.
+            if ($groupBySite && $net->site_id !== null) {
+                $siteKey = 'site-'.$net->site_id;
+                if (! isset($siteParents[$siteKey]) && $net->site !== null) {
+                    $label = $net->site->name;
+                    if (! empty($net->site->address)) {
+                        $label .= "\n".$net->site->address;
+                    }
+                    $siteParents[$siteKey] = [
+                        'id' => $siteKey,
+                        'label' => $label,
+                        'kind' => 'site',
+                        'siteId' => (int) $net->site_id,
+                    ];
+                    $nodes[] = ['data' => $siteParents[$siteKey]];
+                }
+                if (isset($siteParents[$siteKey])) {
+                    $wifiData['parent'] = $siteKey;
+                }
+            }
+
+            $nodes[] = ['data' => $wifiData];
             foreach ($broadcasterEdges as $e) {
                 $edges[] = $e;
             }

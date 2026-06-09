@@ -8,6 +8,7 @@ use App\Enums\EquipmentType;
 use App\Enums\InterfaceMedia;
 use App\Livewire\Concerns\RemembersFilters;
 use App\Models\NetworkInterface;
+use App\Models\Site;
 use App\Models\WifiNetwork;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
@@ -24,9 +25,15 @@ class Index extends Component
     #[Url(except: '')]
     public string $search = '';
 
+    #[Url(except: 0)]
+    public int $siteFilter = 0;
+
     public bool $showForm = false;
 
     public ?int $editingId = null;
+
+    #[Validate('nullable|integer|exists:sites,id')]
+    public ?int $siteId = null;
 
     #[Validate('required|string|max:64')]
     public string $ssid = '';
@@ -50,18 +57,30 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatingSiteFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['search', 'siteFilter']);
+        $this->persistFilters();
+        $this->resetPage();
+    }
+
     /**
      * @return array<int, string>
      */
     protected function rememberedFilters(): array
     {
-        return ['search'];
+        return ['search', 'siteFilter'];
     }
 
     public function openCreate(): void
     {
         $this->authorize('create', WifiNetwork::class);
-        $this->reset(['editingId', 'ssid', 'securityType', 'vlanIdField', 'hiddenSsid', 'notes', 'broadcasterIds']);
+        $this->reset(['editingId', 'siteId', 'ssid', 'securityType', 'vlanIdField', 'hiddenSsid', 'notes', 'broadcasterIds']);
         $this->resetErrorBag();
         $this->showForm = true;
     }
@@ -72,6 +91,7 @@ class Index extends Component
         $this->authorize('update', $net);
 
         $this->editingId = $net->getKey();
+        $this->siteId = $net->site_id;
         $this->ssid = $net->ssid;
         $this->securityType = (string) ($net->security_type ?? '');
         $this->vlanIdField = $net->vlan_id;
@@ -87,6 +107,7 @@ class Index extends Component
         $this->validate();
 
         $payload = [
+            'site_id' => $this->siteId,
             'ssid' => $this->ssid,
             'security_type' => $this->securityType !== '' ? $this->securityType : null,
             'vlan_id' => $this->vlanIdField,
@@ -145,14 +166,17 @@ class Index extends Component
     public function render(): View
     {
         $networks = WifiNetwork::query()
+            ->with('site')
             ->withCount(['broadcasters', 'associations'])
             ->when($this->search !== '', fn ($q) => $q->where('ssid', 'ilike', "%{$this->search}%"))
+            ->when($this->siteFilter > 0, fn ($q) => $q->where('site_id', $this->siteFilter))
             ->orderBy('ssid')
             ->paginate(20);
 
         return view('livewire.wifi-networks.index', [
             'networks' => $networks,
             'availableBroadcasters' => $this->availableBroadcasters()->get(['id', 'name', 'equipment_id']),
+            'sites' => Site::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 }

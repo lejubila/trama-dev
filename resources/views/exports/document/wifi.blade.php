@@ -8,6 +8,7 @@
         <thead>
             <tr>
                 <th>SSID</th>
+                <th>Sede</th>
                 <th>Sicurezza</th>
                 <th>VLAN</th>
                 <th>SSID nascosto</th>
@@ -19,6 +20,7 @@
             @foreach ($wifi as $w)
                 <tr>
                     <td><strong>{{ $w->ssid }}</strong></td>
+                    <td>{{ $w->site?->name ?? '—' }}</td>
                     <td>{{ $w->security_type ?: '—' }}</td>
                     <td>{{ $w->vlan_id ?: '—' }}</td>
                     <td>{{ $w->hidden_ssid ? 'Sì' : 'No' }}</td>
@@ -33,7 +35,7 @@
                 </tr>
                 @if ($w->notes)
                     <tr>
-                        <td colspan="6" class="muted small">{!! nl2br(e($w->notes)) !!}</td>
+                        <td colspan="7" class="muted small">{!! nl2br(e($w->notes)) !!}</td>
                     </tr>
                 @endif
             @endforeach

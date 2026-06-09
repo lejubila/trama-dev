@@ -12,13 +12,22 @@
         @endcan
     </x-page-header>
 
-    <div class="mb-4">
+    <div class="flex flex-wrap gap-3 mb-4 items-center">
         <input
             type="text"
             wire:model.live.debounce.300ms="search"
             placeholder="{{ __('wifi.search_placeholder') }}"
             class="block w-64 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
         />
+        <select wire:model.live="siteFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
+            <option value="0">{{ __('wifi.filter_all_sites') }}</option>
+            @foreach ($sites as $s)
+                <option value="{{ $s->id }}">{{ $s->name }}</option>
+            @endforeach
+        </select>
+        @if ($search !== '' || $siteFilter > 0)
+            <button wire:click="clearFilters" type="button" class="text-xs text-gray-500 hover:text-gray-700 underline">Reset filtri</button>
+        @endif
     </div>
 
     <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
@@ -26,6 +35,7 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('wifi.col_ssid') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('wifi.col_site') }}</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('wifi.col_security') }}</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('wifi.col_vlan') }}</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('wifi.col_broadcasters') }}</th>
@@ -42,6 +52,7 @@
                                 <span class="ml-1 text-[10px] text-gray-500 italic">({{ __('wifi.hidden') }})</span>
                             @endif
                         </td>
+                        <td class="px-4 py-3 text-gray-600">{{ $net->site?->name ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $net->security_type ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $net->vlan_id ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $net->broadcasters_count }}</td>
@@ -60,7 +71,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">{{ __('wifi.empty') }}</td></tr>
+                    <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">{{ __('wifi.empty') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -77,6 +88,16 @@
                         <label class="block text-sm font-medium text-gray-700">{{ __('wifi.label_ssid') }}</label>
                         <input type="text" wire:model="ssid" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                         @error('ssid')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">{{ __('wifi.label_site') }}</label>
+                        <select wire:model="siteId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">{{ __('wifi.site_none') }}</option>
+                            @foreach ($sites as $s)
+                                <option value="{{ $s->id }}">{{ $s->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('siteId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>

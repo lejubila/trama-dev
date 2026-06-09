@@ -153,7 +153,7 @@ class DocumentPdfBuilder
                 $sections['wifi'] ?? null,
                 fn (array $ids) => $this->orderByIdList(
                     WifiNetwork::query()
-                        ->with(['broadcasters.equipment'])
+                        ->with(['site', 'broadcasters.equipment'])
                         ->withCount('associations')
                         ->whereIn('id', $ids)
                         ->get(),

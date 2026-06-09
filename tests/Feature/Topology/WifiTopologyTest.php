@@ -94,6 +94,62 @@ it('skips a Wi-Fi network whose broadcasters and clients are all filtered out', 
     expect($nodeIds)->not->toContain('wifi-'.$net->id);
 });
 
+it('site filter drops a Wi-Fi network bound to a different site', function (): void {
+    $s = makeWifiScene();
+
+    // The scene's site (with rack/AP) is the one we filter ON. Create
+    // ANOTHER site and bind the network to it explicitly. With the
+    // filter pinned to the scene's site, the network must be dropped
+    // even though its broadcaster is in-scope equipment.
+    $otherSite = Site::factory()->create();
+    $net = WifiNetwork::create([
+        'tenant_id' => $s['tenant']->getKey(),
+        'site_id' => $otherSite->getKey(),
+        'ssid' => 'Office',
+    ]);
+    $net->broadcasters()->attach([$s['apIface1']->id]);
+
+    $sceneSiteId = $s['ap1']->rack->room->site_id;
+    $graph = app(TopologyService::class)->buildGraph(siteId: (int) $sceneSiteId);
+
+    $nodeIds = collect($graph['nodes'])->pluck('data.id')->all();
+    expect($nodeIds)->not->toContain('wifi-'.$net->id);
+});
+
+it('nests the Wi-Fi node inside the site compound when groupBySite is on', function (): void {
+    $s = makeWifiScene();
+    $siteId = (int) $s['ap1']->rack->room->site_id;
+
+    $net = WifiNetwork::create([
+        'tenant_id' => $s['tenant']->getKey(),
+        'site_id' => $siteId,
+        'ssid' => 'Office',
+    ]);
+    $net->broadcasters()->attach([$s['apIface1']->id]);
+
+    $graph = app(TopologyService::class)->buildGraph(groupBySite: true);
+    $wifiNode = collect($graph['nodes'])->firstWhere('data.id', 'wifi-'.$net->id);
+    expect($wifiNode)->not->toBeNull()
+        ->and($wifiNode['data']['parent'] ?? null)->toBe('site-'.$siteId);
+});
+
+it('exposes site_id in the SSID node data', function (): void {
+    $s = makeWifiScene();
+    $siteId = (int) $s['ap1']->rack->room->site_id;
+
+    $net = WifiNetwork::create([
+        'tenant_id' => $s['tenant']->getKey(),
+        'site_id' => $siteId,
+        'ssid' => 'Office',
+    ]);
+    $net->broadcasters()->attach([$s['apIface1']->id]);
+
+    $graph = app(TopologyService::class)->buildGraph();
+    $node = collect($graph['nodes'])->firstWhere('data.id', 'wifi-'.$net->id);
+    expect($node)->not->toBeNull()
+        ->and($node['data']['siteId'])->toBe($siteId);
+});
+
 it('vlan filter drops Wi-Fi networks with mismatching vlan_id', function (): void {
     $s = makeWifiScene();
     $net = WifiNetwork::create([
