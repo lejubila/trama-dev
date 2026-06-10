@@ -31,6 +31,16 @@ class SnapshotIndex extends Component
     #[Url(except: 0)]
     public int $siteFilter = 0;
 
+    public bool $showEditForm = false;
+
+    public ?int $editingId = null;
+
+    public string $editTitle = '';
+
+    public string $editDescription = '';
+
+    public string $editSnapshotDate = '';
+
     public function mount(): void
     {
         $this->authorize('viewAny', TopologySnapshot::class);
@@ -69,6 +79,53 @@ class SnapshotIndex extends Component
         $this->reset(['search', 'dateFrom', 'dateTo', 'siteFilter']);
         $this->persistFilters();
         $this->resetPage();
+    }
+
+    public function openEdit(int $id): void
+    {
+        $snap = TopologySnapshot::query()->findOrFail($id);
+        $this->authorize('update', $snap);
+
+        $this->editingId = $snap->getKey();
+        $this->editTitle = (string) $snap->title;
+        $this->editDescription = (string) ($snap->description ?? '');
+        $this->editSnapshotDate = $snap->snapshot_date?->toDateString() ?? now()->toDateString();
+        $this->resetErrorBag();
+        $this->showEditForm = true;
+    }
+
+    public function closeEdit(): void
+    {
+        $this->showEditForm = false;
+        $this->editingId = null;
+        $this->editTitle = '';
+        $this->editDescription = '';
+        $this->editSnapshotDate = '';
+    }
+
+    public function saveEdit(): void
+    {
+        $this->validate([
+            'editTitle' => 'required|string|max:255',
+            'editDescription' => 'nullable|string|max:5000',
+            'editSnapshotDate' => 'required|date',
+        ]);
+
+        if ($this->editingId === null) {
+            return;
+        }
+
+        $snap = TopologySnapshot::query()->findOrFail($this->editingId);
+        $this->authorize('update', $snap);
+
+        $snap->update([
+            'title' => $this->editTitle,
+            'description' => $this->editDescription !== '' ? $this->editDescription : null,
+            'snapshot_date' => $this->editSnapshotDate,
+        ]);
+
+        $this->closeEdit();
+        $this->dispatch('toast', type: 'success', message: 'Snapshot aggiornato.');
     }
 
     public function delete(int $id): void

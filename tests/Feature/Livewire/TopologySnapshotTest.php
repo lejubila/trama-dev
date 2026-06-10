@@ -209,3 +209,122 @@ it('ignores cross-tenant snapshotPreset (no restore leak)', function (): void {
     // null and the saved node id never reaches the HTML.
     expect($component->html())->not->toContain('eq-1');
 });
+
+it('overwrites an existing snapshot, replacing image and metadata but not author', function (): void {
+    Storage::fake('public');
+    [$tenant, $user] = bootSnapshotScene('admin');
+
+    // Seed an existing snapshot with a real file on disk.
+    /** @var User $author */
+    $author = User::factory()->create();
+    $existing = TopologySnapshot::factory()->create([
+        'title' => 'Old title',
+        'description' => 'Old desc',
+        'snapshot_date' => '2026-05-01',
+        'image_path' => "topology-snapshots/{$tenant->getKey()}/old.png",
+        'created_by' => $author->getKey(),
+    ]);
+    Storage::disk('public')->put($existing->image_path, 'OLDBYTES');
+
+    Livewire::test(SnapshotSaveModal::class)
+        ->call('openModal', ['layout' => 'cose-bilkent'])
+        ->set('mode', 'overwrite')
+        ->set('overwriteId', $existing->getKey())
+        ->set('title', 'Refreshed title')
+        ->set('description', 'Refreshed desc')
+        ->set('snapshotDate', '2026-06-09')
+        ->set('snapshotImageBase64', TEST_PNG_DATA_URL)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $fresh = $existing->fresh();
+    expect($fresh->title)->toBe('Refreshed title')
+        ->and($fresh->description)->toBe('Refreshed desc')
+        ->and($fresh->snapshot_date->toDateString())->toBe('2026-06-09')
+        ->and($fresh->image_path)->not->toBe($existing->image_path)
+        ->and($fresh->view_state['layout'] ?? null)->toBe('cose-bilkent')
+        ->and($fresh->created_by)->toBe($author->getKey());
+
+    Storage::disk('public')->assertExists($fresh->image_path);
+    Storage::disk('public')->assertMissing($existing->image_path);
+});
+
+it('pre-fills metadata when picking a snapshot to overwrite', function (): void {
+    Storage::fake('public');
+    [$tenant, $user] = bootSnapshotScene('admin');
+
+    $existing = TopologySnapshot::factory()->create([
+        'title' => 'Existing',
+        'description' => 'Prev desc',
+        'snapshot_date' => '2026-04-15',
+    ]);
+
+    Livewire::test(SnapshotSaveModal::class)
+        ->call('openModal', [])
+        ->set('mode', 'overwrite')
+        ->set('overwriteId', $existing->getKey())
+        ->assertSet('title', 'Existing')
+        ->assertSet('description', 'Prev desc')
+        ->assertSet('snapshotDate', '2026-04-15');
+});
+
+it('forbids cliente from overwriting a snapshot', function (): void {
+    Storage::fake('public');
+    [$tenant, $user] = bootSnapshotScene('cliente');
+
+    $existing = TopologySnapshot::factory()->create([
+        'image_path' => "topology-snapshots/{$tenant->getKey()}/old.png",
+    ]);
+    Storage::disk('public')->put($existing->image_path, 'OLDBYTES');
+
+    Livewire::test(SnapshotSaveModal::class)
+        ->call('openModal', [])
+        ->set('mode', 'overwrite')
+        ->set('overwriteId', $existing->getKey())
+        ->set('title', 'x')
+        ->set('snapshotDate', '2026-06-09')
+        ->set('snapshotImageBase64', TEST_PNG_DATA_URL)
+        ->call('save')
+        ->assertForbidden();
+
+    // The existing image must still be there because the overwrite was rejected.
+    Storage::disk('public')->assertExists($existing->image_path);
+});
+
+it('edits snapshot metadata from the list without touching image or view_state', function (): void {
+    [$tenant, $user] = bootSnapshotScene('admin');
+
+    $existing = TopologySnapshot::factory()->create([
+        'title' => 'Old',
+        'description' => 'd',
+        'snapshot_date' => '2026-05-01',
+        'image_path' => 'topology-snapshots/keep.png',
+        'view_state' => ['layout' => 'dagre'],
+    ]);
+
+    Livewire::test(SnapshotIndex::class)
+        ->call('openEdit', $existing->getKey())
+        ->assertSet('editTitle', 'Old')
+        ->set('editTitle', 'New title')
+        ->set('editDescription', 'New desc')
+        ->set('editSnapshotDate', '2026-06-01')
+        ->call('saveEdit')
+        ->assertHasNoErrors()
+        ->assertSet('showEditForm', false);
+
+    $fresh = $existing->fresh();
+    expect($fresh->title)->toBe('New title')
+        ->and($fresh->description)->toBe('New desc')
+        ->and($fresh->snapshot_date->toDateString())->toBe('2026-06-01')
+        ->and($fresh->image_path)->toBe('topology-snapshots/keep.png')
+        ->and($fresh->view_state)->toBe(['layout' => 'dagre']);
+});
+
+it('forbids cliente from editing snapshot metadata', function (): void {
+    [$tenant, $user] = bootSnapshotScene('cliente');
+    $snap = TopologySnapshot::factory()->create();
+
+    Livewire::test(SnapshotIndex::class)
+        ->call('openEdit', $snap->getKey())
+        ->assertForbidden();
+});
