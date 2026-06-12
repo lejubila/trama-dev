@@ -37,6 +37,10 @@
                 : $iface->speed_mbps.' Mbps';
             $spec .= ($spec !== '' ? ' @ ' : '').$speedTxt;
         }
+        if ($iface->backedBy) {
+            $host = $iface->backedBy->equipment?->name;
+            $spec .= ($spec !== '' ? ' · ' : '').'via '.($host ? $host.'/' : '').$iface->backedBy->name;
+        }
         return $spec !== '' ? $spec : '—';
     };
 
@@ -79,12 +83,32 @@
         <div class="device-head">
             <span class="device-name">{{ $eq->name }}</span>
         </div>
+        @php
+            $cf = is_array($eq->custom_fields) ? $eq->custom_fields : [];
+            $isVm = $eq->type === \App\Enums\EquipmentType::VirtualMachine;
+            $isHv = $eq->type === \App\Enums\EquipmentType::Hypervisor;
+            $vmHost = $isVm ? ($eq->host?->name ?? null) : null;
+            $hvVendor = $isHv && ! empty($cf['hypervisor_vendor'])
+                ? (\App\Enums\HypervisorVendor::tryFrom($cf['hypervisor_vendor'])?->label() ?? $cf['hypervisor_vendor'])
+                : null;
+            $vmSpecs = null;
+            if ($isVm) {
+                $bits = [];
+                if (! empty($cf['vcpu'])) $bits[] = $cf['vcpu'].' vCPU';
+                if (! empty($cf['ram_mb'])) $bits[] = $cf['ram_mb'].' MB RAM';
+                if (! empty($cf['disk_gb'])) $bits[] = $cf['disk_gb'].' GB';
+                $vmSpecs = $bits ? implode(' · ', $bits) : null;
+            }
+        @endphp
         @include('exports.document._metastrip', ['items' => [
             ['Tipo', $eq->type?->label() ?? null],
-            ['Posizione', $positionText],
+            ['Posizione', $isVm ? ($vmHost ? 'VM su '.$vmHost : 'Macchina virtuale') : $positionText],
             ['Stato', $eq->status ? ($eq->status->label() ?? $eq->status->value) : null],
             ['Vendor/Modello', $vendorModel !== '' ? $vendorModel : null],
             ['Seriale', $eq->serial ?? null],
+            ['Hypervisor', $hvVendor],
+            ['Specifiche VM', $vmSpecs],
+            ['SO guest', $isVm && ! empty($cf['guest_os']) ? $cf['guest_os'] : null],
         ]])
 
         @if ($interfaces->isNotEmpty() && ($eq->report_ports ?? true))

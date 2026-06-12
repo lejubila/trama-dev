@@ -139,9 +139,10 @@ class DocumentPdfBuilder
                 fn (array $ids) => $this->orderByIdList(
                     Equipment::query()
                         ->with([
-                            'rack.room.site', 'room.site',
+                            'rack.room.site', 'room.site', 'host',
                             'interfaces.outgoingConnections.toInterface.equipment',
                             'interfaces.incomingConnections.fromInterface.equipment',
+                            'interfaces.backedBy.equipment',
                         ])
                         ->whereIn('id', $ids)
                         ->get(),

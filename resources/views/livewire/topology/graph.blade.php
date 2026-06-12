@@ -146,6 +146,11 @@
             Raggruppa per sede
         </label>
 
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Racchiude le VM e il loro hypervisor in un contenitore visivo">
+            <input type="checkbox" wire:model.live="groupByHypervisor" class="rounded border-gray-300 text-indigo-600" />
+            Raggruppa per hypervisor
+        </label>
+
         <button wire:click="clearFilters" class="text-xs px-2 py-1 text-gray-500 hover:text-gray-700 underline ml-auto">
             Reset filtri
         </button>
@@ -171,6 +176,7 @@
                         groupByRack: $wire.groupByRack,
                         groupBySite: $wire.groupBySite,
                         groupByRoom: $wire.groupByRoom,
+                        groupByHypervisor: $wire.groupByHypervisor,
                         hidePatchPanels: $wire.hidePatchPanels,
                         hideWifi: $wire.hideWifi,
                         hideVpn: $wire.hideVpn,

@@ -39,6 +39,7 @@ class Equipment extends Model implements AuditableContract
     protected $fillable = [
         'tenant_id',
         'rack_id',
+        'host_equipment_id',
         'room_id',
         'position_x',
         'position_y',
@@ -118,6 +119,32 @@ class Equipment extends Model implements AuditableContract
     public function isRackMounted(): bool
     {
         return $this->mounted && $this->rack_id !== null;
+    }
+
+    public function isHypervisor(): bool
+    {
+        return $this->type === EquipmentType::Hypervisor;
+    }
+
+    public function isVirtualMachine(): bool
+    {
+        return $this->type === EquipmentType::VirtualMachine;
+    }
+
+    /**
+     * @return BelongsTo<Equipment, $this>
+     */
+    public function host(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'host_equipment_id');
+    }
+
+    /**
+     * @return HasMany<Equipment, $this>
+     */
+    public function virtualMachines(): HasMany
+    {
+        return $this->hasMany(self::class, 'host_equipment_id');
     }
 
     /**

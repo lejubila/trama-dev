@@ -8,7 +8,12 @@
 
     <div class="border-b border-gray-200 mb-6">
         <nav class="flex gap-x-4 text-sm">
-            @php $tabs = ['general' => 'Generale', 'interfaces' => 'Interfacce', 'connections' => 'Connessioni', 'audit' => 'Audit']; @endphp
+            @php
+                $tabs = ['general' => 'Generale', 'interfaces' => 'Interfacce', 'connections' => 'Connessioni', 'audit' => 'Audit'];
+                if ($isVirtualMachine) {
+                    unset($tabs['connections']);
+                }
+            @endphp
             @foreach ($tabs as $key => $label)
                 <button
                     wire:click="setTab('{{ $key }}')"
@@ -156,7 +161,18 @@
                                 }
                             @endphp
                             <tr wire:key="if-{{ $if->id }}">
-                                <td class="px-4 py-3 font-mono text-gray-900">{{ $if->name }}</td>
+                                <td class="px-4 py-3 font-mono text-gray-900">
+                                    {{ $if->name }}
+                                    @if ($if->backedBy)
+                                        <div class="text-xs text-violet-700 font-normal mt-0.5">
+                                            ← via
+                                            @if ($if->backedBy->equipment)
+                                                <a href="{{ route('equipment.show', $if->backedBy->equipment) }}" wire:navigate class="hover:underline">{{ $if->backedBy->equipment->name }}</a>
+                                            @endif
+                                            : <span class="font-mono">{{ $if->backedBy->name }}</span>
+                                        </div>
+                                    @endif
+                                </td>
                                 <td class="px-4 py-3 text-gray-600">{{ $if->type?->value }} / {{ $if->media?->value }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $if->speed_mbps ? $if->speed_mbps.' Mbps' : '—' }}</td>
                                 <td class="px-4 py-3 text-gray-600">
@@ -169,7 +185,19 @@
                                 <td class="px-4 py-3 font-mono text-gray-600">{{ $if->ip_address ?? '—' }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $if->status?->value }}</td>
                                 <td class="px-4 py-3 text-gray-700">
-                                    @if ($conn && $remote?->equipment)
+                                    @if ($isVirtualMachine)
+                                        @if ($if->backedBy)
+                                            <span class="text-xs text-violet-700">
+                                                vNIC — via
+                                                @if ($if->backedBy->equipment)
+                                                    <a href="{{ route('equipment.show', $if->backedBy->equipment) }}" wire:navigate class="hover:underline">{{ $if->backedBy->equipment->name }}</a>
+                                                @endif
+                                                /<span class="font-mono">{{ $if->backedBy->name }}</span>
+                                            </span>
+                                        @else
+                                            <span class="text-xs text-gray-400" title="Le vNIC non hanno connessioni fisiche: imposta la NIC fisica dell'hypervisor nel form.">vNIC — backing non impostato</span>
+                                        @endif
+                                    @elseif ($conn && $remote?->equipment)
                                         <a href="{{ route('equipment.show', $remote->equipment) }}" wire:navigate class="text-indigo-700 hover:underline">{{ $remote->equipment->name }}</a>
                                         · <span class="font-mono">{{ $remote->name }}</span>
                                         @can('update', $conn)
@@ -438,6 +466,19 @@
                         <label class="block text-sm font-medium text-gray-700">Descrizione</label>
                         <textarea wire:model="ifDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                     </div>
+                    @if ($isVirtualMachine)
+                        <div class="border-t pt-3">
+                            <label class="block text-sm font-medium text-gray-700">NIC fisica dell'hypervisor (vNIC backing)</label>
+                            <select wire:model="ifBackedById" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                                <option value="">— Nessuna —</option>
+                                @foreach ($hostPnics as $p)
+                                    <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->type?->value }})</option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Più vNIC possono condividere la stessa NIC fisica dell'host.</p>
+                            @error('ifBackedById')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                    @endif
                     @php
                         $bulkInvalid = $ifBulk && $editingIfId === null
                             && ($ifBulkQuantity === null || $ifBulkStartFrom === null);

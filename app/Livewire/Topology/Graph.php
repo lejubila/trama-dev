@@ -68,6 +68,9 @@ class Graph extends Component
     #[Url(except: false)]
     public bool $groupByRoom = false;
 
+    #[Url(except: false)]
+    public bool $groupByHypervisor = false;
+
     #[Url(except: 0)]
     public int $roomFilter = 0;
 
@@ -118,7 +121,7 @@ class Graph extends Component
 
     public function clearFilters(): void
     {
-        $this->reset(['siteId', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom', 'roomFilter', 'hidePatchPanels', 'hideWifi', 'hideVpn']);
+        $this->reset(['siteId', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes', 'includeHidden', 'groupByRack', 'groupBySite', 'groupByRoom', 'groupByHypervisor', 'roomFilter', 'hidePatchPanels', 'hideWifi', 'hideVpn']);
     }
 
     /**
@@ -243,6 +246,7 @@ class Graph extends Component
             hidePatchPanels: $this->hidePatchPanels,
             hideWifi: $this->hideWifi,
             hideVpn: $this->hideVpn,
+            groupByHypervisor: $this->groupByHypervisor,
         );
     }
 

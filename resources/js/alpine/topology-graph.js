@@ -242,7 +242,7 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             // regardless of dataset delta. Compounds appear/disappear around
             // their children, hidden devices fade in/out, patch-panel
             // passthrough flips — never a relayout.
-            ['includeHidden', 'hidePatchPanels', 'hideWifi', 'hideVpn', 'groupByRack', 'groupBySite', 'groupByRoom']
+            ['includeHidden', 'hidePatchPanels', 'hideWifi', 'hideVpn', 'groupByRack', 'groupBySite', 'groupByRoom', 'groupByHypervisor']
                 .forEach((k) => this.$watch('$wire.' + k, refreshNoLayout));
         },
 
@@ -1386,6 +1386,26 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                     },
                 },
                 {
+                    // vNIC backing edge: thin dashed violet line, no arrows.
+                    // Encodes "this VM's vNIC is carried by this hypervisor's
+                    // physical NIC" — many vNICs may map to the same pNIC, so
+                    // we expect multiple parallel edges between the same pair.
+                    selector: 'edge[kind = "vnic"]',
+                    style: {
+                        'line-color': '#7c3aed',
+                        'line-style': 'dashed',
+                        'width': 1.2,
+                        'target-arrow-shape': 'none',
+                        'source-arrow-shape': 'none',
+                        'curve-style': 'bezier',
+                        'font-size': 8,
+                        'color': '#5b21b6',
+                        'text-background-color': '#ffffff',
+                        'text-background-opacity': 0.85,
+                        'text-background-padding': 2,
+                    },
+                },
+                {
                     selector: 'node:selected',
                     style: { 'border-width': 4, 'border-color': '#6366f1' },
                 },
@@ -1452,6 +1472,27 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
                         'border-width': 1.5,
                         'border-style': 'dotted',
                         'color': '#713f12',
+                    },
+                },
+                {
+                    // Hypervisor host compound — dashed cyan border, light cyan fill.
+                    // Holds the hypervisor node together with its VMs so the
+                    // host/guest relationship is visually obvious.
+                    selector: 'node:parent[kind = "host"]',
+                    style: {
+                        'background-color': '#ecfeff',
+                        'background-opacity': 0.55,
+                        'border-color': '#0891b2',
+                        'border-width': 2,
+                        'border-style': 'dashed',
+                        'shape': 'round-rectangle',
+                        'padding': 10,
+                        'text-valign': 'top',
+                        'text-halign': 'center',
+                        'font-size': 10,
+                        'font-weight': 'bold',
+                        'color': '#155e75',
+                        'text-margin-y': -4,
                     },
                 },
                 {

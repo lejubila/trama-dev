@@ -50,6 +50,7 @@ class NetworkInterface extends Model implements AuditableContract
         'type',
         'side',
         'paired_interface_id',
+        'backed_by_interface_id',
         'index',
         'speed_mbps',
         'media',
@@ -120,6 +121,30 @@ class NetworkInterface extends Model implements AuditableContract
     public function paired(): BelongsTo
     {
         return $this->belongsTo(self::class, 'paired_interface_id');
+    }
+
+    /**
+     * For vNIC interfaces on a virtual_machine equipment: points to the
+     * physical interface of the hypervisor host that carries this vNIC's
+     * traffic. Many vNICs can share the same backing pNIC (N:1) — that's
+     * why no unique constraint exists on the column.
+     *
+     * @return BelongsTo<NetworkInterface, $this>
+     */
+    public function backedBy(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'backed_by_interface_id');
+    }
+
+    /**
+     * Inverse of `backedBy`: for a physical NIC on a hypervisor, the list of
+     * vNICs (across all VMs hosted) that flow through it.
+     *
+     * @return HasMany<NetworkInterface, $this>
+     */
+    public function virtualBackedInterfaces(): HasMany
+    {
+        return $this->hasMany(self::class, 'backed_by_interface_id');
     }
 
     /**

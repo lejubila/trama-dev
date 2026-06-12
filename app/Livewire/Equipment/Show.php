@@ -66,6 +66,9 @@ class Show extends Component
 
     public string $ifDescription = '';
 
+    /** For vNICs on VMs: id of the host pNIC that carries this interface. */
+    public ?int $ifBackedById = null;
+
     // ── Bulk creation (visible only when creating, not editing) ──────────
     public bool $ifBulk = false;
 
@@ -93,6 +96,7 @@ class Show extends Component
             'ifStatus' => ['required', Rule::in(array_column(InterfaceStatus::cases(), 'value'))],
             'ifPoe' => ['required', Rule::in(array_column(InterfacePoe::cases(), 'value'))],
             'ifDescription' => 'nullable|string|max:255',
+            'ifBackedById' => ['nullable', 'integer', 'exists:interfaces,id'],
         ];
 
         // In bulk mode the name is a *prefix*; the unicità is checked per
@@ -130,20 +134,33 @@ class Show extends Component
         $this->equipment = $equipment->load('rack.room.site');
 
         // Sanitize tab param coming from the URL.
-        if (! in_array($this->activeTab, ['general', 'interfaces', 'connections', 'audit'], true)) {
+        if (! in_array($this->activeTab, $this->allowedTabs(), true)) {
             $this->activeTab = 'general';
         }
     }
 
     public function setTab(string $tab): void
     {
-        $this->activeTab = in_array($tab, ['general', 'interfaces', 'connections', 'audit'], true) ? $tab : 'general';
+        $this->activeTab = in_array($tab, $this->allowedTabs(), true) ? $tab : 'general';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function allowedTabs(): array
+    {
+        $tabs = ['general', 'interfaces', 'connections', 'audit'];
+        if ($this->equipment->isVirtualMachine()) {
+            $tabs = array_values(array_diff($tabs, ['connections']));
+        }
+
+        return $tabs;
     }
 
     public function openIfCreate(): void
     {
         $this->authorize('create', NetworkInterface::class);
-        $this->reset(['editingIfId', 'ifName', 'ifIpAddress', 'ifMacAddress', 'ifDescription', 'ifBulk', 'ifVlansAllowedText']);
+        $this->reset(['editingIfId', 'ifName', 'ifIpAddress', 'ifMacAddress', 'ifDescription', 'ifBulk', 'ifVlansAllowedText', 'ifBackedById']);
         $this->ifBulkQuantity = 12;
         $this->ifBulkStartFrom = 1;
         $isPatchLike = in_array(
@@ -151,7 +168,8 @@ class Show extends Component
             [EquipmentType::PatchPanel, EquipmentType::WallOutlet],
             true,
         );
-        $this->ifType = $isPatchLike ? 'keystone' : 'ethernet';
+        $isVm = $this->equipment->isVirtualMachine();
+        $this->ifType = $isPatchLike ? 'keystone' : ($isVm ? 'virtual' : 'ethernet');
         $this->ifMedia = 'copper';
         $this->ifConnector = $isPatchLike ? 'rj45' : '';
         $this->ifSpeedMbps = $isPatchLike ? null : 1000;
@@ -185,6 +203,7 @@ class Show extends Component
         $this->ifStatus = $if->status?->value ?? 'unknown';
         $this->ifPoe = $if->poe?->value ?? 'none';
         $this->ifDescription = (string) ($if->description ?? '');
+        $this->ifBackedById = $if->backed_by_interface_id;
         $this->resetErrorBag();
         $this->showIfForm = true;
     }
@@ -205,6 +224,10 @@ class Show extends Component
         $this->validate();
 
         if (! $this->validateVlansAllowed()) {
+            return;
+        }
+
+        if (! $this->validateBackingNic()) {
             return;
         }
 
@@ -243,6 +266,10 @@ class Show extends Component
         $this->validate();
 
         if (! $this->validateVlansAllowed()) {
+            return;
+        }
+
+        if (! $this->validateBackingNic()) {
             return;
         }
 
@@ -322,6 +349,13 @@ class Show extends Component
     private function basePayload(): array
     {
         $passthrough = $this->isPassthroughEquipment();
+        $isVm = $this->equipment->isVirtualMachine();
+        // resolveBackingNicId() relies on validateBackingNic() having been
+        // called first (see saveSingleIf / saveBulkIf). Here we just consume
+        // the already-validated value.
+        $backedBy = $isVm && $this->ifBackedById !== null && $this->ifBackedById !== 0
+            ? (int) $this->ifBackedById
+            : null;
 
         return [
             'equipment_id' => $this->equipment->getKey(),
@@ -351,7 +385,48 @@ class Show extends Component
             'status' => InterfaceStatus::from($this->ifStatus),
             'poe' => InterfacePoe::from($this->ifPoe),
             'description' => $this->ifDescription !== '' ? $this->ifDescription : null,
+            'backed_by_interface_id' => $backedBy,
         ];
+    }
+
+    /**
+     * Validate the vNIC backing selection: must reference a NIC of the VM's
+     * hypervisor host with a physical type (ethernet/fiber/wireless). For
+     * non-VM equipment the field is silently cleared so the caller can
+     * reuse the same form without leaking the selection.
+     */
+    private function validateBackingNic(): bool
+    {
+        if (! $this->equipment->isVirtualMachine()) {
+            $this->ifBackedById = null;
+
+            return true;
+        }
+        if ($this->ifBackedById === null || $this->ifBackedById === 0) {
+            $this->ifBackedById = null;
+
+            return true;
+        }
+        $hostId = $this->equipment->host_equipment_id;
+        if ($hostId === null) {
+            $this->addError('ifBackedById', 'La VM non ha un hypervisor host associato.');
+
+            return false;
+        }
+        $pnic = NetworkInterface::query()->find($this->ifBackedById);
+        if ($pnic === null || (int) $pnic->equipment_id !== (int) $hostId) {
+            $this->addError('ifBackedById', 'La NIC selezionata non appartiene all\'hypervisor host.');
+
+            return false;
+        }
+        $allowed = [InterfaceType::Ethernet, InterfaceType::Fiber, InterfaceType::Wireless];
+        if (! in_array($pnic->type, $allowed, true)) {
+            $this->addError('ifBackedById', 'La NIC selezionata non è una porta fisica utilizzabile come backing.');
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -583,7 +658,7 @@ class Show extends Component
         // of each keystone port under the front row (the rear is reached via
         // the `paired` relation in the view).
         $interfaces = $this->equipment->interfaces()
-            ->with('paired')
+            ->with(['paired', 'backedBy.equipment'])
             ->where(function ($q): void {
                 $q->whereNull('side')->orWhere('side', InterfaceSide::Front->value);
             })
@@ -604,6 +679,18 @@ class Show extends Component
             }
         }
 
+        $hostPnics = $this->equipment->isVirtualMachine() && $this->equipment->host_equipment_id !== null
+            ? NetworkInterface::query()
+                ->where('equipment_id', $this->equipment->host_equipment_id)
+                ->whereIn('type', [
+                    InterfaceType::Ethernet->value,
+                    InterfaceType::Fiber->value,
+                    InterfaceType::Wireless->value,
+                ])
+                ->orderBy('name')
+                ->get(['id', 'name', 'type'])
+            : collect();
+
         return view('livewire.equipment.show', [
             'interfaces' => $interfaces,
             'connections' => $connections,
@@ -614,6 +701,8 @@ class Show extends Component
                 [EquipmentType::PatchPanel, EquipmentType::WallOutlet],
                 true,
             ),
+            'isVirtualMachine' => $this->equipment->isVirtualMachine(),
+            'hostPnics' => $hostPnics,
         ]);
     }
 }

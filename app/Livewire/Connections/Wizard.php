@@ -65,13 +65,25 @@ class Wizard extends Component
             // Verify the iface exists (and is visible under the current
             // tenant scope) before pre-selecting, so a stale URL doesn't
             // ghost-fill the form with an unauthorised id.
-            $iface = NetworkInterface::query()->find($this->fromInterfaceParam);
-            if ($iface !== null) {
+            $iface = NetworkInterface::query()->with('equipment:id,type')->find($this->fromInterfaceParam);
+            if ($iface !== null && $iface->equipment?->type !== EquipmentType::VirtualMachine) {
                 $this->fromInterfaceId = $iface->getKey();
                 if ($this->fromEquipmentId === null) {
                     $this->fromEquipmentId = (int) $iface->equipment_id;
                 }
                 $this->step = 2;
+            }
+        }
+
+        // ?from_equipment pointing to a VM is invalid: clear the scoping
+        // so the user lands on a generic wizard (the VM is already filtered
+        // out of the equipment dataset).
+        if ($this->fromEquipmentId !== null) {
+            $fromEq = Equipment::query()->find($this->fromEquipmentId);
+            if ($fromEq?->type === EquipmentType::VirtualMachine) {
+                $this->fromEquipmentId = null;
+                $this->fromInterfaceId = null;
+                $this->step = 1;
             }
         }
     }
@@ -176,7 +188,12 @@ class Wizard extends Component
 
     public function render(): View
     {
+        // Le VM non possono partecipare a connessioni fisiche: i loro
+        // vNIC vivono come riferimento logico verso una pNIC dell'host
+        // (interfaces.backed_by_interface_id). Le escludiamo dal wizard
+        // così non compaiono in nessuno dei due step.
         $equipment = Equipment::query()
+            ->where('type', '!=', EquipmentType::VirtualMachine->value)
             ->with(['interfaces', 'rack:id,room_id'])
             ->orderBy('name')
             ->get();

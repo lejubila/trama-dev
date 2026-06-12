@@ -1,6 +1,6 @@
 # Trama Network — Set Icone
 
-Set di **25 icone isometriche** per dispositivi di rete, pensate per essere utilizzate su planimetrie 2D e diagrammi di topologia.
+Set di **27 icone isometriche** per dispositivi di rete, pensate per essere utilizzate su planimetrie 2D e diagrammi di topologia.
 
 ## Contenuto
 
@@ -64,6 +64,12 @@ Set di **25 icone isometriche** per dispositivi di rete, pensate per essere util
 | `stampante.svg` | Stampante | Foglio in uscita |
 | `iot.svg` | Dispositivo IoT | Chip viola + onde wireless |
 
+### Virtualizzazione ✨ NUOVO
+| File | Oggetto | Simbolo |
+|------|---------|---------|
+| `hypervisor.svg` | Hypervisor | Server + VM stratificate |
+| `macchina_virtuale.svg` | Macchina Virtuale | Case tratteggiato + badge VM |
+
 ### Altro
 | File | Oggetto | Simbolo |
 |------|---------|---------|
@@ -120,6 +126,9 @@ const DEVICE_ICONS = {
   tv: '/icons/tv.svg',
   stampante: '/icons/stampante.svg',
   iot: '/icons/iot.svg',
+  // Virtualizzazione
+  hypervisor: '/icons/hypervisor.svg',
+  macchina_virtuale: '/icons/macchina_virtuale.svg',
   // Altro
   generica: '/icons/generica.svg',
 };

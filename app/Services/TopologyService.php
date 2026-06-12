@@ -73,8 +73,9 @@ class TopologyService
         bool $hidePatchPanels = false,
         bool $hideWifi = false,
         bool $hideVpn = false,
+        bool $groupByHypervisor = false,
     ): array {
-        $equipmentQuery = Equipment::query()->with(['rack.room.site', 'room.site']);
+        $equipmentQuery = Equipment::query()->with(['rack.room.site', 'room.site', 'host']);
 
         if (! $includeHidden) {
             $equipmentQuery->where('hidden_in_topology', false);
@@ -163,6 +164,7 @@ class TopologyService
                 'type' => $type?->value,
                 'color' => $type?->color(),
                 'rackId' => $eq->rack_id,
+                'hostEquipmentId' => $eq->host_equipment_id,
                 'siteId' => $eq->rack?->room?->site_id,
                 'vendor' => $eq->vendor,
                 'model' => $eq->model,
@@ -290,6 +292,59 @@ class TopologyService
             $nodes[] = ['data' => $data];
         }
 
+        // Hypervisor grouping: wrap each hypervisor + its VMs in a synthetic
+        // `host-<eq_id>` compound. The compound inherits the hypervisor's
+        // existing parent (rack/room/site) so it can nest correctly. VMs whose
+        // host is out of scope still get a compound (labeled with the host's
+        // name) but without a chain parent.
+        if ($groupByHypervisor) {
+            /** @var array<string, array<string, mixed>> $hostParents */
+            $hostParents = [];
+            $hypervisorById = [];
+            foreach ($equipment as $eq) {
+                if ($eq->type === EquipmentType::Hypervisor) {
+                    $hypervisorById[$eq->getKey()] = $eq;
+                }
+            }
+            foreach ($nodes as $idx => $node) {
+                $data = $node['data'];
+                if (! isset($data['type'])) {
+                    continue;
+                }
+                if ($data['type'] === EquipmentType::Hypervisor->value) {
+                    $hostKey = 'host-'.substr((string) $data['id'], 3);
+                    // Always re-seed from the hypervisor pass: the hypervisor
+                    // is the source of truth for both label and chain parent,
+                    // and we may have created a placeholder earlier when a VM
+                    // referencing this host was processed first.
+                    $hostParents[$hostKey] = [
+                        'id' => $hostKey,
+                        'label' => $data['label'],
+                        'kind' => 'host',
+                    ];
+                    if (isset($data['parent'])) {
+                        $hostParents[$hostKey]['parent'] = $data['parent'];
+                    }
+                    $nodes[$idx]['data']['parent'] = $hostKey;
+                } elseif ($data['type'] === EquipmentType::VirtualMachine->value && ! empty($data['hostEquipmentId'])) {
+                    $hostId = (int) $data['hostEquipmentId'];
+                    $hostKey = 'host-'.$hostId;
+                    if (! isset($hostParents[$hostKey])) {
+                        $host = $hypervisorById[$hostId] ?? Equipment::query()->find($hostId);
+                        $hostParents[$hostKey] = [
+                            'id' => $hostKey,
+                            'label' => $host?->name ?? 'Hypervisor',
+                            'kind' => 'host',
+                        ];
+                    }
+                    $nodes[$idx]['data']['parent'] = $hostKey;
+                }
+            }
+            foreach ($hostParents as $hp) {
+                $nodes[] = ['data' => $hp];
+            }
+        }
+
         // Emit compound parents (grandparent → parent order) only when at
         // least one child is visible (the maps are populated lazily above).
         foreach ($siteParents as $sp) {
@@ -343,6 +398,12 @@ class TopologyService
         if (! $hideVpn) {
             $this->emitVpnLayer($nodes, $edges, $equipmentIds, $vlan, $iconSize);
         }
+
+        // vNIC backing layer: synthetic dashed edges between each VM and its
+        // hypervisor for every vNIC whose interfaces.backed_by_interface_id
+        // points at a host pNIC. Multiple vNICs on the same pNIC produce
+        // multiple edges with different labels — useful as documentation.
+        $this->emitVirtualBackingEdges($edges, $equipmentIds);
 
         // Final pass: when a VLAN filter is active, drop nodes that
         // survived the equipment filter but ended up without any incident
@@ -739,6 +800,52 @@ class TopologyService
      *
      * @return array<string, mixed>
      */
+    /**
+     * Emit dashed "vNIC backing" edges between each VM and its hypervisor:
+     * for every interface with backed_by_interface_id valued, where both the
+     * VM and the host hypervisor are part of the currently visible equipment
+     * set. The edge carries the pNIC name as label so the user can read at a
+     * glance which physical NIC carries the vNIC's traffic.
+     *
+     * @param  list<array<string, mixed>>  $edges
+     * @param  list<int>  $equipmentIds
+     */
+    private function emitVirtualBackingEdges(array &$edges, array $equipmentIds): void
+    {
+        if ($equipmentIds === []) {
+            return;
+        }
+
+        $visible = array_flip($equipmentIds);
+
+        $vnics = NetworkInterface::query()
+            ->with(['equipment', 'backedBy.equipment'])
+            ->whereNotNull('backed_by_interface_id')
+            ->whereIn('equipment_id', $equipmentIds)
+            ->get();
+
+        foreach ($vnics as $vnic) {
+            $vmEqId = $vnic->equipment_id;
+            $pnic = $vnic->backedBy;
+            if ($pnic === null) {
+                continue;
+            }
+            $hostEqId = $pnic->equipment_id;
+            if (! isset($visible[$hostEqId])) {
+                continue;
+            }
+            $edges[] = ['data' => [
+                'id' => 'vnic-'.$vnic->id,
+                'source' => 'eq-'.$vmEqId,
+                'target' => 'eq-'.$hostEqId,
+                'kind' => 'vnic',
+                'label' => $pnic->name,
+                'vnicName' => $vnic->name,
+                'pnicName' => $pnic->name,
+            ]];
+        }
+    }
+
     private function edgeData(Connection $c): array
     {
         $fromName = (string) ($c->fromInterface?->name ?? '');

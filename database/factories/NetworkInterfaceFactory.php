@@ -80,6 +80,19 @@ class NetworkInterfaceFactory extends Factory
     /**
      * @param  list<int>  $allowed
      */
+    public function backedBy(NetworkInterface $pnic): self
+    {
+        return $this->state([
+            'type' => InterfaceType::Virtual,
+            'media' => InterfaceMedia::Copper,
+            'connector' => null,
+            'backed_by_interface_id' => $pnic->getKey(),
+        ]);
+    }
+
+    /**
+     * @param  list<int>  $allowed
+     */
     public function trunk(int $defaultVlan = 1, array $allowed = [10, 20, 30]): self
     {
         return $this->state([

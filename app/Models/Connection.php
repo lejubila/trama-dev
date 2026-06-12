@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ConnectionStatus;
+use App\Enums\EquipmentType;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\TenantAuditable;
 use Database\Factories\ConnectionFactory;
@@ -83,6 +84,35 @@ class Connection extends Model implements AuditableContract
     public function tags(): MorphToMany
     {
         return $this->morphToMany(Tag::class, 'taggable');
+    }
+
+    /**
+     * Reject any save that would attach a cable to a virtual machine's
+     * interface: vNICs are logical and their physical transit is described
+     * by `interfaces.backed_by_interface_id`, not by a Connection row.
+     * Lives in the model so every entry point — Wizard, Edit, API,
+     * factories — is covered without duplication.
+     */
+    protected static function booted(): void
+    {
+        $guard = function (self $conn): void {
+            foreach (['from_interface_id', 'to_interface_id'] as $field) {
+                $ifaceId = $conn->{$field};
+                if ($ifaceId === null) {
+                    continue;
+                }
+                $iface = NetworkInterface::query()
+                    ->with('equipment:id,type')
+                    ->find($ifaceId);
+                if ($iface?->equipment?->type === EquipmentType::VirtualMachine) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        $field => 'Le interfacce di una macchina virtuale non possono avere connessioni fisiche: usa il backing vNIC → NIC dell\'hypervisor.',
+                    ]);
+                }
+            }
+        };
+        static::creating($guard);
+        static::updating($guard);
     }
 
     /**

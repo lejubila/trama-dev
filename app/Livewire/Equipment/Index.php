@@ -6,6 +6,7 @@ namespace App\Livewire\Equipment;
 
 use App\Enums\EquipmentStatus;
 use App\Enums\EquipmentType;
+use App\Enums\HypervisorVendor;
 use App\Livewire\Concerns\RemembersFilters;
 use App\Models\Equipment;
 use App\Models\Rack;
@@ -61,6 +62,18 @@ class Index extends Component
 
     public ?int $roomId = null;
 
+    public ?int $hostEquipmentId = null;
+
+    public string $hypervisorVendor = '';
+
+    public ?int $vcpu = null;
+
+    public ?int $ramMb = null;
+
+    public ?int $diskGb = null;
+
+    public string $guestOs = '';
+
     public string $name = '';
 
     public string $type = 'switch';
@@ -110,6 +123,17 @@ class Index extends Component
         return [
             'rackId' => 'nullable|exists:racks,id',
             'roomId' => 'nullable|exists:rooms,id',
+            'hostEquipmentId' => [
+                'nullable',
+                'integer',
+                'exists:equipment,id',
+                Rule::requiredIf(fn () => $this->type === EquipmentType::VirtualMachine->value),
+            ],
+            'hypervisorVendor' => ['nullable', Rule::in(array_column(HypervisorVendor::cases(), 'value'))],
+            'vcpu' => 'nullable|integer|min:1|max:1024',
+            'ramMb' => 'nullable|integer|min:1|max:8388608',
+            'diskGb' => 'nullable|integer|min:1|max:1048576',
+            'guestOs' => 'nullable|string|max:120',
             'name' => 'required|string|max:150',
             'type' => ['required', Rule::in(array_column(EquipmentType::cases(), 'value'))],
             'vendor' => 'nullable|string|max:80',
@@ -216,7 +240,7 @@ class Index extends Component
     public function openCreate(): void
     {
         $this->authorize('create', Equipment::class);
-        $this->reset(['editingId', 'rackId', 'roomId', 'name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'mounted', 'locked', 'positionUStart', 'description', 'iconUpload', 'existingIconPath', 'onTop', 'hiddenInTopology', 'selectedTagIds']);
+        $this->reset(['editingId', 'rackId', 'roomId', 'hostEquipmentId', 'hypervisorVendor', 'vcpu', 'ramMb', 'diskGb', 'guestOs', 'name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'mounted', 'locked', 'positionUStart', 'description', 'iconUpload', 'existingIconPath', 'onTop', 'hiddenInTopology', 'selectedTagIds']);
         $this->type = 'switch';
         $this->status = 'active';
         $this->positionUHeight = 1;
@@ -233,6 +257,13 @@ class Index extends Component
         $this->editingId = $eq->getKey();
         $this->rackId = $eq->rack_id;
         $this->roomId = $eq->room_id;
+        $this->hostEquipmentId = $eq->host_equipment_id;
+        $cf = is_array($eq->custom_fields) ? $eq->custom_fields : [];
+        $this->hypervisorVendor = (string) ($cf['hypervisor_vendor'] ?? '');
+        $this->vcpu = isset($cf['vcpu']) ? (int) $cf['vcpu'] : null;
+        $this->ramMb = isset($cf['ram_mb']) ? (int) $cf['ram_mb'] : null;
+        $this->diskGb = isset($cf['disk_gb']) ? (int) $cf['disk_gb'] : null;
+        $this->guestOs = (string) ($cf['guest_os'] ?? '');
         $this->name = $eq->name;
         $this->type = $eq->type?->value ?? 'switch';
         $this->vendor = (string) ($eq->vendor ?? '');
@@ -260,6 +291,31 @@ class Index extends Component
     public function save(RackPlacementService $placement): void
     {
         $this->validate();
+
+        $isVm = $this->type === EquipmentType::VirtualMachine->value;
+        $isHypervisor = $this->type === EquipmentType::Hypervisor->value;
+
+        if ($isVm) {
+            // VM non sono rack-mounted: forziamo a null tutte le coordinate fisiche.
+            $this->mounted = false;
+            $this->rackId = null;
+            $this->positionUStart = null;
+            $this->onTop = false;
+
+            // L'host deve essere un hypervisor dello stesso tenant.
+            $host = Equipment::query()->find($this->hostEquipmentId);
+            if ($host === null || $host->type !== EquipmentType::Hypervisor) {
+                $this->addError('hostEquipmentId', 'L\'host selezionato deve essere un hypervisor.');
+
+                return;
+            }
+            // Eredita la sede/locale dell'host per coerenza nei filtri.
+            if ($this->roomId === null) {
+                $this->roomId = $host->room_id ?? $host->rack?->room_id;
+            }
+        } else {
+            $this->hostEquipmentId = null;
+        }
 
         if ($this->mounted) {
             if ($this->rackId === null) {
@@ -301,9 +357,29 @@ class Index extends Component
             }
         }
 
+        $customFields = [];
+        if ($isHypervisor && $this->hypervisorVendor !== '') {
+            $customFields['hypervisor_vendor'] = $this->hypervisorVendor;
+        }
+        if ($isVm) {
+            if ($this->vcpu !== null) {
+                $customFields['vcpu'] = $this->vcpu;
+            }
+            if ($this->ramMb !== null) {
+                $customFields['ram_mb'] = $this->ramMb;
+            }
+            if ($this->diskGb !== null) {
+                $customFields['disk_gb'] = $this->diskGb;
+            }
+            if ($this->guestOs !== '') {
+                $customFields['guest_os'] = $this->guestOs;
+            }
+        }
+
         $payload = [
             'rack_id' => $this->rackId,
             'room_id' => $this->roomId,
+            'host_equipment_id' => $this->hostEquipmentId,
             'name' => $this->name,
             'type' => EquipmentType::from($this->type),
             'vendor' => $this->vendor !== '' ? $this->vendor : null,
@@ -322,6 +398,19 @@ class Index extends Component
             'status' => EquipmentStatus::from($this->status),
             'description' => $this->description !== '' ? $this->description : null,
         ];
+
+        // Merge dei custom_fields preservando eventuali chiavi esistenti
+        // non gestite dal form (es. metadata importati altrove).
+        if ($this->editingId !== null) {
+            $existing = Equipment::query()->find($this->editingId);
+            $prev = is_array($existing?->custom_fields) ? $existing->custom_fields : [];
+            foreach (['hypervisor_vendor', 'vcpu', 'ram_mb', 'disk_gb', 'guest_os'] as $managedKey) {
+                unset($prev[$managedKey]);
+            }
+            $payload['custom_fields'] = array_merge($prev, $customFields);
+        } else {
+            $payload['custom_fields'] = $customFields;
+        }
 
         if ($this->editingId !== null) {
             $eq = Equipment::query()->findOrFail($this->editingId);
@@ -416,7 +505,7 @@ class Index extends Component
     public function render(): View
     {
         $equipment = Equipment::query()
-            ->with(['rack.room.site', 'room.site', 'tags'])
+            ->with(['rack.room.site', 'room.site', 'tags', 'host'])
             ->withCount('interfaces')
             ->when($this->search !== '', fn ($q) => $q->where(function ($qq) {
                 $qq->where('name', 'ilike', "%{$this->search}%")
@@ -463,6 +552,12 @@ class Index extends Component
             'types' => EquipmentType::cases(),
             'statuses' => EquipmentStatus::cases(),
             'allTags' => Tag::query()->orderBy('name')->get(),
+            'hypervisorOptions' => Equipment::query()
+                ->where('type', EquipmentType::Hypervisor->value)
+                ->when($this->editingId !== null, fn ($q) => $q->where('id', '!=', $this->editingId))
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'hypervisorVendors' => HypervisorVendor::cases(),
         ]);
     }
 }

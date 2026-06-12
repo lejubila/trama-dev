@@ -23,7 +23,14 @@ class EquipmentFactory extends Factory
      */
     public function definition(): array
     {
-        $type = $this->faker->randomElement(EquipmentType::cases());
+        // Skip VirtualMachine/Hypervisor in the default pool: they need a
+        // host or explicit setup. Call ->hypervisor() / ->virtualMachine($host)
+        // explicitly when those are desired.
+        $pool = array_values(array_filter(
+            EquipmentType::cases(),
+            fn (EquipmentType $t) => ! in_array($t, [EquipmentType::Hypervisor, EquipmentType::VirtualMachine], true),
+        ));
+        $type = $this->faker->randomElement($pool);
 
         return [
             'name' => $this->prefixForType($type).'-'.$this->faker->numberBetween(1, 9999),
@@ -84,7 +91,39 @@ class EquipmentFactory extends Factory
             EquipmentType::Notebook => 'NB',
             EquipmentType::IotDevice => 'IOT',
             EquipmentType::Printer => 'PRN',
+            EquipmentType::Hypervisor => 'HV',
+            EquipmentType::VirtualMachine => 'VM',
             EquipmentType::Other => 'DEV',
         };
+    }
+
+    public function hypervisor(?\App\Enums\HypervisorVendor $vendor = null): self
+    {
+        $vendor ??= \App\Enums\HypervisorVendor::Proxmox;
+
+        return $this->state(fn (array $attrs) => [
+            'type' => EquipmentType::Hypervisor,
+            'name' => $this->prefixForType(EquipmentType::Hypervisor).'-'.$this->faker->numberBetween(1, 9999),
+            'custom_fields' => ['hypervisor_vendor' => $vendor->value],
+        ]);
+    }
+
+    public function virtualMachine(Equipment $host, ?string $guestOs = null): self
+    {
+        return $this->state(fn (array $attrs) => [
+            'type' => EquipmentType::VirtualMachine,
+            'name' => $this->prefixForType(EquipmentType::VirtualMachine).'-'.$this->faker->numberBetween(1, 9999),
+            'host_equipment_id' => $host->getKey(),
+            'tenant_id' => $host->tenant_id,
+            'rack_id' => null,
+            'mounted' => false,
+            'room_id' => $host->room_id ?? $host->rack?->room_id,
+            'custom_fields' => [
+                'vcpu' => $this->faker->numberBetween(1, 16),
+                'ram_mb' => $this->faker->randomElement([1024, 2048, 4096, 8192, 16384]),
+                'disk_gb' => $this->faker->randomElement([20, 50, 100, 250, 500]),
+                'guest_os' => $guestOs ?? $this->faker->randomElement(['Ubuntu 22.04', 'Debian 12', 'Windows Server 2022', 'Rocky Linux 9']),
+            ],
+        ]);
     }
 }

@@ -21,6 +21,8 @@ enum EquipmentType: string
     // Server & storage
     case Server = 'server';
     case Nas = 'nas';
+    case Hypervisor = 'hypervisor';
+    case VirtualMachine = 'virtual_machine';
 
     // Alimentazione
     case Ups = 'ups';
@@ -61,6 +63,8 @@ enum EquipmentType: string
             self::WallOutlet => 'Presa a muro',
             self::Server => 'Server',
             self::Nas => 'NAS',
+            self::Hypervisor => 'Hypervisor',
+            self::VirtualMachine => 'Macchina virtuale',
             self::Ups => 'UPS',
             self::Pdu => 'PDU',
             self::Kvm => 'KVM',
@@ -91,6 +95,8 @@ enum EquipmentType: string
             self::WallOutlet => 'stone',
             self::Server => 'blue',
             self::Nas => 'teal',
+            self::Hypervisor => 'indigo',
+            self::VirtualMachine => 'sky',
             self::Ups, self::Pdu => 'yellow',
             self::Kvm => 'orange',
             self::PhoneSystem => 'indigo',
@@ -112,7 +118,7 @@ enum EquipmentType: string
         return match ($this) {
             self::Switch, self::Router, self::Firewall, self::AccessPoint, self::Controller, self::MediaConverter => EquipmentCategory::Network,
             self::PatchPanel, self::WallOutlet => EquipmentCategory::PassiveCabling,
-            self::Server, self::Nas => EquipmentCategory::ServerStorage,
+            self::Server, self::Nas, self::Hypervisor, self::VirtualMachine => EquipmentCategory::ServerStorage,
             self::Ups, self::Pdu => EquipmentCategory::Power,
             self::Kvm => EquipmentCategory::Management,
             self::PhoneSystem, self::Intercom => EquipmentCategory::VoiceComms,

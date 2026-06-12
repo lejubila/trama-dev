@@ -100,7 +100,11 @@
                                 $room = $eq->rack?->room ?? $eq->room;
                                 $site = $room?->site;
                             @endphp
-                            @if ($eq->rack)
+                            @if ($eq->type === \App\Enums\EquipmentType::VirtualMachine && $eq->host)
+                                <span class="italic text-gray-500">
+                                    VM su <a href="{{ route('equipment.show', $eq->host) }}" wire:navigate class="text-indigo-700 hover:underline not-italic">{{ $eq->host->name }}</a>
+                                </span>
+                            @elseif ($eq->rack)
                                 {{ $eq->rack->name }}@if ($eq->mounted) · U{{ $eq->position_u_start }}–{{ $eq->position_u_start + $eq->position_u_height - 1 }}@endif
                             @else
                                 <span class="italic text-gray-500">non rack-mounted</span>
@@ -145,7 +149,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Tipo</label>
-                            <select wire:model="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                            <select wire:model.live="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
                                 @foreach (\App\Enums\EquipmentType::groupedCases() as $group => $items)
                                     <optgroup label="{{ $group }}">
                                         @foreach ($items as $t)
@@ -196,7 +200,60 @@
                         </div>
                     </div>
 
-                    <div class="border-t pt-6 mt-2">
+                    @if ($type === 'hypervisor')
+                        <div class="border-t pt-6 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Vendor hypervisor</label>
+                                <select wire:model="hypervisorVendor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                                    <option value="">—</option>
+                                    @foreach ($hypervisorVendors as $v)
+                                        <option value="{{ $v->value }}">{{ $v->label() }}</option>
+                                    @endforeach
+                                </select>
+                                @error('hypervisorVendor')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($type === 'virtual_machine')
+                        <div class="border-t pt-6 mt-2 space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Host hypervisor</label>
+                                <select wire:model="hostEquipmentId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                                    <option value="">— Seleziona —</option>
+                                    @foreach ($hypervisorOptions as $h)
+                                        <option value="{{ $h->id }}">{{ $h->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('hostEquipmentId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">vCPU</label>
+                                    <input type="number" min="1" wire:model="vcpu" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                                    @error('vcpu')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">RAM (MB)</label>
+                                    <input type="number" min="1" wire:model="ramMb" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                                    @error('ramMb')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Disco (GB)</label>
+                                    <input type="number" min="1" wire:model="diskGb" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                                    @error('diskGb')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Sistema operativo</label>
+                                    <input type="text" wire:model="guestOs" placeholder="es. Ubuntu 22.04" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                                    @error('guestOs')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500">Le macchine virtuali non occupano spazio rack: i campi di posizionamento fisico sono ignorati.</p>
+                        </div>
+                    @endif
+
+                    <div class="border-t pt-6 mt-2" @if ($type === 'virtual_machine') style="display:none" @endif>
                         <div class="flex items-center gap-x-6 gap-y-5 flex-wrap">
                             <label class="inline-flex items-center gap-x-2 text-sm">
                                 <input type="checkbox" wire:model.live="mounted" class="rounded border-gray-300 text-indigo-600" />
