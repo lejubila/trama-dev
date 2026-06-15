@@ -78,6 +78,15 @@ class SnapshotShow extends Component
         if (! empty($state['hidePatchPanels'])) {
             $params['hidePatchPanels'] = true;
         }
+        if (! empty($state['hideWifi'])) {
+            $params['hideWifi'] = true;
+        }
+        if (! empty($state['hideVpn'])) {
+            $params['hideVpn'] = true;
+        }
+        if (! empty($state['groupByHypervisor'])) {
+            $params['groupByHypervisor'] = true;
+        }
         // Attach the snapshotPreset hint when there is anything for the live
         // graph to restore (node positions OR port-label settings). Old
         // snapshots without either keep the URL clean.

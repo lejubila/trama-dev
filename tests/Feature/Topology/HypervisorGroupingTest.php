@@ -84,7 +84,10 @@ it('emits a dashed vnic edge between VM and hypervisor for each backed vNIC', fu
     expect($vnicEdges)->toHaveCount(1)
         ->and($vnicEdges[0]['data']['source'])->toBe('eq-'.$vm1->getKey())
         ->and($vnicEdges[0]['data']['target'])->toBe('eq-'.$hv->getKey())
-        ->and($vnicEdges[0]['data']['label'])->toBe('eno1');
+        ->and($vnicEdges[0]['data']['fromIface'])->toBe('net0')
+        ->and($vnicEdges[0]['data']['toIface'])->toBe('eno1')
+        ->and($vnicEdges[0]['data']['fromIfaceId'])->toBeInt()
+        ->and($vnicEdges[0]['data']['toIfaceId'])->toBeInt();
 });
 
 it('nests the host compound inside the site compound when both groupings are active', function (): void {

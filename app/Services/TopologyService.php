@@ -839,7 +839,15 @@ class TopologyService
                 'source' => 'eq-'.$vmEqId,
                 'target' => 'eq-'.$hostEqId,
                 'kind' => 'vnic',
-                'label' => $pnic->name,
+                // Esponiamo gli endpoint come fromIface/toIface (e gli id
+                // corrispondenti) così le toggle "IP/MAC/VLAN/Descrizione"
+                // del menu contestuale Porte funzionano anche sulle vNIC:
+                // _refreshEdgeLabels in topology-graph.js cerca proprio
+                // questi campi per ricomporre source-label/target-label.
+                'fromIfaceId' => $vnic->id,
+                'toIfaceId' => $pnic->id,
+                'fromIface' => $vnic->name,
+                'toIface' => $pnic->name,
                 'vnicName' => $vnic->name,
                 'pnicName' => $pnic->name,
             ]];
