@@ -234,16 +234,22 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             // $wire helpers. Simpler: re-query the API whenever filters change.
             const refresh = () => this._refresh();
             const refreshNoLayout = () => this._refresh({ skipLayout: true });
+            const refreshReparent = () => this._refresh({ skipLayout: true, reparentOnly: true });
             // Scope filters: a big delta (e.g. site switch) can legitimately
             // trigger a fresh layout when there are no compound parents.
             ['siteId', 'roomFilter', 'statusFilter', 'vlanFilter', 'tagFilters', 'filterTypes']
                 .forEach((k) => this.$watch('$wire.' + k, refresh));
-            // Purely visual flags: must never reposition existing nodes,
-            // regardless of dataset delta. Compounds appear/disappear around
-            // their children, hidden devices fade in/out, patch-panel
-            // passthrough flips — never a relayout.
-            ['includeHidden', 'hidePatchPanels', 'hideWifi', 'hideVpn', 'groupByRack', 'groupBySite', 'groupByRoom', 'groupByHypervisor']
+            // Purely visual flags that may change the set of edges/leaves
+            // (passthrough collapse, hidden inclusion, wifi/vpn layers):
+            // keep the full swap path but never relayout.
+            ['includeHidden', 'hidePatchPanels', 'hideWifi', 'hideVpn']
                 .forEach((k) => this.$watch('$wire.' + k, refreshNoLayout));
+            // Grouping toggles: the leaf/edge dataset is invariant —
+            // only compound parents appear/disappear and some children
+            // get re-parented. Reconcile in-place so leaf coordinates
+            // stay pixel-stable.
+            ['groupByRack', 'groupBySite', 'groupByRoom', 'groupByHypervisor']
+                .forEach((k) => this.$watch('$wire.' + k, refreshReparent));
         },
 
         destroy() {
@@ -312,9 +318,19 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             return [...nodes, ...edges];
         },
 
-        async _refresh({ skipLayout = false } = {}) {
+        async _refresh({ skipLayout = false, reparentOnly = false } = {}) {
             // Ask the Livewire component for fresh data with the current filters.
             const data = await this.$wire.graphData();
+
+            // Fast path for grouping toggles: the leaf/edge set is
+            // unchanged, only compound parents appear/disappear and
+            // some leaves get re-parented. Reconcile in-place via
+            // node.move({ parent }) so positions don't shift even by
+            // a pixel; skip the full swap path entirely.
+            if (reparentOnly && this.cy) {
+                this._reparentInPlace(data);
+                return;
+            }
 
             // 1) Snapshot current positions of all visible nodes (by id) so
             //    we can keep them stable across the swap.
@@ -420,6 +436,83 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
             // The graph swap blew away per-edge fromLabel/toLabel; reapply the
             // persisted port-label settings so the user's chosen IP/MAC/VLAN
             // overlays survive a filter/grouping change.
+            this._refreshEdgeLabels();
+            this._applyNodeLabelPositions();
+            this._applySessionHidden();
+            this._applyVpnLabels();
+            this.cy.style().update();
+        },
+
+        /**
+         * Reconcile compound parents in place without touching leaf
+         * positions or rebuilding edges. Used when only a grouping flag
+         * toggles: the dataset of leaf nodes and edges is invariant —
+         * what changes is which leaves sit inside which compound box.
+         */
+        _reparentInPlace(data) {
+            const nodes = (data && data.nodes) || [];
+            const edges = (data && data.edges) || [];
+
+            const newNodeById = new Map();
+            for (const n of nodes) {
+                if (n && n.data && n.data.id != null) newNodeById.set(String(n.data.id), n);
+            }
+            const newEdgeById = new Map();
+            for (const e of edges) {
+                if (e && e.data && e.data.id != null) newEdgeById.set(String(e.data.id), e);
+            }
+
+            // 1) Remove nodes no longer present (typically compound
+            // parents that disappear when the grouping is turned off).
+            // Removing a parent automatically detaches its children
+            // back to the top level — we'll re-assign their parent in
+            // step 3 if needed.
+            this.cy.nodes().forEach((n) => {
+                if (!newNodeById.has(n.id())) n.remove();
+            });
+
+            // 2) Add brand-new nodes (the new compound parents that
+            // appear when grouping is turned on). Leaves are already
+            // present from the previous render.
+            const toAdd = [];
+            newNodeById.forEach((spec, id) => {
+                if (this.cy.getElementById(id).length === 0) {
+                    // Compound parents carry no `position`; leaves do.
+                    // We pass the spec through unchanged.
+                    toAdd.push({ group: 'nodes', data: spec.data, position: spec.position });
+                }
+            });
+            if (toAdd.length > 0) this.cy.add(toAdd);
+
+            // 3) Re-parent any leaf whose compound assignment changed.
+            // node.move({ parent }) preserves the absolute position,
+            // which is exactly what we want for a zero-shift toggle.
+            newNodeById.forEach((spec, id) => {
+                const node = this.cy.getElementById(id);
+                if (node.length === 0) return;
+                const newParent = (spec.data && spec.data.parent) || null;
+                const currParent = node.data('parent') || null;
+                if (newParent !== currParent) {
+                    node.move({ parent: newParent });
+                }
+            });
+
+            // 4) Reconcile edges: add missing ones, drop orphans.
+            // Edges that exist in both lists are left untouched so
+            // their cached fromLabel/toLabel and styling stay intact.
+            this.cy.edges().forEach((e) => {
+                if (!newEdgeById.has(e.id())) e.remove();
+            });
+            const edgesToAdd = [];
+            newEdgeById.forEach((spec, id) => {
+                if (this.cy.getElementById(id).length === 0) {
+                    edgesToAdd.push({ group: 'edges', data: spec.data });
+                }
+            });
+            if (edgesToAdd.length > 0) this.cy.add(edgesToAdd);
+
+            // 5) Reapply visual adornments. No layout, no fit.
+            this._applyIconSizes();
             this._refreshEdgeLabels();
             this._applyNodeLabelPositions();
             this._applySessionHidden();
