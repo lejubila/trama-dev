@@ -44,7 +44,9 @@
                 @if ($snap->description) · {{ $snap->description }} @endif
             </p>
             @if ($imageDataUri)
-                <img src="{{ $imageDataUri }}" alt="{{ $snap->title }}" class="topo-image" />
+                <div class="topo-frame">
+                    <img src="{{ $imageDataUri }}" alt="{{ $snap->title }}" class="topo-image" />
+                </div>
             @else
                 <p class="muted">Immagine non disponibile.</p>
             @endif

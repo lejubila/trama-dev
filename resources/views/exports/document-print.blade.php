@@ -107,9 +107,26 @@
         .section-description { color: #475569; margin: 4pt 0 10pt; font-style: italic; }
 
         /* ── Topology blocks ──────────────────────────────────────── */
-        .topo-image { display: block; max-width: 100%; max-height: 215mm; margin: 6pt auto; }
-        .topo-landscape .topo-image,
-        .topo-landscape-page .topo-image { max-height: 130mm; }
+        /* Contenitore dimensionato sull'area utile della pagina in mm;
+           l'immagine la riempie con object-fit:contain (cresce fino
+           ai bordi, non sfora mai, aspect ratio preservato). */
+        .topo-block .topo-frame {
+            width: 100%;
+            height: 235mm;
+            margin: 6pt 0;
+            display: block;
+        }
+        .topo-block:first-of-type .topo-frame { height: 200mm; }
+        .topo-landscape .topo-frame,
+        .topo-landscape-page .topo-frame { height: 165mm; }
+        .topo-landscape-page:first-of-type .topo-frame { height: 145mm; }
+        .topo-image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            margin: 0 auto;
+        }
 
         /* ── Rack pages (Front always; Rear opt-in) ───────────────── */
         .rack-card { page: rack-portrait; padding-top: 2pt; }
