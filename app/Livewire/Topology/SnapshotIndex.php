@@ -154,7 +154,7 @@ class SnapshotIndex extends Component
 
         return view('livewire.topology.snapshot-index', [
             'snapshots' => $snapshots,
-            'sites' => Site::query()->orderBy('name')->get(['id', 'name']),
+            'sites' => Site::query()->orderBy('name')->get(['id', 'name', 'address']),
         ]);
     }
 }

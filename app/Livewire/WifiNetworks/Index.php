@@ -176,7 +176,7 @@ class Index extends Component
         return view('livewire.wifi-networks.index', [
             'networks' => $networks,
             'availableBroadcasters' => $this->availableBroadcasters()->get(['id', 'name', 'equipment_id']),
-            'sites' => Site::query()->orderBy('name')->get(['id', 'name']),
+            'sites' => Site::query()->orderBy('name')->get(['id', 'name', 'address']),
         ]);
     }
 }

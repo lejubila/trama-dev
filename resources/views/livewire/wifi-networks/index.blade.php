@@ -22,7 +22,7 @@
         <select wire:model.live="siteFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
             <option value="0">{{ __('wifi.filter_all_sites') }}</option>
             @foreach ($sites as $s)
-                <option value="{{ $s->id }}">{{ $s->name }}</option>
+                <option value="{{ $s->id }}">{{ $s->name }}@if (filled($s->address)) — {{ $s->address }}@endif</option>
             @endforeach
         </select>
         @if ($search !== '' || $siteFilter > 0)
@@ -94,7 +94,7 @@
                         <select wire:model="siteId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">{{ __('wifi.site_none') }}</option>
                             @foreach ($sites as $s)
-                                <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                <option value="{{ $s->id }}">{{ $s->name }}@if (filled($s->address)) — {{ $s->address }}@endif</option>
                             @endforeach
                         </select>
                         @error('siteId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror

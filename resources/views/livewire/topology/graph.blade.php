@@ -23,7 +23,7 @@
         <select wire:model.live="siteId" class="rounded-md border-gray-300 shadow-sm text-sm">
             <option value="0">Tutte le sedi</option>
             @foreach ($sites as $s)
-                <option value="{{ $s->id }}">{{ $s->name }}</option>
+                <option value="{{ $s->id }}">{{ $s->name }}@if (filled($s->address)) — {{ $s->address }}@endif</option>
             @endforeach
         </select>
 
