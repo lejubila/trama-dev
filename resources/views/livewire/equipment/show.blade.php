@@ -185,17 +185,18 @@
                                 <td class="px-4 py-3 font-mono text-gray-600">{{ $if->ip_address ?? '—' }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $if->status?->value }}</td>
                                 <td class="px-4 py-3 text-gray-700">
-                                    @if ($isVirtualMachine)
+                                    @if ($if->type?->value === 'virtual')
                                         @if ($if->backedBy)
                                             <span class="text-xs text-violet-700">
-                                                vNIC — via
-                                                @if ($if->backedBy->equipment)
+                                                {{ $isVirtualMachine ? 'vNIC' : 'sub-if' }} — via
+                                                @if ($if->backedBy->equipment && $if->backedBy->equipment->id !== $equipment->id)
                                                     <a href="{{ route('equipment.show', $if->backedBy->equipment) }}" wire:navigate class="hover:underline">{{ $if->backedBy->equipment->name }}</a>
+                                                    /
                                                 @endif
-                                                /<span class="font-mono">{{ $if->backedBy->name }}</span>
+                                                <span class="font-mono">{{ $if->backedBy->name }}</span>
                                             </span>
                                         @else
-                                            <span class="text-xs text-gray-400" title="Le vNIC non hanno connessioni fisiche: imposta la NIC fisica dell'hypervisor nel form.">vNIC — backing non impostato</span>
+                                            <span class="text-xs text-gray-400" title="Le interfacce virtuali non hanno connessioni fisiche: imposta l'interfaccia di appoggio nel form.">{{ $isVirtualMachine ? 'vNIC' : 'sub-if' }} — backing non impostato</span>
                                         @endif
                                     @elseif ($conn && $remote?->equipment)
                                         <a href="{{ route('equipment.show', $remote->equipment) }}" wire:navigate class="text-indigo-700 hover:underline">{{ $remote->equipment->name }}</a>
@@ -385,7 +386,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Tipo</label>
-                            <select wire:model="ifType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                            <select wire:model.live="ifType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
                                 @foreach (App\Enums\InterfaceType::cases() as $t) <option value="{{ $t->value }}">{{ $t->value }}</option> @endforeach
                             </select>
                         </div>
@@ -466,16 +467,22 @@
                         <label class="block text-sm font-medium text-gray-700">Descrizione</label>
                         <textarea wire:model="ifDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                     </div>
-                    @if ($isVirtualMachine)
+                    @if ($ifType === 'virtual')
                         <div class="border-t pt-3">
-                            <label class="block text-sm font-medium text-gray-700">NIC fisica dell'hypervisor (vNIC backing)</label>
+                            <label class="block text-sm font-medium text-gray-700">
+                                {{ $isVirtualMachine ? "NIC fisica dell'hypervisor (vNIC backing)" : 'Interfaccia fisica di appoggio (backing)' }}
+                            </label>
                             <select wire:model="ifBackedById" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
                                 <option value="">— Nessuna —</option>
-                                @foreach ($hostPnics as $p)
+                                @foreach ($backingCandidates as $p)
                                     <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->type?->value }})</option>
                                 @endforeach
                             </select>
-                            <p class="text-xs text-gray-500 mt-1">Più vNIC possono condividere la stessa NIC fisica dell'host.</p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ $isVirtualMachine
+                                    ? "Più vNIC possono condividere la stessa NIC fisica dell'host."
+                                    : 'Per sub-interfacce VLAN: la porta fisica che trasporta il traffico taggato.' }}
+                            </p>
                             @error('ifBackedById')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                     @endif

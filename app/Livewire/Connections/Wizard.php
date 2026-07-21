@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Connections;
 
 use App\Enums\EquipmentType;
+use App\Enums\InterfaceType;
 use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
@@ -66,7 +67,10 @@ class Wizard extends Component
             // tenant scope) before pre-selecting, so a stale URL doesn't
             // ghost-fill the form with an unauthorised id.
             $iface = NetworkInterface::query()->with('equipment:id,type')->find($this->fromInterfaceParam);
-            if ($iface !== null && $iface->equipment?->type !== EquipmentType::VirtualMachine) {
+            if ($iface !== null
+                && $iface->equipment?->type !== EquipmentType::VirtualMachine
+                && $iface->type !== InterfaceType::Virtual
+            ) {
                 $this->fromInterfaceId = $iface->getKey();
                 if ($this->fromEquipmentId === null) {
                     $this->fromEquipmentId = (int) $iface->equipment_id;
@@ -191,12 +195,24 @@ class Wizard extends Component
         // Le VM non possono partecipare a connessioni fisiche: i loro
         // vNIC vivono come riferimento logico verso una pNIC dell'host
         // (interfaces.backed_by_interface_id). Le escludiamo dal wizard
-        // così non compaiono in nessuno dei due step.
+        // così non compaiono in nessuno dei due step. Analogamente
+        // filtriamo le interfacce di tipo virtual anche sugli altri
+        // dispositivi (sub-if VLAN su firewall/router): non hanno un
+        // cavo proprio, il traffico viaggia sulla porta fisica di appoggio.
         $equipment = Equipment::query()
             ->where('type', '!=', EquipmentType::VirtualMachine->value)
             ->with(['interfaces', 'rack:id,room_id'])
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($eq) {
+                $eq->setRelation(
+                    'interfaces',
+                    $eq->interfaces->reject(fn ($if) => $if->type === InterfaceType::Virtual)->values(),
+                );
+
+                return $eq;
+            })
+            ->values();
 
         // Available interfaces excluding ones already in an active connection
         $busyIds = Connection::query()

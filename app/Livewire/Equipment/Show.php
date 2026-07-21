@@ -349,11 +349,13 @@ class Show extends Component
     private function basePayload(): array
     {
         $passthrough = $this->isPassthroughEquipment();
-        $isVm = $this->equipment->isVirtualMachine();
-        // resolveBackingNicId() relies on validateBackingNic() having been
-        // called first (see saveSingleIf / saveBulkIf). Here we just consume
-        // the already-validated value.
-        $backedBy = $isVm && $this->ifBackedById !== null && $this->ifBackedById !== 0
+        // Il backing è significativo solo per le interfacce virtuali (vNIC di
+        // VM o sub-if VLAN su firewall/router/server). validateBackingNic()
+        // ha già svuotato il campo per gli altri tipi: qui consumiamo il
+        // valore già validato.
+        $backedBy = $this->ifType === InterfaceType::Virtual->value
+            && $this->ifBackedById !== null
+            && $this->ifBackedById !== 0
             ? (int) $this->ifBackedById
             : null;
 
@@ -397,7 +399,10 @@ class Show extends Component
      */
     private function validateBackingNic(): bool
     {
-        if (! $this->equipment->isVirtualMachine()) {
+        // Il campo è significativo solo per le interfacce virtuali (vNIC di
+        // VM oppure sub-interfacce VLAN su firewall/router/server). Per
+        // qualsiasi altro tipo lo azzeriamo silenziosamente.
+        if ($this->ifType !== InterfaceType::Virtual->value) {
             $this->ifBackedById = null;
 
             return true;
@@ -407,15 +412,30 @@ class Show extends Component
 
             return true;
         }
-        $hostId = $this->equipment->host_equipment_id;
-        if ($hostId === null) {
-            $this->addError('ifBackedById', 'La VM non ha un hypervisor host associato.');
+        // Per una VM il backing dev'essere una pNIC dell'hypervisor host;
+        // per qualsiasi altro equipment dev'essere una porta fisica dello
+        // stesso equipment (una vNIC non può ospitare sé stessa).
+        if ($this->equipment->isVirtualMachine()) {
+            $expectedEquipmentId = $this->equipment->host_equipment_id;
+            if ($expectedEquipmentId === null) {
+                $this->addError('ifBackedById', 'La VM non ha un hypervisor host associato.');
+
+                return false;
+            }
+            $mismatchMessage = 'La NIC selezionata non appartiene all\'hypervisor host.';
+        } else {
+            $expectedEquipmentId = $this->equipment->getKey();
+            $mismatchMessage = 'La NIC selezionata non appartiene a questo dispositivo.';
+        }
+
+        $pnic = NetworkInterface::query()->find($this->ifBackedById);
+        if ($pnic === null || (int) $pnic->equipment_id !== (int) $expectedEquipmentId) {
+            $this->addError('ifBackedById', $mismatchMessage);
 
             return false;
         }
-        $pnic = NetworkInterface::query()->find($this->ifBackedById);
-        if ($pnic === null || (int) $pnic->equipment_id !== (int) $hostId) {
-            $this->addError('ifBackedById', 'La NIC selezionata non appartiene all\'hypervisor host.');
+        if ($this->editingIfId !== null && (int) $pnic->id === (int) $this->editingIfId) {
+            $this->addError('ifBackedById', 'Una interfaccia non può ospitare sé stessa.');
 
             return false;
         }
@@ -679,14 +699,24 @@ class Show extends Component
             }
         }
 
-        $hostPnics = $this->equipment->isVirtualMachine() && $this->equipment->host_equipment_id !== null
+        // Candidate physical interfaces that can back a virtual sub-interface.
+        // Per una VM: le pNIC dell'hypervisor host. Per qualsiasi altro
+        // equipment (firewall, router, server, …): le porte fisiche dello
+        // stesso equipment, escludendo l'interfaccia in editing (una vNIC
+        // non può ospitare sé stessa).
+        $backingSourceEquipmentId = $this->equipment->isVirtualMachine()
+            ? $this->equipment->host_equipment_id
+            : $this->equipment->getKey();
+
+        $backingCandidates = $backingSourceEquipmentId !== null
             ? NetworkInterface::query()
-                ->where('equipment_id', $this->equipment->host_equipment_id)
+                ->where('equipment_id', $backingSourceEquipmentId)
                 ->whereIn('type', [
                     InterfaceType::Ethernet->value,
                     InterfaceType::Fiber->value,
                     InterfaceType::Wireless->value,
                 ])
+                ->when($this->editingIfId !== null, fn ($q) => $q->where('id', '!=', $this->editingIfId))
                 ->orderBy('name')
                 ->get(['id', 'name', 'type'])
             : collect();
@@ -702,7 +732,7 @@ class Show extends Component
                 true,
             ),
             'isVirtualMachine' => $this->equipment->isVirtualMachine(),
-            'hostPnics' => $hostPnics,
+            'backingCandidates' => $backingCandidates,
         ]);
     }
 }

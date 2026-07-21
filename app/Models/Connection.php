@@ -87,9 +87,10 @@ class Connection extends Model implements AuditableContract
     }
 
     /**
-     * Reject any save that would attach a cable to a virtual machine's
-     * interface: vNICs are logical and their physical transit is described
-     * by `interfaces.backed_by_interface_id`, not by a Connection row.
+     * Reject any save that would attach a cable to an interface that has no
+     * physical existence: VM vNICs or virtual sub-interfaces (es. VLAN
+     * sub-if su firewall/router). Il loro transito fisico è descritto da
+     * `interfaces.backed_by_interface_id`, non da una Connection.
      * Lives in the model so every entry point — Wizard, Edit, API,
      * factories — is covered without duplication.
      */
@@ -107,6 +108,11 @@ class Connection extends Model implements AuditableContract
                 if ($iface?->equipment?->type === EquipmentType::VirtualMachine) {
                     throw \Illuminate\Validation\ValidationException::withMessages([
                         $field => 'Le interfacce di una macchina virtuale non possono avere connessioni fisiche: usa il backing vNIC → NIC dell\'hypervisor.',
+                    ]);
+                }
+                if ($iface?->type === \App\Enums\InterfaceType::Virtual) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        $field => 'Le interfacce virtuali non ammettono connessioni fisiche: usano il cavo dell\'interfaccia di appoggio.',
                     ]);
                 }
             }

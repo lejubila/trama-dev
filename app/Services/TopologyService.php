@@ -834,6 +834,12 @@ class TopologyService
             if (! isset($visible[$hostEqId])) {
                 continue;
             }
+            // Le sub-interfacce VLAN su firewall/router/server hanno il
+            // backing sulla stessa equipment fisica: un edge sorgente ==
+            // destinazione sarebbe un self-loop inutile che sporca il grafo.
+            if ((int) $vmEqId === (int) $hostEqId) {
+                continue;
+            }
             $edges[] = ['data' => [
                 'id' => 'vnic-'.$vnic->id,
                 'source' => 'eq-'.$vmEqId,
