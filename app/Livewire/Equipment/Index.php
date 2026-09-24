@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Equipment;
 
+use App\Actions\Equipment\DuplicateEquipment;
 use App\Enums\EquipmentStatus;
 use App\Enums\EquipmentType;
 use App\Enums\HypervisorVendor;
@@ -15,7 +16,9 @@ use App\Models\Site;
 use App\Models\Tag;
 use App\Services\RackPlacementService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -57,6 +60,9 @@ class Index extends Component
     public bool $showForm = false;
 
     public ?int $editingId = null;
+
+    /** Source device when the create form was opened via "Duplica". */
+    public ?int $duplicatingFromId = null;
 
     public ?int $rackId = null;
 
@@ -240,7 +246,7 @@ class Index extends Component
     public function openCreate(): void
     {
         $this->authorize('create', Equipment::class);
-        $this->reset(['editingId', 'rackId', 'roomId', 'hostEquipmentId', 'hypervisorVendor', 'vcpu', 'ramMb', 'diskGb', 'guestOs', 'name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'mounted', 'locked', 'positionUStart', 'description', 'iconUpload', 'existingIconPath', 'onTop', 'hiddenInTopology', 'selectedTagIds']);
+        $this->reset(['editingId', 'duplicatingFromId', 'rackId', 'roomId', 'hostEquipmentId', 'hypervisorVendor', 'vcpu', 'ramMb', 'diskGb', 'guestOs', 'name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'mounted', 'locked', 'positionUStart', 'description', 'iconUpload', 'existingIconPath', 'onTop', 'hiddenInTopology', 'selectedTagIds']);
         $this->type = 'switch';
         $this->status = 'active';
         $this->positionUHeight = 1;
@@ -254,7 +260,39 @@ class Index extends Component
         $eq = Equipment::query()->findOrFail($id);
         $this->authorize('update', $eq);
 
+        $this->fillFormFrom($eq);
         $this->editingId = $eq->getKey();
+        $this->duplicatingFromId = null;
+        $this->resetErrorBag();
+        $this->showForm = true;
+    }
+
+    /**
+     * Opens the create form pre-filled from an existing device. Nothing is
+     * persisted until the user saves; interfaces are copied at that point.
+     */
+    public function openDuplicate(int $id, DuplicateEquipment $duplicator): void
+    {
+        $eq = Equipment::query()->findOrFail($id);
+        $this->authorize('view', $eq);
+        $this->authorize('create', Equipment::class);
+
+        $this->fillFormFrom($eq);
+        $this->editingId = null;
+        $this->duplicatingFromId = $eq->getKey();
+        $this->name = $duplicator->nextName($eq);
+        // Identifiers of the physical unit must not be cloned.
+        $this->serial = '';
+        $this->assetTag = '';
+        $this->managementIp = '';
+        // The source's slot is taken: keep rack/height/side, let the user pick the U.
+        $this->positionUStart = null;
+        $this->resetErrorBag();
+        $this->showForm = true;
+    }
+
+    private function fillFormFrom(Equipment $eq): void
+    {
         $this->rackId = $eq->rack_id;
         $this->roomId = $eq->room_id;
         $this->hostEquipmentId = $eq->host_equipment_id;
@@ -284,8 +322,6 @@ class Index extends Component
         $this->iconUpload = null;
         $this->existingIconPath = $eq->icon_path;
         $this->selectedTagIds = $eq->tags()->pluck('tags.id')->all();
-        $this->resetErrorBag();
-        $this->showForm = true;
     }
 
     public function save(RackPlacementService $placement): void
@@ -401,8 +437,12 @@ class Index extends Component
 
         // Merge dei custom_fields preservando eventuali chiavi esistenti
         // non gestite dal form (es. metadata importati altrove).
-        if ($this->editingId !== null) {
-            $existing = Equipment::query()->find($this->editingId);
+        $source = $this->editingId === null && $this->duplicatingFromId !== null
+            ? Equipment::query()->findOrFail($this->duplicatingFromId)
+            : null;
+
+        if ($this->editingId !== null || $source !== null) {
+            $existing = $source ?? Equipment::query()->find($this->editingId);
             $prev = is_array($existing?->custom_fields) ? $existing->custom_fields : [];
             foreach (['hypervisor_vendor', 'vcpu', 'ram_mb', 'disk_gb', 'guest_os'] as $managedKey) {
                 unset($prev[$managedKey]);
@@ -424,13 +464,29 @@ class Index extends Component
             $this->dispatch('toast', type: 'success', message: 'Dispositivo aggiornato.');
         } else {
             $this->authorize('create', Equipment::class);
-            $eq = Equipment::create($payload);
+
+            if ($source !== null) {
+                $this->authorize('view', $source);
+                $payload['icon_size_px'] = $source->icon_size_px;
+                [$eq, $copied] = DB::transaction(function () use ($payload, $source): array {
+                    $eq = Equipment::create($payload);
+
+                    return [$eq, app(DuplicateEquipment::class)->copyInterfaces($source, $eq)];
+                });
+            } else {
+                $eq = Equipment::create($payload);
+            }
 
             if ($this->iconUpload instanceof TemporaryUploadedFile) {
                 $eq->update(['icon_path' => $this->storeIcon($this->iconUpload, null, (int) $eq->tenant_id)]);
+            } elseif ($source !== null && $this->existingIconPath !== null && $source->icon_path !== null) {
+                $eq->update(['icon_path' => $this->copyIcon($source->icon_path, (int) $eq->tenant_id)]);
             }
 
-            $this->dispatch('toast', type: 'success', message: 'Dispositivo creato.');
+            $this->dispatch('toast', type: 'success', message: $source !== null
+                ? "Dispositivo duplicato ({$copied} porte copiate)."
+                : 'Dispositivo creato.');
+            $this->duplicatingFromId = null;
         }
 
         $eq->tags()->sync($this->selectedTagIds);
@@ -442,6 +498,8 @@ class Index extends Component
     {
         if ($this->editingId === null) {
             $this->iconUpload = null;
+            // In duplicate mode this also stops the source's icon being copied.
+            $this->existingIconPath = null;
 
             return;
         }
@@ -489,6 +547,24 @@ class Index extends Component
 
         $eq->delete();
         $this->dispatch('toast', type: 'success', message: 'Dispositivo rimosso.');
+    }
+
+    /**
+     * Each device owns its icon file (delete() removes it), so a duplicate
+     * gets its own copy instead of sharing the source's path.
+     */
+    private function copyIcon(string $sourcePath, int $tenantId): ?string
+    {
+        $disk = Storage::disk('public');
+        if (! $disk->exists($sourcePath)) {
+            return null;
+        }
+
+        $ext = pathinfo($sourcePath, PATHINFO_EXTENSION);
+        $path = "icons/{$tenantId}/equipment/".Str::random(40).($ext !== '' ? ".{$ext}" : '');
+        $disk->copy($sourcePath, $path);
+
+        return $path;
     }
 
     private function storeIcon(TemporaryUploadedFile $file, ?string $previousPath, int $tenantId): string
@@ -558,6 +634,9 @@ class Index extends Component
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'hypervisorVendors' => HypervisorVendor::cases(),
+            'duplicatingInterfaceCount' => $this->duplicatingFromId !== null
+                ? (int) Equipment::query()->find($this->duplicatingFromId)?->interfaces()->count()
+                : 0,
         ]);
     }
 }

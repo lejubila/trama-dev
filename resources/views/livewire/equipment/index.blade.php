@@ -123,6 +123,9 @@
                             @can('update', $eq)
                                 <button wire:click="openEdit({{ $eq->id }})" class="text-indigo-600 hover:text-indigo-800"><x-icon name="pencil" class="h-4 w-4 inline" /></button>
                             @endcan
+                            @can('create', App\Models\Equipment::class)
+                                <button wire:click="openDuplicate({{ $eq->id }})" title="Duplica" class="text-gray-500 hover:text-gray-700"><x-icon name="document-duplicate" class="h-4 w-4 inline" /></button>
+                            @endcan
                             @can('delete', $eq)
                                 <button wire:click="delete({{ $eq->id }})" wire:confirm="Eliminare {{ $eq->name }}?" class="text-red-600 hover:text-red-800"><x-icon name="trash" class="h-4 w-4 inline" /></button>
                             @endcan
@@ -139,7 +142,10 @@
     @if ($showForm)
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
             <div class="bg-white rounded-md shadow-lg w-full max-w-2xl p-6 my-8">
-                <h2 class="text-lg font-semibold mb-4">{{ $editingId ? 'Modifica dispositivo' : 'Nuovo dispositivo' }}</h2>
+                <h2 class="text-lg font-semibold mb-4">{{ $editingId ? 'Modifica dispositivo' : ($duplicatingFromId ? 'Duplica dispositivo' : 'Nuovo dispositivo') }}</h2>
+                @if ($duplicatingFromId)
+                    <p class="-mt-2 mb-4 text-sm text-gray-500">Verranno copiate {{ $duplicatingInterfaceCount }} porte (senza MAC e IP); le connessioni non vengono copiate.</p>
+                @endif
                 <form wire:submit="save" class="space-y-3">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
