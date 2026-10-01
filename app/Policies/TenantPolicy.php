@@ -39,4 +39,13 @@ class TenantPolicy
     {
         return $user->canManageData();
     }
+
+    /**
+     * Full data export (zip). Same audience as data management: an archive
+     * carries everything, so clienti — read-only users — can't download it.
+     */
+    public function export(User $user, Tenant $tenant): bool
+    {
+        return $user->canManageData() && $user->canAccessTenant($tenant);
+    }
 }

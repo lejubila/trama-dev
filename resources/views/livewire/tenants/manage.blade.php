@@ -47,6 +47,14 @@
             @endcan
         </div>
 
+        @can('export', $tenant)
+            <div class="bg-white dark:bg-slate-800 shadow ring-1 ring-black ring-opacity-5 dark:ring-slate-600 rounded-md p-6 max-w-xl mt-6">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-slate-100">Esporta dati</h3>
+                <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">Scarica un archivio .zip con tutti i dati del cliente (sedi, locali, rack, dispositivi, porte, connessioni, Wi-Fi, VPN, documenti, snapshot, foto e icone). Si può reimportare da <em>Clienti → Importa cliente</em>, anche su un'altra installazione.</p>
+                <a href="{{ route('tenants.export', $tenant) }}" class="mt-3 inline-flex px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Esporta dati (.zip)</a>
+            </div>
+        @endcan
+
         @can('delete', $tenant)
             <div class="bg-red-50 dark:bg-red-900/20 ring-1 ring-red-200 dark:ring-red-800/40 rounded-md p-6 max-w-xl mt-6">
                 <h3 class="text-base font-semibold text-red-900 dark:text-red-200">Zona pericolosa</h3>

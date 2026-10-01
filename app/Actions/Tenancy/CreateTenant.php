@@ -42,7 +42,7 @@ class CreateTenant
         });
     }
 
-    private function uniqueSlugFor(string $name): string
+    public function uniqueSlugFor(string $name): string
     {
         $base = Str::slug($name) !== '' ? Str::slug($name) : 'cliente';
         $candidate = $base;

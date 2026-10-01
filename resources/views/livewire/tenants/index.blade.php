@@ -1,6 +1,9 @@
 <div>
     <x-page-header title="Clienti" subtitle="I clienti (workspace) ai quali sei associato">
         @can('create', App\Models\Tenant::class)
+            <a href="{{ route('tenants.import') }}" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-white dark:bg-slate-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-200 shadow-sm ring-1 ring-gray-300 dark:ring-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600">
+                Importa cliente
+            </a>
             <button wire:click="openCreate" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
                 <x-icon name="plus" class="h-4 w-4" /> Nuovo cliente
             </button>
@@ -36,7 +39,10 @@
                                 <button wire:click="switchTo({{ $tenant->id }})" class="text-xs text-indigo-700 dark:text-indigo-300 hover:underline">Attiva</button>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 text-right space-x-3">
+                            @can('export', $tenant)
+                                <a href="{{ route('tenants.export', $tenant) }}" class="text-xs text-gray-600 dark:text-slate-400 hover:underline">Esporta</a>
+                            @endcan
                             <a href="{{ route('tenants.manage', $tenant) }}" wire:navigate class="text-xs text-indigo-700 dark:text-indigo-300 hover:underline">Gestisci →</a>
                         </td>
                     </tr>

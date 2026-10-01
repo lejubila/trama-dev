@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Export\DocumentPdfController;
 use App\Http\Controllers\Export\EquipmentCsvController;
+use App\Http\Controllers\Export\TenantArchiveController;
 use App\Http\Controllers\Tenancy\SwitchTenantController;
 use App\Livewire\Audit\Trail as AuditTrail;
 use App\Livewire\Connections\Edit as ConnectionsEdit;
@@ -25,6 +26,7 @@ use App\Livewire\Settings\ApiTokens as SettingsApiTokens;
 use App\Livewire\Sites\Index as SitesIndex;
 use App\Livewire\Sites\Show as SitesShow;
 use App\Livewire\Tags\Manager as TagsManager;
+use App\Livewire\Tenants\Import as TenantsImport;
 use App\Livewire\Tenants\Index as TenantsIndex;
 use App\Livewire\Tenants\Manage as TenantsManage;
 use App\Livewire\Topology\Graph as TopologyGraph;
@@ -53,6 +55,8 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('tenant/switch/{tenant}', SwitchTenantController::class)->name('tenant.switch');
     Route::get('tenants', TenantsIndex::class)->name('tenants.index');
     Route::get('tenants/{tenant}/manage', TenantsManage::class)->name('tenants.manage');
+    Route::get('tenants/import', TenantsImport::class)->name('tenants.import');
+    Route::get('tenants/{tenant}/export.zip', TenantArchiveController::class)->name('tenants.export');
 
     // Sites
     Route::get('sites', SitesIndex::class)->name('sites.index');
