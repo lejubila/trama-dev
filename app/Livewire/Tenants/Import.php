@@ -104,7 +104,7 @@ class Import extends Component
             return;
         } catch (Throwable $e) {
             Log::error('Tenant archive import failed', ['exception' => $e]);
-            $this->importError = 'Import non riuscito: il file contiene dati non compatibili. Nessun dato è stato importato.';
+            $this->importError = __('tenants.import_failed');
 
             return;
         } finally {
@@ -112,7 +112,7 @@ class Import extends Component
         }
 
         TenantContext::setId((int) $tenant->getKey());
-        $this->dispatch('toast', type: 'success', message: "Cliente \"{$tenant->name}\" importato.");
+        $this->dispatch('toast', type: 'success', message: __('tenants.import_toast_done', ['name' => $tenant->name]));
         $this->redirectRoute('tenants.manage', ['tenant' => $tenant], navigate: true);
     }
 

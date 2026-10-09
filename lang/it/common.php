@@ -90,4 +90,8 @@ return [
     'language_it' => 'Italiano',
     'language_en' => 'Inglese',
     'error_prefix' => 'Errore: :message',
+    'email' => 'Email',
+    'slug' => 'Slug',
+    'domain' => 'Dominio',
+    'assign' => 'Assegna',
 ];

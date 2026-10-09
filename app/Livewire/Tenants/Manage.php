@@ -63,7 +63,7 @@ class Manage extends Component
             'domain' => $data['domain'] !== '' ? $data['domain'] : null,
         ]);
 
-        $this->dispatch('toast', type: 'success', message: 'Cliente aggiornato.');
+        $this->dispatch('toast', type: 'success', message: __('tenants.toast_updated'));
     }
 
     public function deleteTenant(): void
@@ -78,7 +78,7 @@ class Manage extends Component
         // on the redirect.
         TenantContext::clear();
 
-        $this->dispatch('toast', type: 'success', message: "Cliente \"{$name}\" eliminato.");
+        $this->dispatch('toast', type: 'success', message: __('tenants.toast_deleted', ['name' => $name]));
         $this->redirectRoute('tenants.index', navigate: true);
     }
 
@@ -102,7 +102,7 @@ class Manage extends Component
         }
 
         $this->reset(['newUserId']);
-        $this->dispatch('toast', type: 'success', message: 'Cliente assegnato.');
+        $this->dispatch('toast', type: 'success', message: __('tenants.toast_assigned'));
     }
 
     public function removeMember(int $userId, RemoveMember $action): void
@@ -119,7 +119,7 @@ class Manage extends Component
             return;
         }
 
-        $this->dispatch('toast', type: 'success', message: 'Assegnazione rimossa.');
+        $this->dispatch('toast', type: 'success', message: __('tenants.toast_unassigned'));
     }
 
     public function render(): View

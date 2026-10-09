@@ -64,7 +64,7 @@ class Index extends Component
         TenantContext::setId($tenant->getKey());
 
         $this->showForm = false;
-        $this->dispatch('toast', type: 'success', message: "Cliente \"{$tenant->name}\" creato.");
+        $this->dispatch('toast', type: 'success', message: __('tenants.toast_created', ['name' => $tenant->name]));
         $this->redirectRoute('tenants.manage', ['tenant' => $tenant], navigate: true);
     }
 
@@ -77,7 +77,7 @@ class Index extends Component
         $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
         TenantContext::setId($tenant->getKey());
 
-        $this->dispatch('toast', type: 'success', message: "Cliente attivo: {$tenant->name}.");
+        $this->dispatch('toast', type: 'success', message: __('tenants.toast_switched', ['name' => $tenant->name]));
         $this->redirectRoute('dashboard', navigate: true);
     }
 

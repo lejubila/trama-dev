@@ -19,7 +19,7 @@ class RemoveMember
     public function execute(Tenant $tenant, User $member): void
     {
         if (! $member->belongsToTenant($tenant)) {
-            throw new InvalidArgumentException('Utente non è assegnato a questo cliente.');
+            throw new InvalidArgumentException(__('tenants.err_not_assigned'));
         }
 
         DB::transaction(function () use ($tenant, $member): void {

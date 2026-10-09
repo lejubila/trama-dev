@@ -23,7 +23,7 @@ class TenantArchiveReader
     {
         $zip = new ZipArchive;
         if ($zip->open($zipPath, ZipArchive::RDONLY) !== true) {
-            throw new InvalidTenantArchiveException('Il file non è un archivio ZIP valido.');
+            throw new InvalidTenantArchiveException(__('tenants.archive_err_not_zip'));
         }
 
         try {
@@ -45,21 +45,21 @@ class TenantArchiveReader
     {
         $stat = $zip->statName('data.json');
         if ($stat === false) {
-            throw new InvalidTenantArchiveException('L\'archivio non contiene data.json: non è un export di Trama.');
+            throw new InvalidTenantArchiveException(__('tenants.archive_err_no_data'));
         }
         if ($stat['size'] > self::MAX_JSON_BYTES) {
-            throw new InvalidTenantArchiveException('data.json è troppo grande.');
+            throw new InvalidTenantArchiveException(__('tenants.archive_err_data_too_big'));
         }
 
         $data = json_decode((string) $zip->getFromName('data.json'), true);
         if (! is_array($data) || ($data['format'] ?? null) !== TenantArchiveSchema::FORMAT) {
-            throw new InvalidTenantArchiveException('Il file non è un export cliente di Trama.');
+            throw new InvalidTenantArchiveException(__('tenants.archive_err_format'));
         }
         if (($data['version'] ?? null) !== TenantArchiveSchema::VERSION) {
-            throw new InvalidTenantArchiveException('Versione dell\'export non supportata ('.json_encode($data['version'] ?? null).').');
+            throw new InvalidTenantArchiveException(__('tenants.archive_err_version', ['version' => json_encode($data['version'] ?? null)]));
         }
         if (! is_array($data['tenant'] ?? null) || ! is_string($data['tenant']['name'] ?? null) || trim($data['tenant']['name']) === '') {
-            throw new InvalidTenantArchiveException('Dati del cliente mancanti nell\'export.');
+            throw new InvalidTenantArchiveException(__('tenants.archive_err_tenant'));
         }
 
         return $data;
@@ -73,15 +73,15 @@ class TenantArchiveReader
         foreach (array_keys(TenantArchiveSchema::sections()) as $section) {
             $rows = $data[$section] ?? [];
             if (! is_array($rows) || ! array_is_list($rows)) {
-                throw new InvalidTenantArchiveException("Sezione \"{$section}\" non valida.");
+                throw new InvalidTenantArchiveException(__('tenants.archive_err_section', ['section' => $section]));
             }
             $seen = [];
             foreach ($rows as $i => $row) {
                 if (! is_array($row) || ! is_int($row['id'] ?? null)) {
-                    throw new InvalidTenantArchiveException("Riga {$i} della sezione \"{$section}\" senza id valido.");
+                    throw new InvalidTenantArchiveException(__('tenants.archive_err_row_id', ['row' => $i, 'section' => $section]));
                 }
                 if (isset($seen[$row['id']])) {
-                    throw new InvalidTenantArchiveException("Id {$row['id']} duplicato nella sezione \"{$section}\".");
+                    throw new InvalidTenantArchiveException(__('tenants.archive_err_dup_id', ['id' => $row['id'], 'section' => $section]));
                 }
                 $seen[$row['id']] = true;
             }
@@ -91,19 +91,19 @@ class TenantArchiveReader
             foreach ($data[$section] ?? [] as $row) {
                 $ids = $row[$key] ?? [];
                 if (! is_array($ids) || array_filter($ids, fn ($id) => ! is_int($id)) !== []) {
-                    throw new InvalidTenantArchiveException("Campo \"{$key}\" non valido nella sezione \"{$section}\".");
+                    throw new InvalidTenantArchiveException(__('tenants.archive_err_field', ['field' => $key, 'section' => $section]));
                 }
             }
         }
 
         $taggables = $data['taggables'] ?? [];
         if (! is_array($taggables)) {
-            throw new InvalidTenantArchiveException('Sezione "taggables" non valida.');
+            throw new InvalidTenantArchiveException(__('tenants.archive_err_section', ['section' => 'taggables']));
         }
         foreach ($taggables as $t) {
             if (! is_array($t) || ! is_int($t['tag_id'] ?? null) || ! is_int($t['id'] ?? null)
                 || ! array_key_exists((string) ($t['type'] ?? ''), TenantArchiveSchema::TAGGABLE_TYPES)) {
-                throw new InvalidTenantArchiveException('Sezione "taggables" non valida.');
+                throw new InvalidTenantArchiveException(__('tenants.archive_err_section', ['section' => 'taggables']));
             }
         }
     }
@@ -127,14 +127,14 @@ class TenantArchiveReader
                         continue;
                     }
                     if (! is_string($path) || ! $this->isSafePath($path)) {
-                        throw new InvalidTenantArchiveException('Percorso file non valido nell\'export: '.json_encode($path));
+                        throw new InvalidTenantArchiveException(__('tenants.archive_err_path', ['path' => json_encode($path)]));
                     }
                     $stat = $zip->statName('files/'.$path);
                     if ($stat === false) {
                         continue;
                     }
                     if ($stat['size'] > self::MAX_FILE_BYTES) {
-                        throw new InvalidTenantArchiveException("File troppo grande nell'export: {$path}");
+                        throw new InvalidTenantArchiveException(__('tenants.archive_err_file_size', ['path' => $path]));
                     }
                     $files[$path] = true;
                 }

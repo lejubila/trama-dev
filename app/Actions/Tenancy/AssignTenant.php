@@ -17,7 +17,7 @@ class AssignTenant
     public function execute(Tenant $tenant, User $user): User
     {
         if ($user->belongsToTenant($tenant)) {
-            throw new InvalidArgumentException('L\'utente è già assegnato a questo cliente.');
+            throw new InvalidArgumentException(__('tenants.err_already_assigned'));
         }
 
         $user->tenants()->attach($tenant->getKey());

@@ -154,24 +154,12 @@ final class TenantArchiveSchema
      */
     public static function labels(): array
     {
-        return [
-            'sites' => 'Sedi',
-            'rooms' => 'Locali',
-            'racks' => 'Rack',
-            'rack_photos' => 'Foto rack',
-            'equipment' => 'Dispositivi',
-            'interfaces' => 'Porte / interfacce',
-            'connections' => 'Connessioni',
-            'link_groups' => 'Gruppi di link (LAG)',
-            'tags' => 'Tag',
-            'wifi_networks' => 'Reti Wi-Fi',
-            'wifi_associations' => 'Associazioni Wi-Fi',
-            'vpn_remote_access' => 'VPN remote access',
-            'vpn_remote_access_clients' => 'Client VPN',
-            'vpn_site_to_site' => 'VPN site-to-site',
-            'device_icons' => 'Icone personalizzate',
-            'topology_snapshots' => 'Snapshot topologia',
-            'documents' => 'Documenti',
+        $sections = [
+            'sites', 'rooms', 'racks', 'rack_photos', 'equipment', 'interfaces', 'connections',
+            'link_groups', 'tags', 'wifi_networks', 'wifi_associations', 'vpn_remote_access',
+            'vpn_remote_access_clients', 'vpn_site_to_site', 'device_icons', 'topology_snapshots', 'documents',
         ];
+
+        return array_combine($sections, array_map(fn (string $s) => __('tenants.section_'.$s), $sections));
     }
 }

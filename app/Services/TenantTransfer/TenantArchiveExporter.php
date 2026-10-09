@@ -205,7 +205,7 @@ class TenantArchiveExporter
         $path = tempnam(sys_get_temp_dir(), 'trama-export-');
         $zip = new ZipArchive;
         if ($path === false || $zip->open($path, ZipArchive::OVERWRITE) !== true) {
-            throw new RuntimeException('Impossibile creare l\'archivio di export.');
+            throw new RuntimeException(__('tenants.archive_err_create'));
         }
 
         $zip->addFromString('data.json', json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));

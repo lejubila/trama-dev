@@ -148,7 +148,7 @@ class TenantArchiveImporter
     {
         if ($old === null) {
             if ($required) {
-                throw new InvalidTenantArchiveException("Riferimento obbligatorio mancante ({$where}).");
+                throw new InvalidTenantArchiveException(__('tenants.archive_err_ref_missing', ['where' => $where]));
             }
 
             return null;
@@ -156,7 +156,7 @@ class TenantArchiveImporter
 
         $new = is_int($old) || is_numeric($old) ? ($this->maps[$section][(int) $old] ?? null) : null;
         if ($new === null && $required) {
-            throw new InvalidTenantArchiveException("Riferimento non valido ({$where} = ".json_encode($old).').');
+            throw new InvalidTenantArchiveException(__('tenants.archive_err_ref_invalid', ['where' => $where, 'value' => json_encode($old)]));
         }
 
         return $new;
