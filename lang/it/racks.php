@@ -120,4 +120,7 @@ return [
     'add_caption' => '+ Aggiungi didascalia',
     'photo_deleted' => 'Foto eliminata.',
     'photos_uploaded' => '{1} :count foto caricata.|[2,*] :count foto caricate.',
+    'on_top_strip' => 'Sopra il rack',
+    'add_on_top_title' => 'Aggiungi dispositivo sopra il rack',
+    'add_in_u_title' => 'Aggiungi dispositivo in U:u',
 ];

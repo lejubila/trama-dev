@@ -311,3 +311,41 @@ it('loadData skips topology items whose snapshot no longer exists', function ():
     expect($data['topologies']->count())->toBe(1)
         ->and($data['topologies']->first()->snapshot->id)->toBe($snap->getKey());
 });
+
+it('renders the PDF in the document language and restores the caller locale', function (string $locale, string $expected, string $unexpected): void {
+    $tenant = Tenant::factory()->create();
+    TenantContext::setId($tenant->getKey());
+    $site = Site::factory()->create(['name' => 'HQ']);
+
+    $doc = Document::factory()->create([
+        'parameters' => [
+            'sections' => ['sites' => ['enabled' => true, 'description' => '', 'ids' => [$site->getKey()]]],
+            'options' => ['include_cover' => true, 'include_toc' => true, 'locale' => $locale],
+        ],
+    ]);
+
+    $builder = new class extends DocumentPdfBuilder
+    {
+        public string $html = '';
+
+        protected function renderPdf(string $html, string $absolutePath, ?Document $document = null): void
+        {
+            $this->html = $html;
+        }
+    };
+
+    app()->setLocale('it');
+    $builder->build($doc);
+
+    expect($builder->html)->toContain($expected)->not->toContain($unexpected)
+        ->and(app()->getLocale())->toBe('it');
+})->with([
+    'english' => ['en', 'Contents', 'Indice'],
+    'italian' => ['it', 'Indice', 'Contents'],
+]);
+
+it('defaults legacy documents without a locale to Italian', function (): void {
+    $doc = new Document(['parameters' => ['options' => []]]);
+
+    expect($doc->locale())->toBe('it');
+});

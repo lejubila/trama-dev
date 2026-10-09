@@ -1,12 +1,12 @@
 <section class="cover">
     <h1>{{ $document->title }}</h1>
     <p class="meta">
-        Data: <strong>{{ $document->document_date->format('d/m/Y') }}</strong>
+        {{ __('exports.cover_date') }} <strong>{{ $document->document_date->translatedFormat(__('exports.date_format')) }}</strong>
         @if ($document->tenant)
-            <br>Cliente: <strong>{{ $document->tenant->name }}</strong>
+            <br>{{ __('exports.cover_customer') }} <strong>{{ $document->tenant->name }}</strong>
         @endif
         @if ($document->creator)
-            <br>Autore: {{ $document->creator->name }}
+            <br>{{ __('exports.cover_author') }} {{ $document->creator->name }}
         @endif
     </p>
     @if ($document->description)

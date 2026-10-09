@@ -120,4 +120,7 @@ return [
     'add_caption' => '+ Add caption',
     'photo_deleted' => 'Photo deleted.',
     'photos_uploaded' => '{1} :count photo uploaded.|[2,*] :count photos uploaded.',
+    'on_top_strip' => 'On top of the rack',
+    'add_on_top_title' => 'Add a device on top of the rack',
+    'add_in_u_title' => 'Add a device in U:u',
 ];

@@ -39,7 +39,7 @@
         }
         if ($iface->backedBy) {
             $host = $iface->backedBy->equipment?->name;
-            $spec .= ($spec !== '' ? ' · ' : '').'via '.($host ? $host.'/' : '').$iface->backedBy->name;
+            $spec .= ($spec !== '' ? ' · ' : '').__('exports.via').' '.($host ? $host.'/' : '').$iface->backedBy->name;
         }
         return $spec !== '' ? $spec : '—';
     };
@@ -57,7 +57,7 @@
     @php
         $uText = null;
         if ($eq->on_top) {
-            $uText = 'sopra';
+            $uText = __('exports.on_top');
         } elseif ($eq->mounted && $eq->position_u_start) {
             $uText = 'U'.$eq->position_u_start.($eq->position_u_height > 1 ? '–U'.($eq->position_u_start + $eq->position_u_height - 1) : '');
         }
@@ -66,10 +66,10 @@
 
         $positionText = $uText;
         if ($eq->position_orient === 'rear') {
-            $positionText = ($positionText ? $positionText.' · ' : '').'Rear';
+            $positionText = ($positionText ? $positionText.' · ' : '').__('exports.rear');
         }
         if (! $positionText) {
-            $positionText = $eq->rack_id !== null ? null : 'Non in rack';
+            $positionText = $eq->rack_id !== null ? null : __('exports.not_in_rack');
         }
 
         // Per-device: drop VLAN and IP columns when ALL interfaces leave them empty.
@@ -101,27 +101,27 @@
             }
         @endphp
         @include('exports.document._metastrip', ['items' => [
-            ['Tipo', $eq->type?->label() ?? null],
-            ['Posizione', $isVm ? ($vmHost ? 'VM su '.$vmHost : 'Macchina virtuale') : $positionText],
-            ['Stato', $eq->status ? ($eq->status->label() ?? $eq->status->value) : null],
-            ['Vendor/Modello', $vendorModel !== '' ? $vendorModel : null],
-            ['Seriale', $eq->serial ?? null],
-            ['Hypervisor', $hvVendor],
-            ['Specifiche VM', $vmSpecs],
-            ['SO guest', $isVm && ! empty($cf['guest_os']) ? $cf['guest_os'] : null],
+            [__('exports.type'), $eq->type?->label() ?? null],
+            [__('exports.position'), $isVm ? ($vmHost ? __('exports.vm_on', ['host' => $vmHost]) : __('exports.virtual_machine')) : $positionText],
+            [__('exports.status'), $eq->status ? ($eq->status->label() ?? $eq->status->value) : null],
+            [__('exports.vendor_model'), $vendorModel !== '' ? $vendorModel : null],
+            [__('exports.serial'), $eq->serial ?? null],
+            [__('exports.hypervisor'), $hvVendor],
+            [__('exports.vm_specs'), $vmSpecs],
+            [__('exports.guest_os'), $isVm && ! empty($cf['guest_os']) ? $cf['guest_os'] : null],
         ]])
 
         @if ($interfaces->isNotEmpty() && ($eq->report_ports ?? true))
-            <p class="ports-label">Porte ({{ $portCount }})</p>
+            <p class="ports-label">{{ __('exports.ports_count', ['count' => $portCount]) }}</p>
             <table class="{{ $portsTableClass }}">
                 <thead>
                     <tr>
-                        <th style="width:12%">Porta</th>
-                        <th>Specifiche</th>
+                        <th style="width:12%">{{ __('exports.port') }}</th>
+                        <th>{{ __('exports.specs') }}</th>
                         @if ($showVlan)<th style="width:10%">VLAN</th>@endif
                         @if ($showIp)<th style="width:14%">IP</th>@endif
-                        <th style="width:8%">Stato</th>
-                        <th style="width:22%">Connessa a</th>
+                        <th style="width:8%">{{ __('exports.status') }}</th>
+                        <th style="width:22%">{{ __('exports.connected_to') }}</th>
                     </tr>
                 </thead>
                 <tbody>

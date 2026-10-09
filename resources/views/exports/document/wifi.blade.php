@@ -1,5 +1,5 @@
 <section class="section">
-    <h2 id="sec-wifi">Reti Wi-Fi</h2>
+    <h2 id="sec-wifi">{{ __('exports.wifi') }}</h2>
     @if ($description)
         <p class="section-description">{!! nl2br(e($description)) !!}</p>
     @endif
@@ -8,12 +8,12 @@
         <thead>
             <tr>
                 <th>SSID</th>
-                <th>Sede</th>
-                <th>Sicurezza</th>
+                <th>{{ __('exports.site') }}</th>
+                <th>{{ __('exports.security') }}</th>
                 <th>VLAN</th>
-                <th>SSID nascosto</th>
-                <th>Access Point</th>
-                <th>Client</th>
+                <th>{{ __('exports.hidden_ssid') }}</th>
+                <th>{{ __('exports.access_points') }}</th>
+                <th>{{ __('exports.clients') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -23,7 +23,7 @@
                     <td>{{ $w->site?->name ?? '—' }}</td>
                     <td>{{ $w->security_type ?: '—' }}</td>
                     <td>{{ $w->vlan_id ?: '—' }}</td>
-                    <td>{{ $w->hidden_ssid ? 'Sì' : 'No' }}</td>
+                    <td>{{ $w->hidden_ssid ? __('exports.yes') : __('exports.no') }}</td>
                     <td>
                         @forelse ($w->broadcasters as $iface)
                             {{ $iface->equipment?->name }} · {{ $iface->name }}@if (! $loop->last)<br>@endif

@@ -45,6 +45,17 @@ class Document extends Model
     ];
 
     /**
+     * Language the PDF is rendered in. Documents created before the option
+     * existed were always Italian, so that stays their default.
+     */
+    public function locale(): string
+    {
+        $locale = $this->parameters['options']['locale'] ?? 'it';
+
+        return in_array($locale, config('app.supported_locales'), true) ? $locale : 'it';
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function creator(): BelongsTo

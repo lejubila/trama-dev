@@ -18,25 +18,25 @@
     }
 </style>
 <section class="toc">
-    <h2 id="sec-toc">Indice</h2>
+    <h2 id="sec-toc">{{ __('exports.toc') }}</h2>
     <ol class="toc-list">
         @foreach ($hierarchy as $siteIdx => $siteNode)
             <li>
-                {!! $linkRow('sec-site-'.$siteNode->site->id, ($siteIdx + 1).'. Sede — '.$siteNode->site->name) !!}
+                {!! $linkRow('sec-site-'.$siteNode->site->id, __('exports.site_heading', ['num' => $siteIdx + 1, 'name' => $siteNode->site->name])) !!}
                 @if ($siteNode->rooms->isNotEmpty())
                     <ul>
                         @foreach ($siteNode->rooms as $roomIdx => $roomNode)
                             <li>
-                                {!! $linkRow('sec-room-'.$roomNode->room->id, ($siteIdx + 1).'.'.($roomIdx + 1).' Locale — '.$roomNode->room->name) !!}
+                                {!! $linkRow('sec-room-'.$roomNode->room->id, __('exports.room_heading', ['num' => ($siteIdx + 1).'.'.($roomIdx + 1), 'name' => $roomNode->room->name])) !!}
                                 @if ($roomNode->racks->isNotEmpty() || $roomNode->unracked->isNotEmpty())
                                     <ul>
                                         @foreach ($roomNode->racks as $rackIdx => $rackNode)
                                             <li>
-                                                {!! $linkRow('sec-rack-'.$rackNode->rack->id, ($siteIdx + 1).'.'.($roomIdx + 1).'.'.($rackIdx + 1).' Rack '.$rackNode->rack->name) !!}
+                                                {!! $linkRow('sec-rack-'.$rackNode->rack->id, __('exports.rack_toc', ['num' => ($siteIdx + 1).'.'.($roomIdx + 1).'.'.($rackIdx + 1), 'name' => $rackNode->rack->name])) !!}
                                             </li>
                                         @endforeach
                                         @if ($roomNode->unracked->isNotEmpty())
-                                            <li>{{ ($siteIdx + 1) }}.{{ ($roomIdx + 1) }}.{{ $roomNode->racks->count() + 1 }} Dispositivi non in rack ({{ $roomNode->unracked->count() }})</li>
+                                            <li>{{ __('exports.unracked_toc', ['num' => ($siteIdx + 1).'.'.($roomIdx + 1).'.'.($roomNode->racks->count() + 1), 'count' => $roomNode->unracked->count()]) }}</li>
                                         @endif
                                     </ul>
                                 @endif
@@ -48,13 +48,13 @@
         @endforeach
         @php $tocNext = $hierarchy->count() + 1; @endphp
         @if (! is_null($data['wifi'] ?? null) && $data['wifi']->isNotEmpty())
-            <li>{!! $linkRow('sec-wifi', ($tocNext++).'. Reti Wi-Fi ('.$data['wifi']->count().')') !!}</li>
+            <li>{!! $linkRow('sec-wifi', __('exports.wifi_toc', ['num' => $tocNext++, 'count' => $data['wifi']->count()])) !!}</li>
         @endif
         @if (! is_null($data['vpn'] ?? null) && (($data['vpn']['remote'] ?? collect())->isNotEmpty() || ($data['vpn']['site'] ?? collect())->isNotEmpty()))
-            <li>{!! $linkRow('sec-vpn', ($tocNext++).'. VPN ('.(($data['vpn']['remote'] ?? collect())->count() + ($data['vpn']['site'] ?? collect())->count()).')') !!}</li>
+            <li>{!! $linkRow('sec-vpn', __('exports.vpn_toc', ['num' => $tocNext++, 'count' => ($data['vpn']['remote'] ?? collect())->count() + ($data['vpn']['site'] ?? collect())->count()])) !!}</li>
         @endif
         @if (! is_null($data['topologies']) && $data['topologies']->isNotEmpty())
-            <li>{!! $linkRow('sec-topologies', ($tocNext++).'. Topologie ('.$data['topologies']->count().')') !!}</li>
+            <li>{!! $linkRow('sec-topologies', __('exports.topologies_toc', ['num' => $tocNext++, 'count' => $data['topologies']->count()])) !!}</li>
         @endif
     </ol>
 </section>

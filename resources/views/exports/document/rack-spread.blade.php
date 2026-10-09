@@ -1,7 +1,7 @@
 @php
     $numberingLabel = match ($rack->numbering?->value) {
-        'top_down' => 'Dall’alto (U1 in alto)',
-        'bottom_up' => 'Dal basso (U1 in basso)',
+        'top_down' => __('exports.numbering_top_down'),
+        'bottom_up' => __('exports.numbering_bottom_up'),
         default => '—',
     };
     $includeRear = (bool) ($options['rack_include_rear'] ?? false);
@@ -9,20 +9,20 @@
 
 {{-- Front card: specs strip + front elevation, kept on the same page when possible. --}}
 <div class="rack-card front">
-    <h4 id="sec-rack-{{ $rack->id }}">Rack {{ $rack->name }}</h4>
+    <h4 id="sec-rack-{{ $rack->id }}">{{ __('exports.rack_title', ['name' => $rack->name]) }}</h4>
     @include('exports.document._metastrip', ['items' => [
-        ['Locale', ($rack->room?->name ?? '—').($rack->room?->site ? ' / '.$rack->room->site->name : '')],
-        ['Altezza', $rack->height_units.'U'],
-        ['Numerazione', $numberingLabel],
-        ['Larghezza', $rack->width_mm !== null ? $rack->width_mm.' mm' : null],
-        ['Profondità', $rack->depth_mm !== null ? $rack->depth_mm.' mm' : null],
+        [__('exports.room'), ($rack->room?->name ?? '—').($rack->room?->site ? ' / '.$rack->room->site->name : '')],
+        [__('exports.height'), $rack->height_units.'U'],
+        [__('exports.numbering'), $numberingLabel],
+        [__('exports.width'), $rack->width_mm !== null ? $rack->width_mm.' mm' : null],
+        [__('exports.depth'), $rack->depth_mm !== null ? $rack->depth_mm.' mm' : null],
     ]])
     @if (! empty($rack->notes))
         <p class="small muted">{{ $rack->notes }}</p>
     @endif
 
     <div class="elevation">
-        <h4>Front</h4>
+        <h4>{{ __('exports.front') }}</h4>
         <x-rack-elevation :rack="$rack" :interactive="false" orient="front" />
     </div>
 </div>
@@ -31,7 +31,7 @@
 @if ($includeRear)
     <div class="rack-card rear">
         <div class="elevation">
-            <h4>Rack {{ $rack->name }} — Rear</h4>
+            <h4>{{ __('exports.rack_rear', ['name' => $rack->name]) }}</h4>
             <x-rack-elevation :rack="$rack" :interactive="false" orient="rear" />
         </div>
     </div>
@@ -59,7 +59,7 @@
     @endphp
     @if ($dataUri)
         <div class="{{ $landscape ? 'photo-page-l' : 'photo-page-p' }}">
-            <h4>Rack {{ $rack->name }} — Foto</h4>
+            <h4>{{ __('exports.rack_photo', ['name' => $rack->name]) }}</h4>
             <img src="{{ $dataUri }}" alt="" />
             @if ($photo->caption)
                 <p class="muted small">{{ $photo->caption }}</p>
@@ -71,6 +71,6 @@
 @if ($equipment->isNotEmpty())
     @include('exports.document.device-list', [
         'devices' => $equipment,
-        'heading' => 'Rack '.$rack->name.' — Dispositivi nel rack',
+        'heading' => __('exports.rack_devices', ['name' => $rack->name]),
     ])
 @endif

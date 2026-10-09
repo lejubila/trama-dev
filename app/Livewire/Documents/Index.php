@@ -70,9 +70,9 @@ class Index extends Component
 
         try {
             $builder->build($doc);
-            $this->dispatch('toast', type: 'success', message: 'PDF rigenerato.');
+            $this->dispatch('toast', type: 'success', message: __('documents.toast_regenerated'));
         } catch (\Throwable $e) {
-            $this->dispatch('toast', type: 'error', message: 'Errore: '.$e->getMessage());
+            $this->dispatch('toast', type: 'error', message: __('common.error_prefix', ['message' => $e->getMessage()]));
         }
     }
 
@@ -85,7 +85,7 @@ class Index extends Component
             Storage::disk('public')->delete($doc->pdf_path);
         }
         $doc->delete();
-        $this->dispatch('toast', type: 'success', message: 'Documento eliminato.');
+        $this->dispatch('toast', type: 'success', message: __('documents.toast_deleted'));
     }
 
     public function render(): View

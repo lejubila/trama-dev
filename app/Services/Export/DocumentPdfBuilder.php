@@ -14,6 +14,7 @@ use App\Models\VpnRemoteAccess;
 use App\Models\VpnSiteToSite;
 use App\Models\WifiNetwork;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Spatie\Browsershot\Browsershot;
@@ -26,6 +27,20 @@ class DocumentPdfBuilder
      * disk path so the caller can use Storage::url() / response()->download().
      */
     public function build(Document $document): string
+    {
+        // The PDF has its own language, independent of whoever generates it:
+        // switch for the render and always restore the caller's locale.
+        $previousLocale = App::getLocale();
+        App::setLocale($document->locale());
+
+        try {
+            return $this->buildInCurrentLocale($document);
+        } finally {
+            App::setLocale($previousLocale);
+        }
+    }
+
+    private function buildInCurrentLocale(Document $document): string
     {
         $tenantId = (int) $document->tenant_id;
         $data = $this->loadData($document);
@@ -67,7 +82,7 @@ class DocumentPdfBuilder
         // including cover/TOC. The header is a single thin 8pt line so the
         // visual cost there is negligible.
         $titleEsc = htmlspecialchars($document?->title ?? '', ENT_QUOTES);
-        $dateEsc = htmlspecialchars($document?->document_date?->format('d/m/Y') ?? '', ENT_QUOTES);
+        $dateEsc = htmlspecialchars($document?->document_date?->translatedFormat(__('exports.date_format')) ?? '', ENT_QUOTES);
         $header = <<<HTML
             <div style="font-size:8pt; width:100%; padding:0 14mm; color:#6b7280; -webkit-print-color-adjust:exact; display:flex; justify-content:space-between;">
                 <span>{$titleEsc}</span>
@@ -75,9 +90,10 @@ class DocumentPdfBuilder
             </div>
         HTML;
 
-        $footer = <<<'HTML'
+        $pageEsc = htmlspecialchars(__('exports.page'), ENT_QUOTES);
+        $footer = <<<HTML
             <div style="font-size:8pt; width:100%; padding:0 14mm; text-align:right; color:#6b7280; -webkit-print-color-adjust:exact;">
-                Pagina <span class="pageNumber"></span> / <span class="totalPages"></span>
+                {$pageEsc} <span class="pageNumber"></span> / <span class="totalPages"></span>
             </div>
         HTML;
 

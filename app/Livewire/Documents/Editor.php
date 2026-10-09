@@ -17,6 +17,7 @@ use App\Services\Export\DocumentPdfBuilder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -120,6 +121,9 @@ class Editor extends Component
 
     public bool $roomsIncludeFloorplan = true;
 
+    /** Language of the generated PDF (one of config('app.supported_locales')). */
+    public string $locale = '';
+
     public function mount(?Document $document = null): void
     {
         if ($document !== null && $document->exists) {
@@ -131,6 +135,7 @@ class Editor extends Component
             $this->title = '';
             $this->description = '';
             $this->documentDate = now()->toDateString();
+            $this->locale = app()->getLocale();
         }
     }
 
@@ -186,6 +191,7 @@ class Editor extends Component
         $this->includeToc = (bool) ($opt['include_toc'] ?? true);
         $this->rackIncludeRear = (bool) ($opt['rack_include_rear'] ?? false);
         $this->roomsIncludeFloorplan = (bool) ($opt['rooms_include_floorplan'] ?? true);
+        $this->locale = $document->locale();
     }
 
     public function selectAll(string $section): void
@@ -391,6 +397,7 @@ class Editor extends Component
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:5000',
             'documentDate' => 'required|date',
+            'locale' => ['required', Rule::in(config('app.supported_locales'))],
             'sitesDescription' => 'nullable|string|max:5000',
             'roomsDescription' => 'nullable|string|max:5000',
             'racksDescription' => 'nullable|string|max:5000',
@@ -445,6 +452,7 @@ class Editor extends Component
                 'include_toc' => $this->includeToc,
                 'rack_include_rear' => $this->rackIncludeRear,
                 'rooms_include_floorplan' => $this->roomsIncludeFloorplan,
+                'locale' => $this->locale,
             ],
         ];
 
@@ -470,10 +478,10 @@ class Editor extends Component
 
         try {
             $builder->build($doc);
-            $this->dispatch('toast', type: 'success', message: 'Documento salvato e PDF generato.');
+            $this->dispatch('toast', type: 'success', message: __('documents.toast_saved'));
         } catch (\Throwable $e) {
             $this->dispatch('toast', type: 'warning',
-                message: 'Documento salvato, ma la generazione PDF è fallita: '.$e->getMessage());
+                message: __('documents.toast_pdf_failed', ['message' => $e->getMessage()]));
         }
 
         return $this->redirectRoute('documents.index', navigate: true);
@@ -599,6 +607,7 @@ class Editor extends Component
         $allVpnSite = VpnSiteToSite::query()->orderBy('name')->get(['id', 'name', 'protocol']);
 
         return view('livewire.documents.editor', [
+            'locales' => config('app.supported_locales'),
             'tree' => $this->buildTree(),
             'selectedSnaps' => $selectedSnaps,
             'restSnaps' => $restSnaps,

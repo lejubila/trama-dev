@@ -1,31 +1,41 @@
 <div>
-    <x-page-header :title="$document ? 'Modifica documento' : 'Nuovo documento'"
-                   subtitle="Componi la documentazione PDF del cliente">
+    <x-page-header :title="$document ? __('documents.edit_title') : __('documents.new_title')"
+                   :subtitle="__('documents.editor_subtitle')">
         <a href="{{ route('documents.index') }}" wire:navigate
-           class="text-sm text-gray-600 hover:text-gray-800">← Torna alla lista</a>
+           class="text-sm text-gray-600 hover:text-gray-800">{{ __('documents.back') }}</a>
     </x-page-header>
 
     <form wire:submit="save" class="space-y-6">
 
         {{-- Header --}}
         <div class="bg-white shadow ring-1 ring-black/5 rounded-md p-4 space-y-3">
-            <h3 class="font-semibold text-gray-700">Informazioni documento</h3>
+            <h3 class="font-semibold text-gray-700">{{ __('documents.info_heading') }}</h3>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div class="sm:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700">Titolo</label>
+                    <label class="block text-sm font-medium text-gray-700">{{ __('common.title') }}</label>
                     <input type="text" wire:model="title"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                     @error('title')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Data</label>
+                    <label class="block text-sm font-medium text-gray-700">{{ __('common.date') }}</label>
                     <input type="date" wire:model="documentDate"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                     @error('documentDate')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{{ __('common.language') }}</label>
+                    <select wire:model="locale" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                        @foreach ($locales as $code)
+                            <option value="{{ $code }}">{{ __('common.language_'.$code) }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">{{ __('documents.language_help') }}</p>
+                    @error('locale')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700">Descrizione</label>
+                <label class="block text-sm font-medium text-gray-700">{{ __('common.description') }}</label>
                 <textarea wire:model="description" rows="3"
                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                 @error('description')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
@@ -33,64 +43,61 @@
             <div class="flex items-center gap-x-6 gap-y-2 text-sm pt-1 flex-wrap">
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" wire:model="includeCover" class="rounded border-gray-300 text-indigo-600">
-                    Includi copertina
+                    {{ __('documents.include_cover') }}
                 </label>
                 <label class="inline-flex items-center gap-2">
                     <input type="checkbox" wire:model="includeToc" class="rounded border-gray-300 text-indigo-600">
-                    Includi indice
+                    {{ __('documents.include_toc') }}
                 </label>
-                <label class="inline-flex items-center gap-2" title="Aggiunge una pagina dedicata con l'elevation Rear di ogni rack incluso">
+                <label class="inline-flex items-center gap-2" title="{{ __('documents.include_rear_title') }}">
                     <input type="checkbox" wire:model="rackIncludeRear" class="rounded border-gray-300 text-indigo-600">
-                    Includi elevation Rear dei rack
+                    {{ __('documents.include_rear') }}
                 </label>
-                <label class="inline-flex items-center gap-2" title="Per ogni locale, stampa la planimetria (disegno online o immagine caricata) quando presente">
+                <label class="inline-flex items-center gap-2" title="{{ __('documents.include_floorplan_title') }}">
                     <input type="checkbox" wire:model="roomsIncludeFloorplan" class="rounded border-gray-300 text-indigo-600">
-                    Includi planimetria dei locali
+                    {{ __('documents.include_floorplan') }}
                 </label>
             </div>
             <p class="mt-3 text-xs text-gray-500">
-                Il documento è organizzato in modo gerarchico: ogni Sede contiene i propri Locali, ogni Locale i propri Rack (con elevation front/rear e foto) e i dispositivi non in rack. Un elemento appare solo se anche tutti i suoi contenitori (sede, locale, eventuale rack) sono selezionati.
+                {{ __('documents.hierarchy_help') }}
             </p>
         </div>
 
         {{-- Sezione: Contenuti (albero gerarchico Sedi → Locali → Rack → Dispositivi) --}}
         <div class="bg-white shadow ring-1 ring-black/5 rounded-md p-4 space-y-4">
-            <h3 class="font-semibold text-gray-700">Contenuti</h3>
+            <h3 class="font-semibold text-gray-700">{{ __('documents.contents') }}</h3>
 
             <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-                <span class="text-gray-500">Livelli da includere:</span>
+                <span class="text-gray-500">{{ __('documents.levels') }}</span>
                 <label class="inline-flex items-center gap-2">
-                    <input type="checkbox" wire:model.live="sitesEnabled" class="rounded border-gray-300 text-indigo-600"> Sedi
+                    <input type="checkbox" wire:model.live="sitesEnabled" class="rounded border-gray-300 text-indigo-600"> {{ __('documents.level_sites') }}
                 </label>
                 <label class="inline-flex items-center gap-2">
-                    <input type="checkbox" wire:model.live="roomsEnabled" class="rounded border-gray-300 text-indigo-600"> Locali
+                    <input type="checkbox" wire:model.live="roomsEnabled" class="rounded border-gray-300 text-indigo-600"> {{ __('documents.level_rooms') }}
                 </label>
                 <label class="inline-flex items-center gap-2">
-                    <input type="checkbox" wire:model.live="racksEnabled" class="rounded border-gray-300 text-indigo-600"> Rack
+                    <input type="checkbox" wire:model.live="racksEnabled" class="rounded border-gray-300 text-indigo-600"> {{ __('documents.level_racks') }}
                 </label>
                 <label class="inline-flex items-center gap-2">
-                    <input type="checkbox" wire:model.live="equipmentEnabled" class="rounded border-gray-300 text-indigo-600"> Dispositivi
+                    <input type="checkbox" wire:model.live="equipmentEnabled" class="rounded border-gray-300 text-indigo-600"> {{ __('documents.level_equipment') }}
                 </label>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Descrizione sezione Sedi</label>
+                    <label class="block text-sm font-medium text-gray-700">{{ __('documents.sites_description') }}</label>
                     <textarea wire:model="sitesDescription" rows="2"
                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Descrizione sezione Locali</label>
+                    <label class="block text-sm font-medium text-gray-700">{{ __('documents.rooms_description') }}</label>
                     <textarea wire:model="roomsDescription" rows="2"
                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                 </div>
             </div>
 
             <p class="text-xs text-gray-500">
-                Spunta gli elementi da includere ed espandi una sede/locale/rack selezionato per scegliere
-                i figli. Usa le frecce ▲▼ per ordinare gli elementi selezionati: l'ordine scelto è quello
-                con cui compariranno nel PDF. Un elemento appare solo se anche tutti i suoi contenitori sono
-                selezionati e il relativo livello è incluso.
+                {{ __('documents.tree_help') }}
             </p>
 
             <div class="border border-gray-200 rounded p-2 max-h-[28rem] overflow-y-auto" style="display:flex; flex-direction:column; gap:8px;">
@@ -132,7 +139,7 @@
                                                             @if ($rackNode->selected)
                                                                 @include('livewire.documents._reorder', ['id' => $rack->id, 'method' => 'moveRack', 'canUp' => $rackNode->canUp, 'canDown' => $rackNode->canDown])
                                                             @endif
-                                                            <span class="text-gray-700">Rack {{ $rack->name }}</span>
+                                                            <span class="text-gray-700">{{ __('documents.rack_name', ['name' => $rack->name]) }}</span>
                                                         </div>
 
                                                         @if ($rackNode->selected && $rackNode->equipment->isNotEmpty())
@@ -151,7 +158,7 @@
                                                                                 <input type="checkbox" wire:click="toggleEquipmentPorts({{ $eq->id }})"
                                                                                        @checked(! in_array($eq->id, $equipmentPortsExcluded))
                                                                                        class="rounded border-gray-300 text-indigo-600">
-                                                                                porte
+                                                                                {{ __('documents.ports') }}
                                                                             </label>
                                                                         @endif
                                                                     </div>
@@ -164,7 +171,7 @@
 
                                                 @if ($roomNode->unracked->isNotEmpty())
                                                     <div style="display:flex; flex-direction:column; gap:8px;">
-                                                    <div class="text-sm text-gray-400 pt-1" style="order:-1">Dispositivi non in rack</div>
+                                                    <div class="text-sm text-gray-400 pt-1" style="order:-1">{{ __('documents.unracked') }}</div>
                                                     @foreach ($roomNode->unracked as $eqNode)
                                                         @php $eq = $eqNode->model; @endphp
                                                         <div class="flex items-center gap-2 text-base py-1" wire:key="eq-{{ $eq->id }}" style="order: {{ $loop->index }}">
@@ -179,7 +186,7 @@
                                                                     <input type="checkbox" wire:click="toggleEquipmentPorts({{ $eq->id }})"
                                                                            @checked(! in_array($eq->id, $equipmentPortsExcluded))
                                                                            class="rounded border-gray-300 text-indigo-600">
-                                                                    porte
+                                                                    {{ __('documents.ports') }}
                                                                 </label>
                                                             @endif
                                                         </div>
@@ -190,13 +197,13 @@
                                         @endif
                                     </div>
                                 @empty
-                                    <p class="text-xs text-gray-400 italic">Nessun locale in questa sede.</p>
+                                    <p class="text-xs text-gray-400 italic">{{ __('documents.no_rooms') }}</p>
                                 @endforelse
                             </div>
                         @endif
                     </div>
                 @empty
-                    <p class="text-sm text-gray-500 italic">Nessuna sede disponibile.</p>
+                    <p class="text-sm text-gray-500 italic">{{ __('documents.no_sites') }}</p>
                 @endforelse
             </div>
         </div>
@@ -207,20 +214,20 @@
                 <label class="inline-flex items-center gap-3">
                     <input type="checkbox" wire:model.live="topologiesEnabled"
                            class="rounded border-gray-300 text-indigo-600">
-                    <span class="font-semibold text-gray-700">Topologie</span>
+                    <span class="font-semibold text-gray-700">{{ __('documents.topologies') }}</span>
                 </label>
                 <span class="text-xs text-gray-500">
-                    Selezionati: {{ count($topologiesItems) }} / {{ $snapshotCount }}
+                    {{ __('common.selected_count', ['count' => count($topologiesItems), 'total' => $snapshotCount]) }}
                 </span>
             </div>
             <div class="p-4 space-y-3 @if (!$topologiesEnabled) opacity-50 pointer-events-none @endif">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Descrizione di sezione</label>
+                    <label class="block text-sm font-medium text-gray-700">{{ __('common.section_description') }}</label>
                     <textarea wire:model="topologiesDescription" rows="2"
                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                 </div>
                 @if ($snapshotCount === 0)
-                    <p class="text-sm text-gray-500 italic">Nessuno snapshot disponibile. Salvane uno dalla topologia.</p>
+                    <p class="text-sm text-gray-500 italic">{{ __('documents.no_snapshots') }}</p>
                 @else
                     <div class="space-y-2 max-h-80 overflow-y-auto border border-gray-200 rounded p-2">
                         <div style="display:flex; flex-direction:column; gap:8px;">
@@ -236,8 +243,8 @@
                                 </div>
                                 <select wire:change="setSnapshotOrientation({{ $snap->id }}, $event.target.value)"
                                         class="rounded border-gray-300 text-xs">
-                                    <option value="portrait" @selected($topologiesItems[$snap->id] === 'portrait')>Portrait</option>
-                                    <option value="landscape" @selected($topologiesItems[$snap->id] === 'landscape')>Landscape</option>
+                                    <option value="portrait" @selected($topologiesItems[$snap->id] === 'portrait')>{{ __('documents.portrait') }}</option>
+                                    <option value="landscape" @selected($topologiesItems[$snap->id] === 'landscape')>{{ __('documents.landscape') }}</option>
                                 </select>
                             </div>
                         @endforeach
@@ -263,18 +270,18 @@
             <div class="p-4 border-b border-gray-200 flex items-center justify-between">
                 <label class="inline-flex items-center gap-3">
                     <input type="checkbox" wire:model.live="wifiEnabled" class="rounded border-gray-300 text-indigo-600">
-                    <span class="font-semibold text-gray-700">Reti Wi-Fi</span>
+                    <span class="font-semibold text-gray-700">{{ __('documents.wifi') }}</span>
                 </label>
-                <span class="text-xs text-gray-500">Selezionate: {{ count($wifiIds) }} / {{ $allWifi->count() }}</span>
+                <span class="text-xs text-gray-500">{{ __('common.selected_female_count', ['count' => count($wifiIds), 'total' => $allWifi->count()]) }}</span>
             </div>
             <div class="p-4 space-y-3 @if (!$wifiEnabled) opacity-50 pointer-events-none @endif">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Descrizione di sezione</label>
+                    <label class="block text-sm font-medium text-gray-700">{{ __('common.section_description') }}</label>
                     <textarea wire:model="wifiDescription" rows="2"
                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                 </div>
                 @if ($allWifi->isEmpty())
-                    <p class="text-sm text-gray-500 italic">Nessuna rete Wi-Fi definita.</p>
+                    <p class="text-sm text-gray-500 italic">{{ __('documents.no_wifi') }}</p>
                 @else
                     <div class="space-y-1 max-h-72 overflow-y-auto border border-gray-200 rounded p-2">
                         @foreach ($allWifi as $w)
@@ -301,20 +308,20 @@
                     <span class="font-semibold text-gray-700">VPN</span>
                 </label>
                 <span class="text-xs text-gray-500">
-                    Selezionate: {{ count($vpnRemoteIds) + count($vpnSiteIds) }} / {{ $allVpnRemote->count() + $allVpnSite->count() }}
+                    {{ __('common.selected_female_count', ['count' => count($vpnRemoteIds) + count($vpnSiteIds), 'total' => $allVpnRemote->count() + $allVpnSite->count()]) }}
                 </span>
             </div>
             <div class="p-4 space-y-3 @if (!$vpnEnabled) opacity-50 pointer-events-none @endif">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Descrizione di sezione</label>
+                    <label class="block text-sm font-medium text-gray-700">{{ __('common.section_description') }}</label>
                     <textarea wire:model="vpnDescription" rows="2"
                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                        <h4 class="text-xs font-semibold text-gray-600 uppercase mb-1">Remote access</h4>
+                        <h4 class="text-xs font-semibold text-gray-600 uppercase mb-1">{{ __('documents.remote_access') }}</h4>
                         @if ($allVpnRemote->isEmpty())
-                            <p class="text-xs text-gray-500 italic">Nessuna VPN remote-access.</p>
+                            <p class="text-xs text-gray-500 italic">{{ __('documents.no_vpn_ra') }}</p>
                         @else
                             <div class="space-y-1 max-h-60 overflow-y-auto border border-gray-200 rounded p-2">
                                 @foreach ($allVpnRemote as $v)
@@ -329,9 +336,9 @@
                         @endif
                     </div>
                     <div>
-                        <h4 class="text-xs font-semibold text-gray-600 uppercase mb-1">Site-to-Site</h4>
+                        <h4 class="text-xs font-semibold text-gray-600 uppercase mb-1">{{ __('documents.site_to_site') }}</h4>
                         @if ($allVpnSite->isEmpty())
-                            <p class="text-xs text-gray-500 italic">Nessuna VPN site-to-site.</p>
+                            <p class="text-xs text-gray-500 italic">{{ __('documents.no_vpn_s2s') }}</p>
                         @else
                             <div class="space-y-1 max-h-60 overflow-y-auto border border-gray-200 rounded p-2">
                                 @foreach ($allVpnSite as $v)
@@ -354,11 +361,11 @@
                     wire:loading.attr="disabled"
                     wire:target="save"
                     class="px-4 py-2 rounded bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-50">
-                Salva e genera PDF
+                {{ __('documents.save_generate') }}
             </button>
-            <span wire:loading wire:target="save" class="text-sm text-gray-500">Generazione in corso…</span>
+            <span wire:loading wire:target="save" class="text-sm text-gray-500">{{ __('documents.generating') }}</span>
             <a href="{{ route('documents.index') }}" wire:navigate
-               class="text-sm text-gray-600 hover:text-gray-800">Annulla</a>
+               class="text-sm text-gray-600 hover:text-gray-800">{{ __('common.cancel') }}</a>
         </div>
     </form>
 </div>

@@ -5,17 +5,17 @@
     @endif
 
     @if ($vpn['remote']->isNotEmpty())
-        <h3>Remote access (client-to-LAN)</h3>
+        <h3>{{ __('exports.vpn_ra') }}</h3>
         <table class="data compact">
             <thead>
                 <tr>
-                    <th>Nome</th>
-                    <th>Protocollo</th>
-                    <th>Firewall / interfaccia</th>
-                    <th>Modalità</th>
-                    <th>Rete client (CIDR)</th>
-                    <th>VLAN raggiungibili</th>
-                    <th>Client</th>
+                    <th>{{ __('exports.name') }}</th>
+                    <th>{{ __('exports.protocol') }}</th>
+                    <th>{{ __('exports.firewall_iface') }}</th>
+                    <th>{{ __('exports.mode') }}</th>
+                    <th>{{ __('exports.client_network') }}</th>
+                    <th>{{ __('exports.reachable_vlans') }}</th>
+                    <th>{{ __('exports.clients') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -40,15 +40,15 @@
     @endif
 
     @if ($vpn['site']->isNotEmpty())
-        <h3 style="margin-top:14pt;">Site-to-Site (LAN-to-LAN)</h3>
+        <h3 style="margin-top:14pt;">{{ __('exports.vpn_s2s') }}</h3>
         <table class="data compact">
             <thead>
                 <tr>
-                    <th>Nome</th>
-                    <th>Protocollo</th>
-                    <th>Endpoint A</th>
-                    <th>Endpoint B</th>
-                    <th>Reti / VLAN esportate</th>
+                    <th>{{ __('exports.name') }}</th>
+                    <th>{{ __('exports.protocol') }}</th>
+                    <th>{{ __('exports.endpoint_a') }}</th>
+                    <th>{{ __('exports.endpoint_b') }}</th>
+                    <th>{{ __('exports.exported_networks') }}</th>
                 </tr>
             </thead>
             <tbody>

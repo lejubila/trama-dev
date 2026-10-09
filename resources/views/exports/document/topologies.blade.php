@@ -33,14 +33,14 @@
         @endphp
         <div class="{{ implode(' ', $classes) }}">
             @if ($loop->first)
-                <h2 id="sec-topologies">Topologie</h2>
+                <h2 id="sec-topologies">{{ __('exports.topologies') }}</h2>
                 @if ($description)
                     <p class="section-description">{{ $description }}</p>
                 @endif
             @endif
             <h3>{{ $snap->title }}</h3>
             <p class="muted small">
-                {{ $snap->snapshot_date->format('d/m/Y') }}
+                {{ $snap->snapshot_date->translatedFormat(__('exports.date_format')) }}
                 @if ($snap->description) · {{ $snap->description }} @endif
             </p>
             @if ($imageDataUri)
@@ -48,7 +48,7 @@
                     <img src="{{ $imageDataUri }}" alt="{{ $snap->title }}" class="topo-image" />
                 </div>
             @else
-                <p class="muted">Immagine non disponibile.</p>
+                <p class="muted">{{ __('exports.image_unavailable') }}</p>
             @endif
         </div>
     @endforeach

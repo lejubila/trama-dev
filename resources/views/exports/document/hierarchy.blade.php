@@ -4,9 +4,9 @@
 @foreach ($hierarchy as $siteIdx => $siteNode)
     @php $site = $siteNode->site; @endphp
     <section class="section">
-        <h2 id="sec-site-{{ $site->id }}">{{ ($siteIdx + 1) }}. Sede — {{ $site->name }}</h2>
+        <h2 id="sec-site-{{ $site->id }}">{{ __('exports.site_heading', ['num' => $siteIdx + 1, 'name' => $site->name]) }}</h2>
         @include('exports.document._metastrip', ['items' => [
-            ['Indirizzo', $site->address ?? null],
+            [__('exports.address'), $site->address ?? null],
         ]])
         @if ($siteNode->description)
             <p class="section-description">{{ $siteNode->description }}</p>
@@ -17,11 +17,11 @@
 
         @foreach ($siteNode->rooms as $roomIdx => $roomNode)
             @php $room = $roomNode->room; @endphp
-            <h3 id="sec-room-{{ $room->id }}">{{ ($siteIdx + 1) }}.{{ ($roomIdx + 1) }} Locale — {{ $room->name }}</h3>
+            <h3 id="sec-room-{{ $room->id }}">{{ __('exports.room_heading', ['num' => ($siteIdx + 1).'.'.($roomIdx + 1), 'name' => $room->name]) }}</h3>
             @include('exports.document._metastrip', ['items' => [
-                ['Piano', $room->floor],
-                ['Rack', $roomNode->racks->count()],
-                ['Dispositivi non in rack', $roomNode->unracked->count()],
+                [__('exports.floor'), $room->floor],
+                [__('exports.rack'), $roomNode->racks->count()],
+                [__('exports.unracked'), $roomNode->unracked->count()],
             ]])
             @if ($roomNode->description)
                 <p class="section-description">{{ $roomNode->description }}</p>
@@ -41,7 +41,7 @@
             @if ($roomNode->unracked->isNotEmpty())
                 @include('exports.document.device-list', [
                     'devices' => $roomNode->unracked,
-                    'heading' => 'Dispositivi non in rack',
+                    'heading' => __('exports.unracked'),
                 ])
             @endif
         @endforeach

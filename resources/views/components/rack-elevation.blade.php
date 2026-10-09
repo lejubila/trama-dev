@@ -146,7 +146,7 @@
     @endphp
 
     @if ($onTopEquipment->isNotEmpty() || $interactive)
-        <text x="{{ $padLeft }}" y="{{ $stripY - 4 }}" font-size="9" fill="#6b7280">Sopra il rack</text>
+        <text x="{{ $padLeft }}" y="{{ $stripY - 4 }}" font-size="9" fill="#6b7280">{{ __('racks.on_top_strip') }}</text>
         <rect
             x="{{ $padLeft - 5 }}" y="{{ $stripY }}"
             width="{{ $rackInner + 10 }}" height="{{ $onTopH }}"
@@ -176,7 +176,7 @@
             @php $btnX = $padLeft + $rackInner - $addBtnW - 2; @endphp
             <g class="rack-ontop-add cursor-pointer"
                 wire:click="$dispatch('on-top-clicked')">
-                <title>Aggiungi dispositivo sopra il rack</title>
+                <title>{{ __('racks.add_on_top_title') }}</title>
                 <rect
                     x="{{ $btnX }}" y="{{ $stripY + 3 }}"
                     width="{{ $addBtnW }}" height="{{ $onTopH - 6 }}"
@@ -232,7 +232,7 @@
         @if ($interactive && ! empty($occupied[$u]))
             <g class="rack-slot-add cursor-pointer"
                 wire:click="$dispatch('slot-clicked', { u: {{ $u }}, orient: '{{ $orient }}' })">
-                <title>Aggiungi dispositivo in U{{ $labelForU($u) }}</title>
+                <title>{{ __('racks.add_in_u_title', ['u' => $labelForU($u)]) }}</title>
                 <rect
                     x="{{ $padLeft + $devicesArea + 2 }}" y="{{ $y + 2 }}"
                     width="{{ $addBtnW - 4 }}" height="{{ $uPx - 4 }}"

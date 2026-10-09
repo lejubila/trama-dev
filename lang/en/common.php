@@ -85,4 +85,9 @@ return [
     'date_from' => 'From',
     'date_to' => 'To',
     'back_arrow' => '← Back',
+    'selected_female_count' => 'Selected: :count / :total',
+    'language' => 'Language',
+    'language_it' => 'Italian',
+    'language_en' => 'English',
+    'error_prefix' => 'Error: :message',
 ];

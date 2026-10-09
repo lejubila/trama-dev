@@ -39,7 +39,7 @@
 @endphp
 
 @if ($allRacks->isNotEmpty() || $floorPlanData)
-    <h4>Planimetria</h4>
+    <h4>{{ __('exports.floorplan') }}</h4>
     <div class="floorplan">
         <svg viewBox="0 0 {{ $vbW }} {{ $vbH }}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
             <rect x="0" y="0" width="{{ $vbW }}" height="{{ $vbH }}" fill="#f8fafc" stroke="#94a3b8" stroke-width="1" />
@@ -98,9 +98,9 @@
         </svg>
     </div>
     <p class="muted small">
-        Locale {{ number_format($widthM, 2) }}m × {{ number_format($depthM, 2) }}m{{ $hasCustomDim ? '' : ' (dimensioni di default)' }}.
+        {{ __('exports.room_size', ['w' => number_format($widthM, 2), 'd' => number_format($depthM, 2)]) }}{{ $hasCustomDim ? '' : __('exports.default_size') }}.
         @if ($selectedIds !== [])
-            Rack inclusi nel documento in <span style="color:#4338ca; font-weight:600;">indaco</span>.
+            {!! __('exports.racks_highlighted_html') !!}
         @endif
     </p>
 @endif
