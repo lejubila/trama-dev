@@ -1,7 +1,7 @@
 <div>
-    <x-page-header title="Import" subtitle="Storico delle importazioni eseguite per il cliente attivo">
+    <x-page-header :title="__('imports.title')" :subtitle="__('imports.subtitle')">
         <a href="{{ route('equipment.import') }}" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
-            <x-icon name="plus" class="h-4 w-4" /> Nuovo import
+            <x-icon name="plus" class="h-4 w-4" /> {{ __('imports.new') }}
         </a>
     </x-page-header>
 
@@ -9,11 +9,11 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Utente</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Riepilogo</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('common.date') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('common.type') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('common.user') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('common.status') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('imports.col_summary') }}</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase"></th>
                 </tr>
             </thead>
@@ -28,12 +28,11 @@
                             <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-{{ $color }}-100 text-{{ $color }}-700">{{ $imp->status }}</span>
                         </td>
                         <td class="px-4 py-3 text-gray-600 text-xs">
-                            {{ ($imp->summary['created'] ?? 0) }} creati ·
-                            {{ count($imp->summary['errors'] ?? []) }} errori
+                            {{ __('imports.summary', ['created' => $imp->summary['created'] ?? 0, 'errors' => count($imp->summary['errors'] ?? [])]) }}
                         </td>
                         <td class="px-4 py-3 text-right">
                             <button wire:click="toggle({{ $imp->id }})" class="text-xs text-indigo-700 hover:underline">
-                                {{ $expandedId === $imp->id ? 'Chiudi' : 'Dettagli' }}
+                                {{ $expandedId === $imp->id ? __('common.close') : __('common.details') }}
                             </button>
                         </td>
                     </tr>
@@ -45,7 +44,7 @@
                         </tr>
                     @endif
                 @empty
-                    <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Nessun import.</td></tr>
+                    <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">{{ __('imports.empty') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

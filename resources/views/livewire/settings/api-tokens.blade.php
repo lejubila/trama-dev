@@ -1,23 +1,23 @@
 <div>
-    <x-page-header title="API Tokens" subtitle="Token di accesso personali per l'API REST" />
+    <x-page-header :title="__('settings.tokens_title')" :subtitle="__('settings.tokens_subtitle')" />
 
     @if ($newPlainToken)
         <div class="bg-emerald-50 border border-emerald-200 rounded-md p-4 mb-6">
-            <h3 class="font-semibold text-emerald-900">Token creato</h3>
-            <p class="text-sm text-emerald-800 mt-1">Copialo ora — non sarà più mostrato.</p>
+            <h3 class="font-semibold text-emerald-900">{{ __('settings.token_created') }}</h3>
+            <p class="text-sm text-emerald-800 mt-1">{{ __('settings.token_copy_now') }}</p>
             <code class="block mt-2 p-2 rounded bg-emerald-100 text-emerald-950 font-mono text-xs break-all">{{ $newPlainToken }}</code>
-            <button wire:click="$set('newPlainToken', null)" class="text-xs text-emerald-700 hover:text-emerald-900 underline mt-2">Ho copiato</button>
+            <button wire:click="$set('newPlainToken', null)" class="text-xs text-emerald-700 hover:text-emerald-900 underline mt-2">{{ __('settings.token_copied') }}</button>
         </div>
     @endif
 
     <form wire:submit="create" class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md p-4 mb-6 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
         <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">Nome token</label>
-            <input type="text" wire:model="name" placeholder="es. Postman su laptop" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+            <label class="block text-sm font-medium text-gray-700">{{ __('settings.token_name') }}</label>
+            <input type="text" wire:model="name" placeholder="{{ __('settings.token_name_placeholder') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
             @error('name')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
         </div>
         <div>
-            <label class="block text-sm font-medium text-gray-700">Abilità</label>
+            <label class="block text-sm font-medium text-gray-700">{{ __('settings.abilities') }}</label>
             <div class="mt-1 flex gap-x-3 text-sm">
                 <label class="inline-flex items-center gap-x-1.5">
                     <input type="checkbox" wire:model="abilities" value="read" class="rounded border-gray-300 text-indigo-600" />
@@ -30,7 +30,7 @@
             </div>
         </div>
         <div class="md:col-span-3 flex justify-end">
-            <button type="submit" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Crea token</button>
+            <button type="submit" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">{{ __('settings.create_token') }}</button>
         </div>
     </form>
 
@@ -38,11 +38,11 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Abilità</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ultimo uso</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Creato</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('common.name') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.abilities') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.last_used') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.created') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">{{ __('common.actions') }}</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200 text-sm">
@@ -53,11 +53,11 @@
                         <td class="px-4 py-3 text-gray-600">{{ $t->last_used_at?->diffForHumans() ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $t->created_at?->format('Y-m-d H:i') }}</td>
                         <td class="px-4 py-3 text-right">
-                            <button wire:click="revoke({{ $t->id }})" wire:confirm="Revocare il token {{ $t->name }}?" class="text-red-600 hover:text-red-800 text-xs">Revoca</button>
+                            <button wire:click="revoke({{ $t->id }})" wire:confirm="{{ __('settings.revoke_confirm', ['name' => $t->name]) }}" class="text-red-600 hover:text-red-800 text-xs">{{ __('settings.revoke') }}</button>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">Nessun token.</td></tr>
+                    <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">{{ __('settings.no_tokens') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

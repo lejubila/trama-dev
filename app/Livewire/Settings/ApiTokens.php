@@ -33,13 +33,13 @@ class ApiTokens extends Component
         $this->newPlainToken = $token->plainTextToken;
         $this->reset(['name']);
         $this->abilities = ['read'];
-        $this->dispatch('toast', type: 'success', message: 'Token creato. Copialo ora — non sarà mostrato di nuovo.');
+        $this->dispatch('toast', type: 'success', message: __('settings.toast_token_created'));
     }
 
     public function revoke(int $id): void
     {
         auth()->user()->tokens()->whereKey($id)->delete();
-        $this->dispatch('toast', type: 'success', message: 'Token revocato.');
+        $this->dispatch('toast', type: 'success', message: __('settings.toast_token_revoked'));
     }
 
     public function render(): View

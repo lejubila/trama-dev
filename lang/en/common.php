@@ -94,4 +94,9 @@ return [
     'slug' => 'Slug',
     'domain' => 'Domain',
     'assign' => 'Assign',
+    'details' => 'Details',
+    'add' => 'Add',
+    'select_customer' => 'Select customer',
+    'create_first_customer' => '+ Create your first customer',
+    'role' => 'Role',
 ];

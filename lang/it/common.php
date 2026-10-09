@@ -94,4 +94,9 @@ return [
     'slug' => 'Slug',
     'domain' => 'Dominio',
     'assign' => 'Assegna',
+    'details' => 'Dettagli',
+    'add' => 'Aggiungi',
+    'select_customer' => 'Seleziona cliente',
+    'create_first_customer' => '+ Crea il tuo primo cliente',
+    'role' => 'Ruolo',
 ];

@@ -43,7 +43,7 @@ class Index extends Component
      */
     public function kinds(): array
     {
-        $kinds = [['key' => 'rack', 'label' => 'Rack']];
+        $kinds = [['key' => 'rack', 'label' => __('icons.kind_rack')]];
         foreach (EquipmentType::cases() as $case) {
             $kinds[] = ['key' => $case->value, 'label' => $case->label()];
         }
@@ -58,7 +58,7 @@ class Index extends Component
 
         $file = $this->globalUpload[$kind] ?? null;
         if (! $file instanceof TemporaryUploadedFile) {
-            $this->addError("globalUpload.$kind", 'Seleziona un file.');
+            $this->addError("globalUpload.$kind", __('icons.err_select_file'));
 
             return;
         }
@@ -77,7 +77,7 @@ class Index extends Component
         );
 
         $this->globalUpload[$kind] = null;
-        $this->dispatch('toast', type: 'success', message: 'Icona globale aggiornata.');
+        $this->dispatch('toast', type: 'success', message: __('icons.toast_global_updated'));
     }
 
     public function saveTenant(string $kind): void
@@ -87,14 +87,14 @@ class Index extends Component
 
         $tenantId = $this->currentTenantId();
         if ($tenantId === null) {
-            $this->addError("tenantUpload.$kind", 'Nessun cliente attivo.');
+            $this->addError("tenantUpload.$kind", __('icons.no_tenant'));
 
             return;
         }
 
         $file = $this->tenantUpload[$kind] ?? null;
         if (! $file instanceof TemporaryUploadedFile) {
-            $this->addError("tenantUpload.$kind", 'Seleziona un file.');
+            $this->addError("tenantUpload.$kind", __('icons.err_select_file'));
 
             return;
         }
@@ -113,14 +113,14 @@ class Index extends Component
         );
 
         $this->tenantUpload[$kind] = null;
-        $this->dispatch('toast', type: 'success', message: 'Override per il cliente aggiornato.');
+        $this->dispatch('toast', type: 'success', message: __('icons.toast_tenant_updated'));
     }
 
     public function removeGlobal(string $kind): void
     {
         $this->authorize('manageGlobal', DeviceIcon::class);
         $this->deleteIconRow(null, $kind);
-        $this->dispatch('toast', type: 'success', message: 'Icona globale rimossa.');
+        $this->dispatch('toast', type: 'success', message: __('icons.toast_global_removed'));
     }
 
     public function removeTenant(string $kind): void
@@ -131,7 +131,7 @@ class Index extends Component
             return;
         }
         $this->deleteIconRow($tenantId, $kind);
-        $this->dispatch('toast', type: 'success', message: 'Override rimosso.');
+        $this->dispatch('toast', type: 'success', message: __('icons.toast_tenant_removed'));
     }
 
     private function deleteIconRow(?int $tenantId, string $kind): void

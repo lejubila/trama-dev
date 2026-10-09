@@ -30,7 +30,7 @@ class Manager extends Component
             ],
             'color' => 'required|regex:/^#[0-9a-fA-F]{6}$/',
         ], [
-            'name.unique' => 'Esiste già un tag con questo nome.',
+            'name.unique' => __('tags.err_unique'),
         ]);
 
         Tag::create([
@@ -40,7 +40,7 @@ class Manager extends Component
 
         $this->reset(['name']);
         $this->color = '#4f46e5';
-        $this->dispatch('toast', type: 'success', message: 'Tag creato.');
+        $this->dispatch('toast', type: 'success', message: __('tags.toast_created'));
     }
 
     public function delete(int $id): void
@@ -48,7 +48,7 @@ class Manager extends Component
         $tag = Tag::query()->findOrFail($id);
         $this->authorize('delete', $tag);
         $tag->delete();
-        $this->dispatch('toast', type: 'success', message: 'Tag rimosso.');
+        $this->dispatch('toast', type: 'success', message: __('tags.toast_deleted'));
     }
 
     public function render(): View

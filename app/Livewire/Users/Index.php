@@ -111,7 +111,7 @@ class Index extends Component
                 $user->tenants()->sync($tenantIds);
             });
 
-            $this->dispatch('toast', type: 'success', message: 'Utente creato.');
+            $this->dispatch('toast', type: 'success', message: __('users.toast_created'));
         } else {
             /** @var User $target */
             $target = User::query()->findOrFail($this->editingId);
@@ -119,7 +119,7 @@ class Index extends Component
 
             // Guard: do not demote the last remaining admin.
             if ($target->isAdmin() && $role !== UserRole::Admin && $this->isLastAdmin($target)) {
-                $this->addError('role', 'Non puoi rimuovere il ruolo all\'ultimo amministratore.');
+                $this->addError('role', __('users.err_last_admin_role'));
 
                 return;
             }
@@ -139,7 +139,7 @@ class Index extends Component
                 $target->tenants()->sync($tenantIds);
             });
 
-            $this->dispatch('toast', type: 'success', message: 'Utente aggiornato.');
+            $this->dispatch('toast', type: 'success', message: __('users.toast_updated'));
         }
 
         $this->cancel();
@@ -152,20 +152,20 @@ class Index extends Component
         $this->authorize('delete', $target);
 
         if ($target->getKey() === auth()->id()) {
-            $this->dispatch('toast', type: 'error', message: 'Non puoi eliminare il tuo stesso account.');
+            $this->dispatch('toast', type: 'error', message: __('users.err_delete_self'));
 
             return;
         }
 
         if ($target->isAdmin() && $this->isLastAdmin($target)) {
-            $this->dispatch('toast', type: 'error', message: 'Non puoi eliminare l\'ultimo amministratore.');
+            $this->dispatch('toast', type: 'error', message: __('users.err_delete_last_admin'));
 
             return;
         }
 
         $target->delete();
 
-        $this->dispatch('toast', type: 'success', message: 'Utente eliminato.');
+        $this->dispatch('toast', type: 'success', message: __('users.toast_deleted'));
     }
 
     public function render(): View

@@ -5,7 +5,7 @@
         wire:navigate
         class="inline-flex items-center gap-x-1.5 rounded-md border border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-500/20 px-3 py-1.5 text-sm font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/30"
     >
-        + Crea il tuo primo cliente
+        {{ __('common.create_first_customer') }}
     </a>
 @else
     <div x-data="{ open: false }" @click.outside="open = false" class="relative">
@@ -18,7 +18,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6h1.5m-1.5 3h1.5m-1.5 3h1.5M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
             </svg>
             <span>
-                {{ $tenants->firstWhere('id', $currentTenantId)?->name ?? 'Seleziona cliente' }}
+                {{ $tenants->firstWhere('id', $currentTenantId)?->name ?? __('common.select_customer') }}
             </span>
             <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />

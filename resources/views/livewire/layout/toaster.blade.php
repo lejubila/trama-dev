@@ -23,7 +23,7 @@
                     type="button"
                     wire:click="dismiss('{{ $toast['id'] }}')"
                     class="text-gray-400 hover:text-gray-600 text-sm"
-                    aria-label="Chiudi"
+                    aria-label="{{ __('common.close') }}"
                 >×</button>
             </div>
         </div>
