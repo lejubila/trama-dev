@@ -83,7 +83,7 @@ class Edit extends Component
 
         $this->connection->tags()->sync($this->selectedTagIds);
 
-        $this->dispatch('toast', type: 'success', message: 'Connessione aggiornata.');
+        $this->dispatch('toast', type: 'success', message: __('connections.toast_updated'));
         $this->redirectAfterExit();
     }
 

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\ConnectionStatus;
 use App\Enums\EquipmentType;
+use App\Enums\InterfaceType;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\TenantAuditable;
 use Database\Factories\ConnectionFactory;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 
 /**
@@ -106,13 +108,13 @@ class Connection extends Model implements AuditableContract
                     ->with('equipment:id,type')
                     ->find($ifaceId);
                 if ($iface?->equipment?->type === EquipmentType::VirtualMachine) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        $field => 'Le interfacce di una macchina virtuale non possono avere connessioni fisiche: usa il backing vNIC → NIC dell\'hypervisor.',
+                    throw ValidationException::withMessages([
+                        $field => __('connections.err_vm_iface'),
                     ]);
                 }
-                if ($iface?->type === \App\Enums\InterfaceType::Virtual) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        $field => 'Le interfacce virtuali non ammettono connessioni fisiche: usano il cavo dell\'interfaccia di appoggio.',
+                if ($iface?->type === InterfaceType::Virtual) {
+                    throw ValidationException::withMessages([
+                        $field => __('connections.err_virtual_iface'),
                     ]);
                 }
             }

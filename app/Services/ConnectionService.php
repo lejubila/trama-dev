@@ -26,16 +26,16 @@ class ConnectionService
     public function connect(NetworkInterface $a, NetworkInterface $b, array $cable): Connection
     {
         if ($a->getKey() === $b->getKey()) {
-            throw new InvalidArgumentException('Cannot connect an interface to itself.');
+            throw new InvalidArgumentException(__('connections.err_self'));
         }
 
         if ($a->tenant_id !== $b->tenant_id) {
-            throw new InvalidArgumentException('Endpoints belong to different tenants.');
+            throw new InvalidArgumentException(__('connections.err_tenants'));
         }
 
         return DB::transaction(function () use ($a, $b, $cable): Connection {
             if ($a->activeConnection() !== null || $b->activeConnection() !== null) {
-                throw new InvalidArgumentException('At least one endpoint already has an active connection.');
+                throw new InvalidArgumentException(__('connections.err_busy'));
             }
 
             return Connection::create([

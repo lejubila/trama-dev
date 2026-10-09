@@ -76,4 +76,6 @@ return [
     'cancel_back' => '← Annulla',
     'next' => 'Avanti →',
     'change_file' => '← Cambia file',
+    'back_plain' => 'Indietro',
+    'select_short' => 'Seleziona…',
 ];

@@ -96,7 +96,7 @@ class Wizard extends Component
     {
         if ($this->step === 1) {
             if ($this->fromInterfaceId === null) {
-                $this->addError('fromInterfaceId', 'Scegli l\'interfaccia di partenza.');
+                $this->addError('fromInterfaceId', __('connections.err_choose_from'));
 
                 return;
             }
@@ -111,7 +111,7 @@ class Wizard extends Component
 
         if ($this->step === 2) {
             if ($this->toInterfaceId === null) {
-                $this->addError('toInterfaceId', 'Scegli l\'interfaccia di destinazione.');
+                $this->addError('toInterfaceId', __('connections.err_choose_to'));
 
                 return;
             }
@@ -167,7 +167,7 @@ class Wizard extends Component
 
         $conn->tags()->sync($this->selectedTagIds);
 
-        $this->dispatch('toast', type: 'success', message: 'Connessione creata.');
+        $this->dispatch('toast', type: 'success', message: __('connections.toast_created'));
         $this->redirectAfterExit();
     }
 

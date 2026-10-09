@@ -80,7 +80,7 @@ class Index extends Component
         $c = Connection::query()->findOrFail($id);
         $this->authorize('delete', $c);
         $c->delete();
-        $this->dispatch('toast', type: 'success', message: 'Connessione rimossa.');
+        $this->dispatch('toast', type: 'success', message: __('connections.toast_deleted'));
     }
 
     public function decommission(int $id): void
@@ -88,7 +88,7 @@ class Index extends Component
         $c = Connection::query()->findOrFail($id);
         $this->authorize('update', $c);
         $c->update(['status' => ConnectionStatus::Decommissioned]);
-        $this->dispatch('toast', type: 'success', message: 'Connessione dismessa.');
+        $this->dispatch('toast', type: 'success', message: __('connections.toast_decommissioned'));
     }
 
     public function render(): View

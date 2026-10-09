@@ -11,6 +11,11 @@ use App\Services\ConnectionService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\UniqueConstraintViolationException;
 
+// The service's messages are localized; assert against the English ones.
+beforeEach(function (): void {
+    app()->setLocale('en');
+});
+
 afterEach(function (): void {
     TenantContext::clear();
 });
