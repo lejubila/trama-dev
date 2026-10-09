@@ -125,7 +125,7 @@ class SnapshotIndex extends Component
         ]);
 
         $this->closeEdit();
-        $this->dispatch('toast', type: 'success', message: 'Snapshot aggiornato.');
+        $this->dispatch('toast', type: 'success', message: __('topology.snap_toast_updated'));
     }
 
     public function delete(int $id): void
@@ -137,7 +137,7 @@ class SnapshotIndex extends Component
             Storage::disk('public')->delete($snap->image_path);
         }
         $snap->delete();
-        $this->dispatch('toast', type: 'success', message: 'Snapshot eliminato.');
+        $this->dispatch('toast', type: 'success', message: __('topology.snap_toast_deleted'));
     }
 
     public function render(): View

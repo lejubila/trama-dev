@@ -1,31 +1,31 @@
 <div>
     <x-page-header :title="$snapshot->title">
         <x-slot:subtitle>
-            Snapshot del {{ $snapshot->snapshot_date->format('d/m/Y') }}
-            @if ($snapshot->creator) · creato da {{ $snapshot->creator->name }} @endif
+            {{ __('topology.snap_of', ['date' => $snapshot->snapshot_date->format('d/m/Y')]) }}
+            @if ($snapshot->creator) {{ __('topology.snap_created_by', ['name' => $snapshot->creator->name]) }} @endif
         </x-slot:subtitle>
     </x-page-header>
 
     <div class="flex flex-wrap items-center gap-2 mb-3">
         <a href="{{ route('topology.snapshots.index') }}" wire:navigate
-           class="text-xs px-2 py-1 rounded border bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-200">← Lista snapshot</a>
+           class="text-xs px-2 py-1 rounded border bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-200">{{ __('topology.snap_back') }}</a>
 
         <a href="{{ $liveUrl }}" wire:navigate
            class="text-xs px-2 py-1 rounded border bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700">
-            Apri nella topologia live
+            {{ __('topology.snap_open_live') }}
         </a>
 
         <a href="/storage/{{ $snapshot->image_path }}" download="{{ $snapshot->title }}.png"
            class="text-xs px-2 py-1 rounded border bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-200">
-            Scarica PNG
+            {{ __('topology.snap_download') }}
         </a>
 
         @can('delete', $snapshot)
             <button type="button"
                     wire:click="delete"
-                    wire:confirm="Eliminare questo snapshot?"
+                    wire:confirm="{{ __('topology.snap_delete_confirm') }}"
                     class="text-xs px-2 py-1 rounded border border-red-300 bg-white text-red-600 hover:bg-red-50 ml-auto">
-                Elimina
+                {{ __('common.delete') }}
             </button>
         @endcan
     </div>

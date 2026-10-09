@@ -115,7 +115,7 @@ class SnapshotSaveModal extends Component
 
         $bytes = $this->decodePngDataUrl($this->snapshotImageBase64);
         if ($bytes === null) {
-            $this->addError('snapshotImageBase64', 'Immagine non valida.');
+            $this->addError('snapshotImageBase64', __('topology.snap_err_image'));
 
             return null;
         }
@@ -142,7 +142,7 @@ class SnapshotSaveModal extends Component
                 Storage::disk('public')->delete($oldPath);
             }
 
-            $message = 'Snapshot aggiornato.';
+            $message = __('topology.snap_toast_updated');
         } else {
             $this->authorize('create', TopologySnapshot::class);
 
@@ -155,7 +155,7 @@ class SnapshotSaveModal extends Component
                 'created_by' => auth()->id(),
             ]);
 
-            $message = 'Snapshot salvato.';
+            $message = __('topology.snap_toast_saved');
         }
 
         $this->open = false;

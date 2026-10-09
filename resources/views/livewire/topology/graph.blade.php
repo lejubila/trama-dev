@@ -9,7 +9,7 @@
     class="flex flex-col"
 >
     <div x-show="!fs">
-        <x-page-header title="Topologia" subtitle="Vista grafico delle connessioni del cliente attivo" />
+        <x-page-header :title="__('topology.title')" :subtitle="__('topology.subtitle')" />
     </div>
 
     {{-- Filtri: sempre visibili in modalità standard; a schermo intero
@@ -21,29 +21,29 @@
         {{-- Riga 1: filtri --}}
         <div class="flex flex-wrap items-center gap-3">
         <select wire:model.live="siteId" class="rounded-md border-gray-300 shadow-sm text-sm">
-            <option value="0">Tutte le sedi</option>
+            <option value="0">{{ __('common.all_sites') }}</option>
             @foreach ($sites as $s)
                 <option value="{{ $s->id }}">{{ $s->name }}@if (filled($s->address)) — {{ $s->address }}@endif</option>
             @endforeach
         </select>
 
         <select wire:model.live="roomFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
-            <option value="0">Tutti i locali</option>
+            <option value="0">{{ __('common.all_rooms') }}</option>
             @foreach ($rooms as $r)
                 <option value="{{ $r->id }}">{{ $r->name }}@if ($siteId === 0 && $r->site) ({{ $r->site->name }})@endif</option>
             @endforeach
         </select>
 
         <select wire:model.live="layout" class="rounded-md border-gray-300 shadow-sm text-sm">
-            <option value="cose-bilkent">Force-directed (cose-bilkent)</option>
-            <option value="dagre">Gerarchico (dagre)</option>
-            <option value="breadthfirst">Albero (breadthfirst)</option>
-            <option value="circle">Circolare</option>
-            <option value="grid">Griglia</option>
+            <option value="cose-bilkent">{{ __('topology.layout_cose') }}</option>
+            <option value="dagre">{{ __('topology.layout_dagre') }}</option>
+            <option value="breadthfirst">{{ __('topology.layout_breadthfirst') }}</option>
+            <option value="circle">{{ __('topology.layout_circle') }}</option>
+            <option value="grid">{{ __('topology.layout_grid') }}</option>
         </select>
 
         <select wire:model.live="statusFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
-            <option value="">Tutti gli stati</option>
+            <option value="">{{ __('common.all_statuses') }}</option>
             @foreach ($statuses as $s)
                 <option value="{{ $s->value }}">{{ $s->label() }}</option>
             @endforeach
@@ -52,13 +52,13 @@
         <div x-data="{ open: false }" @click.away="open = false" class="relative">
             <button type="button" @click="open = !open"
                 class="rounded-md border border-gray-300 shadow-sm text-sm px-3 py-2 bg-white inline-flex items-center gap-1">
-                Tipi @if (count($filterTypes)) <span class="text-indigo-600 font-medium">({{ count($filterTypes) }})</span> @endif
+                {{ __('topology.types') }} @if (count($filterTypes)) <span class="text-indigo-600 font-medium">({{ count($filterTypes) }})</span> @endif
                 <span class="text-gray-400">▾</span>
             </button>
             <div x-show="open" x-cloak class="absolute z-20 mt-1 max-h-80 overflow-auto rounded-md bg-white p-2 shadow-lg ring-1 ring-black/5 w-56">
                 @if (count($filterTypes))
                     <button type="button" wire:click="$set('filterTypes', [])"
-                        class="block w-full text-left px-2 py-1 text-xs text-indigo-600 hover:underline">Seleziona tutti</button>
+                        class="block w-full text-left px-2 py-1 text-xs text-indigo-600 hover:underline">{{ __('topology.select_all') }}</button>
                 @endif
                 @foreach (\App\Enums\EquipmentType::groupedCases() as $group => $items)
                     <div class="px-2 pt-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">{{ $group }}</div>
@@ -93,7 +93,7 @@
                         {{ $tag->name }}
                     </label>
                 @empty
-                    <span class="block px-2 py-1 text-xs text-gray-400">Nessun tag</span>
+                    <span class="block px-2 py-1 text-xs text-gray-400">{{ __('topology.no_tags') }}</span>
                 @endforelse
             </div>
         </div>
@@ -111,52 +111,52 @@
 
         {{-- Riga 2: flag a sinistra, azioni allineate a destra --}}
         <div class="flex flex-wrap items-center gap-3">
-        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Includi gli apparati con il flag 'Nascosto nella topologia'">
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="{{ __('topology.show_hidden_title') }}">
             <input type="checkbox" wire:model.live="includeHidden" class="rounded border-gray-300 text-indigo-600" />
-            Mostra nascosti
+            {{ __('topology.show_hidden') }}
         </label>
 
-        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Collassa patch panel e prese a muro: mostra un edge end-to-end tra i terminali etichettato con il path attraversato">
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="{{ __('topology.hide_patch_title') }}">
             <input type="checkbox" wire:model.live="hidePatchPanels" class="rounded border-gray-300 text-indigo-600" />
-            Nascondi patch panel / prese
+            {{ __('topology.hide_patch') }}
         </label>
 
-        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Non mostra le reti Wi-Fi e i relativi client wireless">
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="{{ __('topology.hide_wifi_title') }}">
             <input type="checkbox" wire:model.live="hideWifi" class="rounded border-gray-300 text-indigo-600" />
-            Nascondi Wi-Fi
+            {{ __('topology.hide_wifi') }}
         </label>
 
-        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Non mostra le VPN remote-access e site-to-site">
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="{{ __('topology.hide_vpn_title') }}">
             <input type="checkbox" wire:model.live="hideVpn" class="rounded border-gray-300 text-indigo-600" />
-            Nascondi VPN
+            {{ __('topology.hide_vpn') }}
         </label>
 
-        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Racchiude gli apparati di ogni rack in un contenitore visivo">
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="{{ __('topology.group_rack_title') }}">
             <input type="checkbox" wire:model.live="groupByRack" class="rounded border-gray-300 text-indigo-600" />
-            Raggruppa per rack
+            {{ __('topology.group_rack') }}
         </label>
 
-        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Racchiude gli apparati dello stesso locale in un contenitore visivo">
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="{{ __('topology.group_room_title') }}">
             <input type="checkbox" wire:model.live="groupByRoom" class="rounded border-gray-300 text-indigo-600" />
-            Raggruppa per locale
+            {{ __('topology.group_room') }}
         </label>
 
-        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Racchiude rack/locali della stessa sede in un contenitore visivo">
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="{{ __('topology.group_site_title') }}">
             <input type="checkbox" wire:model.live="groupBySite" class="rounded border-gray-300 text-indigo-600" />
-            Raggruppa per sede
+            {{ __('topology.group_site') }}
         </label>
 
-        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="Racchiude le VM e il loro hypervisor in un contenitore visivo">
+        <label class="inline-flex items-center gap-1 text-xs text-gray-700" title="{{ __('topology.group_hypervisor_title') }}">
             <input type="checkbox" wire:model.live="groupByHypervisor" class="rounded border-gray-300 text-indigo-600" />
-            Raggruppa per hypervisor
+            {{ __('topology.group_hypervisor') }}
         </label>
 
         <button wire:click="clearFilters" class="text-xs px-2 py-1 text-gray-500 hover:text-gray-700 underline ml-auto">
-            Reset filtri
+            {{ __('common.reset_filters') }}
         </button>
 
         <div class="flex items-center gap-1">
-            <button x-data x-on:click="window.cy && window.cy.fit()" class="text-xs px-2 py-1 rounded border bg-white text-gray-700">⛶ Fit</button>
+            <button x-data x-on:click="window.cy && window.cy.fit()" class="text-xs px-2 py-1 rounded border bg-white text-gray-700">{{ __('topology.fit') }}</button>
             <button x-data x-on:click="window.cy && window.cy.zoom(window.cy.zoom() * 1.2)" class="text-xs px-2 py-1 rounded border bg-white text-gray-700">+</button>
             <button x-data x-on:click="window.cy && window.cy.zoom(window.cy.zoom() / 1.2)" class="text-xs px-2 py-1 rounded border bg-white text-gray-700">−</button>
             <button x-data x-on:click="window.dispatchEvent(new CustomEvent('topology:export-png'))" class="text-xs px-2 py-1 rounded border bg-white text-gray-700">PNG</button>
@@ -194,7 +194,7 @@
                         vpnNodeDetails: window._topologyVpnNodeDetails || {},
                     }})"
                     class="text-xs px-2 py-1 rounded border bg-white text-gray-700"
-                >Salva snapshot</button>
+                >{{ __('topology.save_snapshot') }}</button>
             @endif
         </div>
         </div>
@@ -227,7 +227,7 @@
             class="absolute top-2 left-2 z-20 rounded border shadow px-3 py-1.5 text-xs inline-flex items-center gap-1"
             style="display: none;"
         >
-            <span>Filtri e raggruppamenti</span>
+            <span>{{ __('topology.filters_and_grouping') }}</span>
             <span x-text="filters ? '▴' : '▾'"></span>
         </button>
         {{-- id + cytoscape-navigator class: the extension only reuses an existing
@@ -245,8 +245,8 @@
                 @click="toggleNavigator()"
                 :class="showNavigator ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'bg-white border-gray-200 text-gray-600'"
                 class="rounded border shadow-sm px-2 py-1 text-xs whitespace-nowrap"
-                title="Mostra/nascondi mini-mappa"
-            >🗺️ Mappa</button>
+                title="{{ __('topology.minimap_title') }}"
+            >{{ __('topology.minimap') }}</button>
 
             {{-- Toggle schermo intero. fs vive nel wrapper esterno: usiamo un
                  evento window per non creare una proprietà ombra in questo scope. --}}
@@ -255,12 +255,12 @@
                 @click="$dispatch('topology-toggle-fs')"
                 :class="fs ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'bg-white border-gray-200 text-gray-600'"
                 class="rounded border shadow-sm px-2 py-1 text-xs whitespace-nowrap"
-                :title="fs ? 'Esci da schermo intero' : 'Schermo intero'"
-                x-text="fs ? '✕ Schermo' : '⛶ Schermo'"
+                :title="fs ? @js(__('topology.fullscreen_exit')) : @js(__('topology.fullscreen'))"
+                x-text="fs ? @js(__('topology.fullscreen_btn_exit')) : @js(__('topology.fullscreen_btn'))"
             ></button>
 
             @if ($canEdit)
-                <span class="text-gray-600 pointer-events-none">Dim. icone</span>
+                <span class="text-gray-600 pointer-events-none">{{ __('topology.icon_size') }}</span>
                 <input
                     type="range"
                     min="{{ $minIconPx }}" max="{{ $maxIconPx }}" step="1"
@@ -285,31 +285,31 @@
             class="absolute z-30 min-w-[16rem] max-w-[22rem] rounded-md bg-white shadow-lg ring-1 ring-black/10 text-sm select-none"
             @click.outside="closeContextMenu()"
         >
-            <div class="px-3 py-2 border-b text-xs font-semibold text-gray-700 truncate" x-text="contextMenu.nodeName || 'Dispositivo'"></div>
+            <div class="px-3 py-2 border-b text-xs font-semibold text-gray-700 truncate" x-text="contextMenu.nodeName || @js(__('topology.device_fallback'))"></div>
 
             {{-- Root view --}}
             <div x-show="contextMenu.view === 'root'">
                 {{-- "Nome" è l'unica voce sensata per i nodi sintetici Wi-Fi
                      (non hanno porte fisiche né flag hidden_in_topology). --}}
                 <button type="button" @click="openNamePositionView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
-                    <span>Nome</span>
+                    <span>{{ __('topology.menu_name') }}</span>
                     <span class="text-gray-400">▸</span>
                 </button>
                 <template x-if="contextMenu.nodeKind === 'equipment'">
                     <div>
                         <button type="button" @click="openPortsView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
-                            <span>Porte</span>
+                            <span>{{ __('topology.menu_ports') }}</span>
                             <span class="text-gray-400">▸</span>
                         </button>
                         <button type="button" @click="openHideView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
-                            <span>Nascondi</span>
+                            <span>{{ __('topology.menu_hide') }}</span>
                             <span class="text-gray-400">▸</span>
                         </button>
                     </div>
                 </template>
                 <template x-if="contextMenu.nodeKind === 'vpn' && (contextMenu.nodeVpnKind === 'remote' || contextMenu.nodeVpnKind === 'site')">
                     <button type="button" @click="openVpnDetailsView()" class="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
-                        <span>Dettagli rete</span>
+                        <span>{{ __('topology.menu_network_details') }}</span>
                         <span class="text-gray-400">▸</span>
                     </button>
                 </template>
@@ -317,16 +317,16 @@
 
             {{-- VPN details view: per-vpnKind toggles (remote-access vs site-to-site) --}}
             <div x-show="contextMenu.view === 'vpn-details'">
-                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">← Indietro</button>
-                <div class="px-3 py-2 border-t border-b text-xs font-semibold text-gray-600">Mostra sotto il nome</div>
+                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">{{ __('common.back_arrow') }}</button>
+                <div class="px-3 py-2 border-t border-b text-xs font-semibold text-gray-600">{{ __('topology.show_under_name') }}</div>
                 <template x-if="contextMenu.nodeVpnKind === 'remote'">
                     <div>
                         <label class="flex items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50 text-xs cursor-pointer">
-                            <span>Tipologia di rete (routed/bridged)</span>
+                            <span>{{ __('topology.detail_routing') }}</span>
                             <input type="checkbox" :checked="isVpnDetailOn('routing')" @change="toggleVpnDetail('routing')" class="rounded border-gray-300" />
                         </label>
                         <label class="flex items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50 text-xs cursor-pointer">
-                            <span>Classe di rete (CIDR)</span>
+                            <span>{{ __('topology.detail_cidr') }}</span>
                             <input type="checkbox" :checked="isVpnDetailOn('cidr')" @change="toggleVpnDetail('cidr')" class="rounded border-gray-300" />
                         </label>
                     </div>
@@ -334,11 +334,11 @@
                 <template x-if="contextMenu.nodeVpnKind === 'site'">
                     <div>
                         <label class="flex items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50 text-xs cursor-pointer">
-                            <span>Reti esportate da A</span>
+                            <span>{{ __('topology.detail_networks_a') }}</span>
                             <input type="checkbox" :checked="isVpnDetailOn('netA')" @change="toggleVpnDetail('netA')" class="rounded border-gray-300" />
                         </label>
                         <label class="flex items-center justify-between gap-2 px-3 py-2 hover:bg-gray-50 text-xs cursor-pointer">
-                            <span>Reti esportate da B</span>
+                            <span>{{ __('topology.detail_networks_b') }}</span>
                             <input type="checkbox" :checked="isVpnDetailOn('netB')" @change="toggleVpnDetail('netB')" class="rounded border-gray-300" />
                         </label>
                     </div>
@@ -347,40 +347,40 @@
 
             {{-- Hide / Show view --}}
             <div x-show="contextMenu.view === 'hide'">
-                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">← Indietro</button>
+                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">{{ __('common.back_arrow') }}</button>
                 {{-- Default: device is currently visible and not hidden by anything → offer hide options. --}}
                 <template x-if="!contextMenu.nodeIsHiddenDb && !contextMenu.nodeIsHiddenSession">
                     <div class="p-2 grid grid-cols-1 gap-1">
-                        <button type="button" @click="hideNodeSessionOnly()" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs text-left">Solo ora</button>
-                        <button type="button" @click="hideNodeAlways()" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs text-left">Sempre</button>
+                        <button type="button" @click="hideNodeSessionOnly()" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs text-left">{{ __('topology.hide_session') }}</button>
+                        <button type="button" @click="hideNodeAlways()" class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs text-left">{{ __('topology.hide_always') }}</button>
                     </div>
                 </template>
                 {{-- Session-only hide: shown only when "Includi nascosti" is on (otherwise the node isn't clickable). --}}
                 <template x-if="contextMenu.nodeIsHiddenSession">
                     <div class="p-2 space-y-2">
-                        <p class="text-[11px] text-gray-500 italic">Questo dispositivo è nascosto solo nella sessione corrente.</p>
-                        <button type="button" @click="unhideNodeSessionOnly()" class="w-full px-2 py-1 rounded bg-emerald-600 text-white text-xs text-left">Riporta visibile (Solo ora)</button>
+                        <p class="text-[11px] text-gray-500 italic">{{ __('topology.hidden_session_note') }}</p>
+                        <button type="button" @click="unhideNodeSessionOnly()" class="w-full px-2 py-1 rounded bg-emerald-600 text-white text-xs text-left">{{ __('topology.unhide_session') }}</button>
                     </div>
                 </template>
                 {{-- Persistent DB-flag hide: also shown only when "Includi nascosti" is on. --}}
                 <template x-if="contextMenu.nodeIsHiddenDb">
                     <div class="p-2 space-y-2">
-                        <p class="text-[11px] text-gray-500 italic">Questo dispositivo è nascosto nella topologia. È visibile solo perché "Includi nascosti" è attivo.</p>
-                        <button type="button" @click="showNodeAlways()" class="w-full px-2 py-1 rounded bg-indigo-600 text-white text-xs text-left">Mostra (rimuovi flag)</button>
+                        <p class="text-[11px] text-gray-500 italic">{{ __('topology.hidden_flag_note') }}</p>
+                        <button type="button" @click="showNodeAlways()" class="w-full px-2 py-1 rounded bg-indigo-600 text-white text-xs text-left">{{ __('topology.show_always') }}</button>
                     </div>
                 </template>
             </div>
 
             {{-- Name position view --}}
             <div x-show="contextMenu.view === 'name-position'">
-                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">← Indietro</button>
-                <div class="px-3 py-2 border-t border-b text-xs font-semibold text-gray-600">Posizione del nome</div>
+                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">{{ __('common.back_arrow') }}</button>
+                <div class="px-3 py-2 border-t border-b text-xs font-semibold text-gray-600">{{ __('topology.label_position') }}</div>
                 <div class="grid grid-cols-2 gap-1 p-2">
                     <template x-for="opt in [
-                        { key: 'top', label: 'Sopra' },
-                        { key: 'bottom', label: 'Sotto' },
-                        { key: 'left', label: 'Sinistra' },
-                        { key: 'right', label: 'Destra' },
+                        { key: 'top', label: @js(__('topology.pos_top')) },
+                        { key: 'bottom', label: @js(__('topology.pos_bottom')) },
+                        { key: 'left', label: @js(__('topology.pos_left')) },
+                        { key: 'right', label: @js(__('topology.pos_right')) },
                     ]" :key="opt.key">
                         <button type="button" @click="setNodeLabelPosition(opt.key)"
                             :class="currentNodeLabelPosition() === opt.key ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
@@ -392,9 +392,9 @@
 
             {{-- Ports list view --}}
             <div x-show="contextMenu.view === 'ports'">
-                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">← Indietro</button>
+                <button type="button" @click="backToRoot()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">{{ __('common.back_arrow') }}</button>
                 <div class="max-h-72 overflow-y-auto border-t">
-                    <div x-show="contextMenu.loading" class="px-3 py-2 text-xs text-gray-500 italic">Caricamento porte…</div>
+                    <div x-show="contextMenu.loading" class="px-3 py-2 text-xs text-gray-500 italic">{{ __('topology.loading_ports') }}</div>
                     <template x-for="iface in (contextMenu.interfaces || [])" :key="iface.id">
                         <button type="button" @click="openPortDetail(iface.id)"
                             class="w-full text-left px-3 py-1.5 hover:bg-gray-50 flex items-center justify-between text-xs">
@@ -402,13 +402,13 @@
                             <span class="text-gray-400">▸</span>
                         </button>
                     </template>
-                    <div x-show="!contextMenu.loading && (contextMenu.interfaces || []).length === 0" class="px-3 py-2 text-xs text-gray-500 italic">Nessuna interfaccia.</div>
+                    <div x-show="!contextMenu.loading && (contextMenu.interfaces || []).length === 0" class="px-3 py-2 text-xs text-gray-500 italic">{{ __('topology.no_interfaces') }}</div>
                 </div>
             </div>
 
             {{-- Port detail view --}}
             <div x-show="contextMenu.view === 'port-detail'">
-                <button type="button" @click="backToPorts()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">← Indietro</button>
+                <button type="button" @click="backToPorts()" class="w-full text-left px-3 py-1.5 text-xs text-indigo-600 hover:bg-gray-50">{{ __('common.back_arrow') }}</button>
                 <div class="px-3 py-2 border-t border-b text-xs font-semibold text-gray-600 font-mono"
                      x-text="(contextMenu.interfaces || []).find(i => i.id === contextMenu.currentInterfaceId)?.name || ''"></div>
                 <div class="px-3 py-2 space-y-1.5">
@@ -416,7 +416,7 @@
                         <input type="checkbox" class="rounded border-gray-300 text-indigo-600"
                             :checked="isPortAttrOn(contextMenu.currentInterfaceId, 'ip')"
                             @change="togglePortAttr(contextMenu.currentInterfaceId, 'ip')" />
-                        Indirizzo IP
+                        {{ __('topology.attr_ip') }}
                     </label>
                     <label class="flex items-center gap-2 text-xs cursor-pointer">
                         <input type="checkbox" class="rounded border-gray-300 text-indigo-600"
@@ -428,13 +428,13 @@
                         <input type="checkbox" class="rounded border-gray-300 text-indigo-600"
                             :checked="isPortAttrOn(contextMenu.currentInterfaceId, 'vlan')"
                             @change="togglePortAttr(contextMenu.currentInterfaceId, 'vlan')" />
-                        VLAN (modalità, default, ammesse)
+                        {{ __('topology.attr_vlan') }}
                     </label>
                     <label class="flex items-center gap-2 text-xs cursor-pointer">
                         <input type="checkbox" class="rounded border-gray-300 text-indigo-600"
                             :checked="isPortAttrOn(contextMenu.currentInterfaceId, 'description')"
                             @change="togglePortAttr(contextMenu.currentInterfaceId, 'description')" />
-                        Descrizione
+                        {{ __('common.description') }}
                     </label>
                 </div>
             </div>

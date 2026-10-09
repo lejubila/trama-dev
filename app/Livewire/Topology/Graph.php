@@ -166,7 +166,7 @@ class Graph extends Component
         $eq = Equipment::query()->findOrFail($equipmentId);
         $this->authorize('update', $eq);
         $eq->update(['hidden_in_topology' => true]);
-        $this->dispatch('toast', type: 'success', message: 'Dispositivo nascosto nella topologia.');
+        $this->dispatch('toast', type: 'success', message: __('topology.toast_hidden'));
     }
 
     /** Counterpart of hideAlways: drops the persistent hidden flag. */
@@ -175,7 +175,7 @@ class Graph extends Component
         $eq = Equipment::query()->findOrFail($equipmentId);
         $this->authorize('update', $eq);
         $eq->update(['hidden_in_topology' => false]);
-        $this->dispatch('toast', type: 'success', message: 'Dispositivo visibile nella topologia.');
+        $this->dispatch('toast', type: 'success', message: __('topology.toast_visible'));
     }
 
     /**

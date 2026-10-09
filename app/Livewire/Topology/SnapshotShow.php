@@ -29,7 +29,7 @@ class SnapshotShow extends Component
             Storage::disk('public')->delete($this->snapshot->image_path);
         }
         $this->snapshot->delete();
-        $this->dispatch('toast', type: 'success', message: 'Snapshot eliminato.');
+        $this->dispatch('toast', type: 'success', message: __('topology.snap_toast_deleted'));
 
         return $this->redirectRoute('topology.snapshots.index', navigate: true);
     }

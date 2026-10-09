@@ -78,4 +78,11 @@ return [
     'change_file' => '← Change file',
     'back_plain' => 'Back',
     'select_short' => 'Select…',
+    'title' => 'Title',
+    'open' => 'Open',
+    'description_optional' => 'Description (optional)',
+    'all_female' => 'All',
+    'date_from' => 'From',
+    'date_to' => 'To',
+    'back_arrow' => '← Back',
 ];

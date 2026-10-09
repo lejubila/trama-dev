@@ -246,7 +246,7 @@ class TopologyService
                         // When grouping by rack but not by room, a room
                         // compound only ever collects the unracked devices.
                         if ($groupByRack && ! $groupByRoom) {
-                            $label .= ' · non in rack';
+                            $label .= ' · '.__('topology.not_in_rack');
                         }
                         $roomParents[$roomKey] = [
                             'id' => $roomKey,

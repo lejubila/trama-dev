@@ -78,4 +78,11 @@ return [
     'change_file' => '← Cambia file',
     'back_plain' => 'Indietro',
     'select_short' => 'Seleziona…',
+    'title' => 'Titolo',
+    'open' => 'Apri',
+    'description_optional' => 'Descrizione (opzionale)',
+    'all_female' => 'Tutte',
+    'date_from' => 'Dal',
+    'date_to' => 'Al',
+    'back_arrow' => '← Indietro',
 ];
