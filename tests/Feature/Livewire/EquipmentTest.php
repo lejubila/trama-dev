@@ -410,7 +410,7 @@ it('escapes the %% sequence to a literal percent sign in bulk names', function (
 
 it('parses vlans_allowed from a comma-and-range list when creating an interface', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
-    $eq = Equipment::factory()->create();
+    $eq = Equipment::factory()->create(['type' => EquipmentType::Switch]);
 
     Livewire::test(EquipmentShow::class, ['equipment' => $eq])
         ->call('openIfCreate')
@@ -427,7 +427,7 @@ it('parses vlans_allowed from a comma-and-range list when creating an interface'
 
 it('reloads vlans_allowed into a compact range string when editing', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
-    $eq = Equipment::factory()->create();
+    $eq = Equipment::factory()->create(['type' => EquipmentType::Switch]);
     $if = NetworkInterface::factory()->ethernet()->create([
         'equipment_id' => $eq->getKey(),
         'name' => 'Gi0/1',
@@ -441,7 +441,7 @@ it('reloads vlans_allowed into a compact range string when editing', function ()
 
 it('rejects an invalid vlans_allowed string', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
-    $eq = Equipment::factory()->create();
+    $eq = Equipment::factory()->create(['type' => EquipmentType::Switch]);
 
     // Need trunk mode for the parser to actually run — access/none/transparent
     // skip parsing and silently null the field.
@@ -458,7 +458,7 @@ it('rejects an invalid vlans_allowed string', function (): void {
 
 it('rejects a descending range in vlans_allowed', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
-    $eq = Equipment::factory()->create();
+    $eq = Equipment::factory()->create(['type' => EquipmentType::Switch]);
 
     Livewire::test(EquipmentShow::class, ['equipment' => $eq])
         ->call('openIfCreate')
@@ -471,7 +471,7 @@ it('rejects a descending range in vlans_allowed', function (): void {
 
 it('stores null vlans_allowed when the field is blank', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
-    $eq = Equipment::factory()->create();
+    $eq = Equipment::factory()->create(['type' => EquipmentType::Switch]);
 
     Livewire::test(EquipmentShow::class, ['equipment' => $eq])
         ->call('openIfCreate')
@@ -485,7 +485,7 @@ it('stores null vlans_allowed when the field is blank', function (): void {
 
 it('blanks vlan_default and vlans_allowed when vlan_mode is transparent', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
-    $eq = Equipment::factory()->create();
+    $eq = Equipment::factory()->create(['type' => EquipmentType::Switch]);
 
     Livewire::test(EquipmentShow::class, ['equipment' => $eq])
         ->call('openIfCreate')
@@ -503,7 +503,7 @@ it('blanks vlan_default and vlans_allowed when vlan_mode is transparent', functi
 
 it('blanks vlan_default and vlans_allowed when vlan_mode is none', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
-    $eq = Equipment::factory()->create();
+    $eq = Equipment::factory()->create(['type' => EquipmentType::Switch]);
 
     Livewire::test(EquipmentShow::class, ['equipment' => $eq])
         ->call('openIfCreate')
@@ -521,7 +521,7 @@ it('blanks vlan_default and vlans_allowed when vlan_mode is none', function (): 
 
 it('skips vlans_allowed parsing error when vlan_mode is transparent', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
-    $eq = Equipment::factory()->create();
+    $eq = Equipment::factory()->create(['type' => EquipmentType::Switch]);
 
     // Garbage in the text field, but transparent mode means we never parse it.
     Livewire::test(EquipmentShow::class, ['equipment' => $eq])
