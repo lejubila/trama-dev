@@ -49,4 +49,6 @@ return [
     'plan_editor_hide_devices' => 'Nascondi dispositivi',
     'plan_editor_no_dimensions' => 'Imposta prima larghezza e profondità del locale per disegnare la planimetria.',
     'back_to_site' => '← Torna alla sede',
+    'plan_label_prompt' => 'Testo etichetta:',
+    'plan_clear_confirm' => 'Cancellare tutto il disegno?',
 ];

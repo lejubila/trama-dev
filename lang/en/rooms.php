@@ -49,4 +49,6 @@ return [
     'plan_editor_hide_devices' => 'Hide devices',
     'plan_editor_no_dimensions' => 'Set the room width and depth first to draw the floor plan.',
     'back_to_site' => '← Back to site',
+    'plan_label_prompt' => 'Label text:',
+    'plan_clear_confirm' => 'Clear the whole drawing?',
 ];

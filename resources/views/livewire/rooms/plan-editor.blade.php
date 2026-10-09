@@ -9,7 +9,9 @@
     $floorPlanUrl = $room->floor_plan_path ? '/storage/'.ltrim($room->floor_plan_path, '/') : null;
     $initialJson = json_encode($drawing, JSON_UNESCAPED_UNICODE);
 @endphp
-<div class="p-6 max-w-7xl mx-auto" x-data="roomPlanEditor" x-init="init($el)">
+<div class="p-6 max-w-7xl mx-auto" x-data="roomPlanEditor" x-init="init($el)"
+     data-i18n-label-prompt="{{ __('rooms.plan_label_prompt') }}"
+     data-i18n-clear-confirm="{{ __('rooms.plan_clear_confirm') }}">
     <div class="flex items-center justify-between mb-3">
         <div>
             <h1 class="text-xl font-semibold text-gray-900 dark:text-slate-100">{{ __('rooms.plan_editor_title') }}</h1>

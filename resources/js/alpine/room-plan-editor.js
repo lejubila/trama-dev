@@ -131,8 +131,15 @@ export default function roomPlanEditor() {
         _lastClickPt: null,
         _undo: [],
         _redo: [],
+        // UI strings come from the Blade root (data-i18n-*), so the editor
+        // follows the user's language without a client-side i18n library.
+        _i18n: { labelPrompt: 'Testo etichetta:', clearConfirm: 'Cancellare tutto il disegno?' },
 
         init(root) {
+            this._i18n = {
+                labelPrompt: root.dataset.i18nLabelPrompt || this._i18n.labelPrompt,
+                clearConfirm: root.dataset.i18nClearConfirm || this._i18n.clearConfirm,
+            };
             this._svg = root.querySelector('svg.plan-editor');
             if (!this._svg) return;
 
@@ -315,7 +322,7 @@ export default function roomPlanEditor() {
             }
 
             if (this.mode === 'label') {
-                const text = (this.labelText || '').trim() || prompt('Testo etichetta:', '');
+                const text = (this.labelText || '').trim() || prompt(this._i18n.labelPrompt, '');
                 if (!text) return;
                 this._push();
                 this._drawing.labels.push({
@@ -598,7 +605,7 @@ export default function roomPlanEditor() {
         },
 
         clearAll() {
-            if (!confirm('Cancellare tutto il disegno?')) return;
+            if (!confirm(this._i18n.clearConfirm)) return;
             this._push();
             this._drawing = { version: 1, walls: [], doors: [], windows: [], labels: [] };
             this._renderAll();
