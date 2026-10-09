@@ -11,14 +11,14 @@
                         <p class="text-sm text-gray-500">{{ trim(($equipment->vendor ?? '').' '.($equipment->model ?? '')) }}</p>
                     </div>
                     <div class="flex items-center gap-x-2">
-                        <a href="{{ route('equipment.show', $equipment) }}" wire:navigate class="text-xs text-indigo-700 hover:underline">Apri pagina →</a>
+                        <a href="{{ route('equipment.show', $equipment) }}" wire:navigate class="text-xs text-indigo-700 hover:underline">{{ __('equipment.open_page') }}</a>
                         <button wire:click="close" class="text-gray-400 hover:text-gray-700 text-2xl leading-none px-2">×</button>
                     </div>
                 </div>
 
                 <div class="border-b border-gray-200 px-4">
                     <nav class="flex gap-x-4 text-sm">
-                        @php $tabs = ['general' => 'Generale', 'interfaces' => 'Interfacce', 'connections' => 'Connessioni', 'audit' => 'Audit']; @endphp
+                        @php $tabs = ['general' => __('common.general'), 'interfaces' => __('equipment.tab_interfaces'), 'connections' => __('equipment.tab_connections'), 'audit' => __('common.audit')]; @endphp
                         @foreach ($tabs as $key => $label)
                             <button
                                 wire:click="setTab('{{ $key }}')"
@@ -31,31 +31,31 @@
                 <div class="p-4 text-sm">
                     @if ($activeTab === 'general')
                         <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-gray-700">
-                            <div><dt class="text-gray-500 inline">Tipo:</dt> {{ $equipment->type?->label() }}</div>
-                            <div><dt class="text-gray-500 inline">Stato:</dt> {{ $equipment->status?->label() }}</div>
+                            <div><dt class="text-gray-500 inline">{{ __('common.type') }}:</dt> {{ $equipment->type?->label() }}</div>
+                            <div><dt class="text-gray-500 inline">{{ __('common.status') }}:</dt> {{ $equipment->status?->label() }}</div>
                             <div><dt class="text-gray-500 inline">Vendor:</dt> {{ $equipment->vendor ?? '—' }}</div>
-                            <div><dt class="text-gray-500 inline">Modello:</dt> {{ $equipment->model ?? '—' }}</div>
-                            <div><dt class="text-gray-500 inline">Seriale:</dt> {{ $equipment->serial ?? '—' }}</div>
+                            <div><dt class="text-gray-500 inline">{{ __('common.model') }}:</dt> {{ $equipment->model ?? '—' }}</div>
+                            <div><dt class="text-gray-500 inline">{{ __('equipment.label_serial') }}:</dt> {{ $equipment->serial ?? '—' }}</div>
                             <div><dt class="text-gray-500 inline">Firmware:</dt> {{ $equipment->firmware ?? '—' }}</div>
-                            <div><dt class="text-gray-500 inline">Asset tag:</dt> {{ $equipment->asset_tag ?? '—' }}</div>
+                            <div><dt class="text-gray-500 inline">{{ __('equipment.label_asset_tag') }}:</dt> {{ $equipment->asset_tag ?? '—' }}</div>
                             <div><dt class="text-gray-500 inline">Mgmt IP:</dt> {{ $equipment->management_ip ?? '—' }}</div>
                             @if ($equipment->mounted)
-                                <div class="col-span-2"><dt class="text-gray-500 inline">Posizione:</dt> {{ $equipment->rack?->name }} · U{{ $equipment->position_u_start }}–{{ $equipment->position_u_start + $equipment->position_u_height - 1 }} {{ $equipment->locked ? '🔒' : '' }}</div>
+                                <div class="col-span-2"><dt class="text-gray-500 inline">{{ __('equipment.label_position') }}:</dt> {{ $equipment->rack?->name }} · U{{ $equipment->position_u_start }}–{{ $equipment->position_u_start + $equipment->position_u_height - 1 }} {{ $equipment->locked ? '🔒' : '' }}</div>
                             @endif
                             @php $roomName = $equipment->rack?->room?->name ?? $equipment->room?->name; @endphp
                             @if ($roomName)
-                                <div class="col-span-2"><dt class="text-gray-500 inline">Locale:</dt> {{ $roomName }}</div>
+                                <div class="col-span-2"><dt class="text-gray-500 inline">{{ __('common.room') }}:</dt> {{ $roomName }}</div>
                             @endif
                             @if ($equipment->description)
-                                <div class="col-span-2 mt-2"><dt class="text-gray-500 mb-1">Descrizione:</dt><dd class="whitespace-pre-line">{{ $equipment->description }}</dd></div>
+                                <div class="col-span-2 mt-2"><dt class="text-gray-500 mb-1">{{ __('common.description') }}:</dt><dd class="whitespace-pre-line">{{ $equipment->description }}</dd></div>
                             @endif
                             @if ($equipment->tags->isNotEmpty())
-                                <div class="col-span-2 mt-2"><dt class="text-gray-500 inline">Tag:</dt> <x-tag-chips :tags="$equipment->tags" /></div>
+                                <div class="col-span-2 mt-2"><dt class="text-gray-500 inline">{{ __('common.tags') }}:</dt> <x-tag-chips :tags="$equipment->tags" /></div>
                             @endif
                         </dl>
                     @elseif ($activeTab === 'interfaces')
                         @if ($equipment->interfaces->isEmpty())
-                            <p class="text-gray-500">Nessuna interfaccia.</p>
+                            <p class="text-gray-500">{{ __('equipment.no_interfaces') }}</p>
                         @else
                             <ul class="divide-y divide-gray-200">
                                 @foreach ($equipment->interfaces as $if)
@@ -71,7 +71,7 @@
                         @endif
                     @elseif ($activeTab === 'connections')
                         @if ($connections->isEmpty())
-                            <p class="text-gray-500">Nessuna connessione.</p>
+                            <p class="text-gray-500">{{ __('equipment.no_connections_short') }}</p>
                         @else
                             <ul class="divide-y divide-gray-200">
                                 @foreach ($connections as $c)
@@ -97,14 +97,14 @@
                         @endif
                     @else
                         @if ($audits->isEmpty())
-                            <p class="text-gray-500">Nessun audit.</p>
+                            <p class="text-gray-500">{{ __('common.no_audit') }}</p>
                         @else
                             <ul class="divide-y divide-gray-200">
                                 @foreach ($audits as $a)
                                     <li wire:key="d-a-{{ $a->id }}" class="py-2">
                                         <div class="text-xs text-gray-500">{{ $a->created_at?->format('Y-m-d H:i') }} · {{ $a->event }}</div>
                                         <details class="text-xs">
-                                            <summary class="cursor-pointer text-gray-600">Diff</summary>
+                                            <summary class="cursor-pointer text-gray-600">{{ __('common.diff') }}</summary>
                                             <pre class="mt-1 max-h-40 overflow-auto bg-gray-50 p-2 rounded font-mono text-xs">{{ json_encode(['old' => $a->old_values, 'new' => $a->new_values], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
                                         </details>
                                     </li>

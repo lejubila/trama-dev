@@ -25,7 +25,7 @@ enum VpnProtocol: string
             self::Pptp => 'PPTP',
             self::SslVpn => 'SSL VPN',
             self::Gre => 'GRE',
-            self::Other => 'Altro',
+            self::Other => __('enums.vpn_protocol.other'),
         };
     }
 }

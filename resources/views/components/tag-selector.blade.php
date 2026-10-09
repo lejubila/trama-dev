@@ -17,6 +17,6 @@
             {{ $tag->name }}
         </button>
     @empty
-        <span class="text-xs text-gray-400">{{ __('Nessun tag definito. Creane nella pagina Tag.') }}</span>
+        <span class="text-xs text-gray-400">{{ __('common.no_tags_defined') }}</span>
     @endforelse
 </div>

@@ -341,7 +341,7 @@ class Index extends Component
             // L'host deve essere un hypervisor dello stesso tenant.
             $host = Equipment::query()->find($this->hostEquipmentId);
             if ($host === null || $host->type !== EquipmentType::Hypervisor) {
-                $this->addError('hostEquipmentId', 'L\'host selezionato deve essere un hypervisor.');
+                $this->addError('hostEquipmentId', __('equipment.err_host_not_hypervisor'));
 
                 return;
             }
@@ -355,14 +355,14 @@ class Index extends Component
 
         if ($this->mounted) {
             if ($this->rackId === null) {
-                $this->addError('rackId', 'Un dispositivo montato richiede un rack.');
+                $this->addError('rackId', __('equipment.err_mounted_needs_rack'));
 
                 return;
             }
 
             if (! $this->onTop) {
                 if ($this->positionUStart === null || $this->positionUHeight === null) {
-                    $this->addError('positionUStart', 'Posizione U obbligatoria per dispositivi montati in una unità.');
+                    $this->addError('positionUStart', __('equipment.err_u_required'));
 
                     return;
                 }
@@ -371,7 +371,7 @@ class Index extends Component
                 $excluding = $this->editingId ? Equipment::query()->find($this->editingId) : null;
 
                 if (! $placement->canPlace($rack, $this->positionUStart, $this->positionUHeight, $excluding, $this->positionOrient)) {
-                    $this->addError('positionUStart', 'Conflitto con altro dispositivo sullo stesso lato, o posizione fuori dal rack.');
+                    $this->addError('positionUStart', __('equipment.err_u_conflict'));
 
                     return;
                 }
@@ -461,7 +461,7 @@ class Index extends Component
             }
 
             $eq->update($payload);
-            $this->dispatch('toast', type: 'success', message: 'Dispositivo aggiornato.');
+            $this->dispatch('toast', type: 'success', message: __('equipment.toast_updated'));
         } else {
             $this->authorize('create', Equipment::class);
 
@@ -484,8 +484,8 @@ class Index extends Component
             }
 
             $this->dispatch('toast', type: 'success', message: $source !== null
-                ? "Dispositivo duplicato ({$copied} porte copiate)."
-                : 'Dispositivo creato.');
+                ? __('equipment.toast_duplicated', ['count' => $copied])
+                : __('equipment.toast_created'));
             $this->duplicatingFromId = null;
         }
 
@@ -514,7 +514,7 @@ class Index extends Component
 
         $this->iconUpload = null;
         $this->existingIconPath = null;
-        $this->dispatch('toast', type: 'success', message: 'Icona rimossa.');
+        $this->dispatch('toast', type: 'success', message: __('common.icon_removed'));
     }
 
     /**
@@ -531,8 +531,8 @@ class Index extends Component
             'toast',
             type: 'success',
             message: $eq->hidden_in_topology
-                ? 'Dispositivo nascosto nella topologia.'
-                : 'Dispositivo visibile nella topologia.',
+                ? __('equipment.toast_hidden')
+                : __('equipment.toast_visible'),
         );
     }
 
@@ -546,7 +546,7 @@ class Index extends Component
         }
 
         $eq->delete();
-        $this->dispatch('toast', type: 'success', message: 'Dispositivo rimosso.');
+        $this->dispatch('toast', type: 'success', message: __('equipment.toast_deleted'));
     }
 
     /**

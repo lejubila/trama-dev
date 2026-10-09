@@ -19,15 +19,15 @@ enum EquipmentCategory: string
     public function label(): string
     {
         return match ($this) {
-            self::Network => 'Rete',
-            self::PassiveCabling => 'Cablaggio passivo',
-            self::ServerStorage => 'Server & storage',
-            self::Power => 'Alimentazione',
-            self::Management => 'Gestione',
-            self::VoiceComms => 'Telefonia & comunicazione',
-            self::Security => 'Sicurezza & videosorveglianza',
-            self::EndUser => 'Postazioni & end-user',
-            self::Other => 'Altro',
+            self::Network => __('enums.equipment_category.network'),
+            self::PassiveCabling => __('enums.equipment_category.passive_cabling'),
+            self::ServerStorage => __('enums.equipment_category.server_storage'),
+            self::Power => __('enums.equipment_category.power'),
+            self::Management => __('enums.equipment_category.management'),
+            self::VoiceComms => __('enums.equipment_category.voice_comms'),
+            self::Security => __('enums.equipment_category.security'),
+            self::EndUser => __('enums.equipment_category.end_user'),
+            self::Other => __('enums.equipment_category.other'),
         };
     }
 }

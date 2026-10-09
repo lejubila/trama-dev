@@ -51,4 +51,5 @@ return [
     'err_iface_required' => 'Seleziona un\'interfaccia wireless o spunta "crea nuova".',
     'toast_attached' => 'Client associato alla rete Wi-Fi.',
     'toast_detached' => 'Client scollegato dalla rete Wi-Fi.',
+    'security_placeholder' => 'wpa2 / wpa3 / open / …',
 ];

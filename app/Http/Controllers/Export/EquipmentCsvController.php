@@ -39,7 +39,7 @@ class EquipmentCsvController extends Controller
             [
                 'SW-EXAMPLE-01', 'switch', 'Cisco', 'Catalyst 9300', 'SN12345', '17.9.4', 'AT-001',
                 'Sede Milano', 'CED Milano', 'Rack-MI-A1',
-                'true', '36', '1', 'active', '10.0.0.10', 'Esempio importazione',
+                'true', '36', '1', 'active', '10.0.0.10', __('equipment.import_example_description'),
             ],
         ];
 

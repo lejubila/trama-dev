@@ -112,7 +112,7 @@ class ImportEquipmentCsv
         $rackId = null;
         if ($mounted) {
             if (empty($data['site']) || empty($data['room']) || empty($data['rack'])) {
-                $result->addError($rowNum, ['Per dispositivi montati site/room/rack sono obbligatori.']);
+                $result->addError($rowNum, [__('equipment.import_err_mounted_location')]);
 
                 return;
             }
@@ -135,7 +135,7 @@ class ImportEquipmentCsv
             $startU = (int) ($data['position_u_start'] ?? 0);
             $heightU = (int) ($data['position_u_height'] ?? 1);
             if ($startU < 1 || ! $this->placement->canPlace($rack, $startU, $heightU)) {
-                $result->addError($rowNum, ["Posizione U{$startU} non disponibile nel rack {$rack->name}."]);
+                $result->addError($rowNum, [__('equipment.import_err_u_unavailable', ['u' => $startU, 'rack' => $rack->name])]);
 
                 return;
             }

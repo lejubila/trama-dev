@@ -146,7 +146,7 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">{{ __('racks.label_icon') }}</label>
                         @if ($iconUpload)
                             <div class="mt-1 flex items-center gap-3">
-                                <img src="{{ $iconUpload->temporaryUrl() }}" alt="anteprima" class="h-16 w-16 object-contain rounded border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900" />
+                                <img src="{{ $iconUpload->temporaryUrl() }}" alt="{{ __('common.preview_alt') }}" class="h-16 w-16 object-contain rounded border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900" />
                                 <button type="button" wire:click="$set('iconUpload', null)" class="text-xs text-red-600 hover:underline">{{ __('racks.icon_cancel') }}</button>
                             </div>
                         @endif

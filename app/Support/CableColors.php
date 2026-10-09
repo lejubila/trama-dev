@@ -18,16 +18,16 @@ final class CableColors
     public static function presets(): array
     {
         return [
-            'Grigio' => '#6B7280',
-            'Nero' => '#111827',
-            'Bianco' => '#F3F4F6',
-            'Rosso' => '#DC2626',
-            'Arancione' => '#EA580C',
-            'Giallo' => '#EAB308',
-            'Verde' => '#16A34A',
-            'Blu' => '#2563EB',
-            'Viola' => '#9333EA',
-            'Rosa' => '#EC4899',
+            __('common.color_gray') => '#6B7280',
+            __('common.color_black') => '#111827',
+            __('common.color_white') => '#F3F4F6',
+            __('common.color_red') => '#DC2626',
+            __('common.color_orange') => '#EA580C',
+            __('common.color_yellow') => '#EAB308',
+            __('common.color_green') => '#16A34A',
+            __('common.color_blue') => '#2563EB',
+            __('common.color_purple') => '#9333EA',
+            __('common.color_pink') => '#EC4899',
         ];
     }
 

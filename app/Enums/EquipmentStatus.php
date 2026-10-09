@@ -14,10 +14,10 @@ enum EquipmentStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Active => 'Attivo',
-            self::Inactive => 'Inattivo',
-            self::Maintenance => 'In manutenzione',
-            self::Decommissioned => 'Dismesso',
+            self::Active => __('enums.equipment_status.active'),
+            self::Inactive => __('enums.equipment_status.inactive'),
+            self::Maintenance => __('enums.equipment_status.maintenance'),
+            self::Decommissioned => __('enums.equipment_status.decommissioned'),
         };
     }
 }

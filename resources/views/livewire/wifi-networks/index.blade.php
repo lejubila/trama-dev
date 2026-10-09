@@ -26,7 +26,7 @@
             @endforeach
         </select>
         @if ($search !== '' || $siteFilter > 0)
-            <button wire:click="clearFilters" type="button" class="text-xs text-gray-500 hover:text-gray-700 underline">Reset filtri</button>
+            <button wire:click="clearFilters" type="button" class="text-xs text-gray-500 hover:text-gray-700 underline">{{ __('common.reset_filters') }}</button>
         @endif
     </div>
 
@@ -102,7 +102,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-medium text-gray-700">{{ __('wifi.label_security') }}</label>
-                            <input type="text" wire:model="securityType" placeholder="wpa2 / wpa3 / open / …" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                            <input type="text" wire:model="securityType" placeholder="{{ __('wifi.security_placeholder') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">{{ __('wifi.label_vlan') }}</label>

@@ -124,7 +124,7 @@ class Show extends Component
     public function messages(): array
     {
         return [
-            'ifName.unique' => 'Esiste già un\'interfaccia con questo nome su questo dispositivo.',
+            'ifName.unique' => __('equipment.err_if_name_unique'),
         ];
     }
 
@@ -236,7 +236,7 @@ class Show extends Component
             $this->authorize('update', $if);
             $payload = array_merge($this->basePayload(), ['name' => $this->ifName]);
             $if->update($payload);
-            $this->dispatch('toast', type: 'success', message: 'Interfaccia aggiornata.');
+            $this->dispatch('toast', type: 'success', message: __('equipment.toast_if_updated'));
             $this->showIfForm = false;
 
             return;
@@ -251,10 +251,10 @@ class Show extends Component
                 'description' => $this->ifDescription !== '' ? $this->ifDescription : null,
                 'status' => $this->ifStatus,
             ]);
-            $this->dispatch('toast', type: 'success', message: 'Porta creata (front + rear).');
+            $this->dispatch('toast', type: 'success', message: __('equipment.toast_port_created'));
         } else {
             NetworkInterface::create(array_merge($this->basePayload(), ['name' => $this->ifName]));
-            $this->dispatch('toast', type: 'success', message: 'Interfaccia creata.');
+            $this->dispatch('toast', type: 'success', message: __('equipment.toast_if_created'));
         }
 
         $this->showIfForm = false;
@@ -285,7 +285,7 @@ class Show extends Component
             ->all();
 
         if ($existing !== []) {
-            $this->addError('ifName', 'Conflitto: '.implode(', ', $existing).' già presenti.');
+            $this->addError('ifName', __('equipment.err_bulk_conflict', ['names' => implode(', ', $existing)]));
 
             return;
         }
@@ -302,7 +302,7 @@ class Show extends Component
                     ]);
                 }
             });
-            $this->dispatch('toast', type: 'success', message: count($names).' porte create (front + rear).');
+            $this->dispatch('toast', type: 'success', message: __('equipment.toast_ports_created', ['count' => count($names)]));
         } else {
             $base = $this->basePayload();
             DB::transaction(function () use ($names, $base): void {
@@ -310,7 +310,7 @@ class Show extends Component
                     NetworkInterface::create(array_merge($base, ['name' => $name]));
                 }
             });
-            $this->dispatch('toast', type: 'success', message: count($names).' interfacce create.');
+            $this->dispatch('toast', type: 'success', message: __('equipment.toast_ifs_created', ['count' => count($names)]));
         }
 
         $this->showIfForm = false;
@@ -418,14 +418,14 @@ class Show extends Component
         if ($this->equipment->isVirtualMachine()) {
             $expectedEquipmentId = $this->equipment->host_equipment_id;
             if ($expectedEquipmentId === null) {
-                $this->addError('ifBackedById', 'La VM non ha un hypervisor host associato.');
+                $this->addError('ifBackedById', __('equipment.err_vm_no_host'));
 
                 return false;
             }
-            $mismatchMessage = 'La NIC selezionata non appartiene all\'hypervisor host.';
+            $mismatchMessage = __('equipment.err_backing_not_host');
         } else {
             $expectedEquipmentId = $this->equipment->getKey();
-            $mismatchMessage = 'La NIC selezionata non appartiene a questo dispositivo.';
+            $mismatchMessage = __('equipment.err_backing_not_self');
         }
 
         $pnic = NetworkInterface::query()->find($this->ifBackedById);
@@ -435,13 +435,13 @@ class Show extends Component
             return false;
         }
         if ($this->editingIfId !== null && (int) $pnic->id === (int) $this->editingIfId) {
-            $this->addError('ifBackedById', 'Una interfaccia non può ospitare sé stessa.');
+            $this->addError('ifBackedById', __('equipment.err_backing_self'));
 
             return false;
         }
         $allowed = [InterfaceType::Ethernet, InterfaceType::Fiber, InterfaceType::Wireless];
         if (! in_array($pnic->type, $allowed, true)) {
-            $this->addError('ifBackedById', 'La NIC selezionata non è una porta fisica utilizzabile come backing.');
+            $this->addError('ifBackedById', __('equipment.err_backing_not_physical'));
 
             return false;
         }
@@ -511,7 +511,7 @@ class Show extends Component
         $if = NetworkInterface::query()->findOrFail($id);
         $this->authorize('delete', $if);
         $if->delete();
-        $this->dispatch('toast', type: 'success', message: 'Interfaccia rimossa.');
+        $this->dispatch('toast', type: 'success', message: __('equipment.toast_if_deleted'));
     }
 
     public function deleteConnection(int $id): void
@@ -519,7 +519,7 @@ class Show extends Component
         $c = Connection::query()->findOrFail($id);
         $this->authorize('delete', $c);
         $c->delete();
-        $this->dispatch('toast', type: 'success', message: 'Connessione rimossa.');
+        $this->dispatch('toast', type: 'success', message: __('equipment.toast_conn_deleted'));
     }
 
     /**
@@ -593,26 +593,26 @@ class Show extends Component
                 $from = trim($parts[0]);
                 $to = trim($parts[1]);
                 if (! ctype_digit($from) || ! ctype_digit($to)) {
-                    throw new \InvalidArgumentException("Range non valido: \"{$token}\". Usa numeri 1-4094.");
+                    throw new \InvalidArgumentException(__('equipment.err_vlan_range', ['token' => $token]));
                 }
                 $from = (int) $from;
                 $to = (int) $to;
                 if ($from < 1 || $to < 1 || $from > 4094 || $to > 4094) {
-                    throw new \InvalidArgumentException("VLAN fuori intervallo 1-4094: \"{$token}\".");
+                    throw new \InvalidArgumentException(__('equipment.err_vlan_out_of_range', ['token' => $token]));
                 }
                 if ($from > $to) {
-                    throw new \InvalidArgumentException("Range invertito: \"{$token}\" (atteso \"from-to\" crescente).");
+                    throw new \InvalidArgumentException(__('equipment.err_vlan_inverted', ['token' => $token]));
                 }
                 for ($v = $from; $v <= $to; $v++) {
                     $out[$v] = true;
                 }
             } else {
                 if (! ctype_digit($token)) {
-                    throw new \InvalidArgumentException("Token non valido: \"{$token}\". Usa numeri 1-4094.");
+                    throw new \InvalidArgumentException(__('equipment.err_vlan_token', ['token' => $token]));
                 }
                 $v = (int) $token;
                 if ($v < 1 || $v > 4094) {
-                    throw new \InvalidArgumentException("VLAN fuori intervallo 1-4094: \"{$token}\".");
+                    throw new \InvalidArgumentException(__('equipment.err_vlan_out_of_range', ['token' => $token]));
                 }
                 $out[$v] = true;
             }

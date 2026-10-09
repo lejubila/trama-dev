@@ -1,18 +1,18 @@
 <div>
-    <x-page-header title="Dispositivi" subtitle="Tutti gli equipment del cliente attivo">
-        <a href="{{ route('export.equipment.csv') }}" class="text-sm text-gray-700 hover:text-gray-900 inline-flex items-center gap-x-1">⤓ Esporta CSV</a>
+    <x-page-header :title="__('equipment.title')" :subtitle="__('equipment.subtitle')">
+        <a href="{{ route('export.equipment.csv') }}" class="text-sm text-gray-700 hover:text-gray-900 inline-flex items-center gap-x-1">{{ __('equipment.export_csv') }}</a>
         @can('create', App\Models\Equipment::class)
-            <a href="{{ route('equipment.import') }}" wire:navigate class="text-sm text-gray-700 hover:text-gray-900 inline-flex items-center gap-x-1">⤒ Importa CSV</a>
+            <a href="{{ route('equipment.import') }}" wire:navigate class="text-sm text-gray-700 hover:text-gray-900 inline-flex items-center gap-x-1">{{ __('equipment.import_csv') }}</a>
             <button wire:click="openCreate" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
-                <x-icon name="plus" class="h-4 w-4" /> Nuovo dispositivo
+                <x-icon name="plus" class="h-4 w-4" /> {{ __('equipment.new') }}
             </button>
         @endcan
     </x-page-header>
 
     <div class="flex flex-wrap gap-3 mb-4 items-center">
-        <input type="text" wire:model.live.debounce.300ms="search" placeholder="Nome, modello, seriale…" class="rounded-md border-gray-300 shadow-sm text-sm w-64" />
+        <input type="text" wire:model.live.debounce.300ms="search" placeholder="{{ __('equipment.search_placeholder') }}" class="rounded-md border-gray-300 shadow-sm text-sm w-64" />
         <select wire:model.live="typeFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
-            <option value="">Tutti i tipi</option>
+            <option value="">{{ __('common.all_types') }}</option>
             @foreach (\App\Enums\EquipmentType::groupedCases() as $group => $items)
                 <optgroup label="{{ $group }}">
                     @foreach ($items as $t)
@@ -22,37 +22,37 @@
             @endforeach
         </select>
         <select wire:model.live="siteFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
-            <option value="0">Tutte le sedi</option>
+            <option value="0">{{ __('common.all_sites') }}</option>
             @foreach ($sites as $s)
                 <option value="{{ $s->id }}">{{ $s->name }}@if (filled($s->address)) — {{ $s->address }}@endif</option>
             @endforeach
         </select>
         <select wire:model.live="roomFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
-            <option value="0">Tutti i locali</option>
+            <option value="0">{{ __('common.all_rooms') }}</option>
             @foreach ($filterRooms as $r)
                 <option value="{{ $r->id }}">{{ $r->name }}@if ($r->site) ({{ $r->site->name }})@endif</option>
             @endforeach
         </select>
         <select wire:model.live="rackFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
-            <option value="0">Tutti i rack</option>
+            <option value="0">{{ __('common.all_racks') }}</option>
             @foreach ($filterRacks as $r)
                 <option value="{{ $r->id }}">{{ $r->name }}</option>
             @endforeach
         </select>
         <select wire:model.live="statusFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
-            <option value="">Tutti gli stati</option>
+            <option value="">{{ __('common.all_statuses') }}</option>
             @foreach ($statuses as $s)
                 <option value="{{ $s->value }}">{{ $s->label() }}</option>
             @endforeach
         </select>
         <select wire:model.live="tagFilter" class="rounded-md border-gray-300 shadow-sm text-sm">
-            <option value="0">Tutti i tag</option>
+            <option value="0">{{ __('common.all_tags') }}</option>
             @foreach ($allTags as $tag)
                 <option value="{{ $tag->id }}">{{ $tag->name }}</option>
             @endforeach
         </select>
         @if ($search !== '' || $typeFilter !== '' || $siteFilter > 0 || $roomFilter > 0 || $rackFilter > 0 || $statusFilter !== '' || $tagFilter > 0)
-            <button wire:click="clearFilters" type="button" class="text-xs text-gray-500 hover:text-gray-700 underline">Reset filtri</button>
+            <button wire:click="clearFilters" type="button" class="text-xs text-gray-500 hover:text-gray-700 underline">{{ __('common.reset_filters') }}</button>
         @endif
     </div>
 
@@ -60,12 +60,12 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor / Modello</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rack</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Interfacce</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('common.name') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('common.type') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('equipment.col_vendor_model') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('common.rack') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('equipment.col_interfaces') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">{{ __('common.actions') }}</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200 text-sm">
@@ -77,12 +77,12 @@
                                 @can('update', $eq)
                                     <button type="button"
                                         wire:click="toggleHiddenInTopology({{ $eq->id }})"
-                                        title="{{ $eq->hidden_in_topology ? 'Nascosto nella topologia — click per mostrare' : 'Visibile nella topologia — click per nascondere' }}"
+                                        title="{{ $eq->hidden_in_topology ? __('equipment.hidden_toggle_title') : __('equipment.visible_toggle_title') }}"
                                         class="text-gray-400 hover:text-indigo-600">
                                         <x-icon name="{{ $eq->hidden_in_topology ? 'eye-slash' : 'eye' }}" class="h-4 w-4" />
                                     </button>
                                 @else
-                                    <span title="{{ $eq->hidden_in_topology ? 'Nascosto nella topologia' : 'Visibile nella topologia' }}" class="text-gray-400">
+                                    <span title="{{ $eq->hidden_in_topology ? __('equipment.hidden_title') : __('equipment.visible_title') }}" class="text-gray-400">
                                         <x-icon name="{{ $eq->hidden_in_topology ? 'eye-slash' : 'eye' }}" class="h-4 w-4" />
                                     </span>
                                 @endcan
@@ -102,12 +102,12 @@
                             @endphp
                             @if ($eq->type === \App\Enums\EquipmentType::VirtualMachine && $eq->host)
                                 <span class="italic text-gray-500">
-                                    VM su <a href="{{ route('equipment.show', $eq->host) }}" wire:navigate class="text-indigo-700 hover:underline not-italic">{{ $eq->host->name }}</a>
+                                    {{ __('equipment.vm_on') }} <a href="{{ route('equipment.show', $eq->host) }}" wire:navigate class="text-indigo-700 hover:underline not-italic">{{ $eq->host->name }}</a>
                                 </span>
                             @elseif ($eq->rack)
                                 {{ $eq->rack->name }}@if ($eq->mounted) · U{{ $eq->position_u_start }}–{{ $eq->position_u_start + $eq->position_u_height - 1 }}@endif
                             @else
-                                <span class="italic text-gray-500">non rack-mounted</span>
+                                <span class="italic text-gray-500">{{ __('equipment.not_rack_mounted') }}</span>
                             @endif
                             @if ($room)
                                 <span class="block text-xs text-gray-400">{{ $room->name }}</span>
@@ -124,15 +124,15 @@
                                 <button wire:click="openEdit({{ $eq->id }})" class="text-indigo-600 hover:text-indigo-800"><x-icon name="pencil" class="h-4 w-4 inline" /></button>
                             @endcan
                             @can('create', App\Models\Equipment::class)
-                                <button wire:click="openDuplicate({{ $eq->id }})" title="Duplica" class="text-gray-500 hover:text-gray-700"><x-icon name="document-duplicate" class="h-4 w-4 inline" /></button>
+                                <button wire:click="openDuplicate({{ $eq->id }})" title="{{ __('common.duplicate') }}" class="text-gray-500 hover:text-gray-700"><x-icon name="document-duplicate" class="h-4 w-4 inline" /></button>
                             @endcan
                             @can('delete', $eq)
-                                <button wire:click="delete({{ $eq->id }})" wire:confirm="Eliminare {{ $eq->name }}?" class="text-red-600 hover:text-red-800"><x-icon name="trash" class="h-4 w-4 inline" /></button>
+                                <button wire:click="delete({{ $eq->id }})" wire:confirm="{{ __('equipment.delete_confirm', ['name' => $eq->name]) }}" class="text-red-600 hover:text-red-800"><x-icon name="trash" class="h-4 w-4 inline" /></button>
                             @endcan
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Nessun dispositivo.</td></tr>
+                    <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">{{ __('equipment.empty') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -142,19 +142,19 @@
     @if ($showForm)
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
             <div class="bg-white rounded-md shadow-lg w-full max-w-2xl p-6 my-8">
-                <h2 class="text-lg font-semibold mb-4">{{ $editingId ? 'Modifica dispositivo' : ($duplicatingFromId ? 'Duplica dispositivo' : 'Nuovo dispositivo') }}</h2>
+                <h2 class="text-lg font-semibold mb-4">{{ $editingId ? __('equipment.form_edit') : ($duplicatingFromId ? __('equipment.form_duplicate') : __('equipment.new')) }}</h2>
                 @if ($duplicatingFromId)
-                    <p class="-mt-2 mb-4 text-sm text-gray-500">Verranno copiate {{ $duplicatingInterfaceCount }} porte (senza MAC e IP); le connessioni non vengono copiate.</p>
+                    <p class="-mt-2 mb-4 text-sm text-gray-500">{{ __('equipment.duplicate_note', ['count' => $duplicatingInterfaceCount]) }}</p>
                 @endif
                 <form wire:submit="save" class="space-y-3">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Nome</label>
+                            <label class="block text-sm font-medium text-gray-700">{{ __('common.name') }}</label>
                             <input type="text" wire:model="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                             @error('name')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Tipo</label>
+                            <label class="block text-sm font-medium text-gray-700">{{ __('common.type') }}</label>
                             <select wire:model.live="type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
                                 @foreach (\App\Enums\EquipmentType::groupedCases() as $group => $items)
                                     <optgroup label="{{ $group }}">
@@ -167,19 +167,19 @@
                             @error('type')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Vendor</label>
+                            <label class="block text-sm font-medium text-gray-700">{{ __('common.vendor') }}</label>
                             <input type="text" wire:model="vendor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Modello</label>
+                            <label class="block text-sm font-medium text-gray-700">{{ __('common.model') }}</label>
                             <input type="text" wire:model="modelName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Seriale</label>
+                            <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_serial') }}</label>
                             <input type="text" wire:model="serial" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Stato</label>
+                            <label class="block text-sm font-medium text-gray-700">{{ __('common.status') }}</label>
                             <select wire:model="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
                                 @foreach ($statuses as $s)
                                     <option value="{{ $s->value }}">{{ $s->label() }}</option>
@@ -190,18 +190,18 @@
 
                     <div class="grid grid-cols-3 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Firmware</label>
+                            <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_firmware') }}</label>
                             <input type="text" wire:model="firmware" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                             @error('firmware')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Asset tag</label>
+                            <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_asset_tag') }}</label>
                             <input type="text" wire:model="assetTag" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                             @error('assetTag')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Mgmt IP</label>
-                            <input type="text" wire:model="managementIp" placeholder="es. 192.168.1.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                            <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_mgmt_ip') }}</label>
+                            <input type="text" wire:model="managementIp" placeholder="{{ __('equipment.mgmt_ip_placeholder') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                             @error('managementIp')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                     </div>
@@ -209,7 +209,7 @@
                     @if ($type === 'hypervisor')
                         <div class="border-t pt-6 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Vendor hypervisor</label>
+                                <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_hypervisor_vendor') }}</label>
                                 <select wire:model="hypervisorVendor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
                                     <option value="">—</option>
                                     @foreach ($hypervisorVendors as $v)
@@ -224,9 +224,9 @@
                     @if ($type === 'virtual_machine')
                         <div class="border-t pt-6 mt-2 space-y-3">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Host hypervisor</label>
+                                <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_host') }}</label>
                                 <select wire:model="hostEquipmentId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
-                                    <option value="">— Seleziona —</option>
+                                    <option value="">{{ __('common.select_placeholder') }}</option>
                                     @foreach ($hypervisorOptions as $h)
                                         <option value="{{ $h->id }}">{{ $h->name }}</option>
                                     @endforeach
@@ -240,22 +240,22 @@
                                     @error('vcpu')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">RAM (MB)</label>
+                                    <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_ram') }}</label>
                                     <input type="number" min="1" wire:model="ramMb" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                                     @error('ramMb')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Disco (GB)</label>
+                                    <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_disk') }}</label>
                                     <input type="number" min="1" wire:model="diskGb" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                                     @error('diskGb')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Sistema operativo</label>
-                                    <input type="text" wire:model="guestOs" placeholder="es. Ubuntu 22.04" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                                    <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_guest_os') }}</label>
+                                    <input type="text" wire:model="guestOs" placeholder="{{ __('equipment.guest_os_placeholder') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
                                     @error('guestOs')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                                 </div>
                             </div>
-                            <p class="text-xs text-gray-500">Le macchine virtuali non occupano spazio rack: i campi di posizionamento fisico sono ignorati.</p>
+                            <p class="text-xs text-gray-500">{{ __('equipment.vm_help') }}</p>
                         </div>
                     @endif
 
@@ -263,20 +263,20 @@
                         <div class="flex items-center gap-x-6 gap-y-5 flex-wrap">
                             <label class="inline-flex items-center gap-x-2 text-sm">
                                 <input type="checkbox" wire:model.live="mounted" class="rounded border-gray-300 text-indigo-600" />
-                                Rack-mounted
+                                {{ __('equipment.label_mounted') }}
                             </label>
                             <label class="inline-flex items-center gap-x-2 text-sm">
                                 <input type="checkbox" wire:model="locked" class="rounded border-gray-300 text-indigo-600" />
-                                Bloccato (no drag&amp;drop)
+                                {{ __('equipment.label_locked') }}
                             </label>
                             <label class="inline-flex items-center gap-x-2 text-sm">
                                 <input type="checkbox" wire:model="hiddenInTopology" class="rounded border-gray-300 text-indigo-600" />
-                                Nascosto nella topologia
+                                {{ __('equipment.label_hidden_topology') }}
                             </label>
                             @if ($mounted)
                                 <label class="inline-flex items-center gap-x-2 text-sm">
                                     <input type="checkbox" wire:model.live="onTop" class="rounded border-gray-300 text-indigo-600" />
-                                    Sopra il rack (no U)
+                                    {{ __('equipment.label_on_top') }}
                                 </label>
                             @endif
                         </div>
@@ -284,7 +284,7 @@
                         @if ($mounted)
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Rack</label>
+                                    <label class="block text-sm font-medium text-gray-700">{{ __('common.rack') }}</label>
                                     <select wire:model="rackId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
                                         <option value="">—</option>
                                         @foreach ($racks as $r)
@@ -294,22 +294,22 @@
                                     @error('rackId')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Lato</label>
+                                    <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_side') }}</label>
                                     <select wire:model="positionOrient" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
-                                        <option value="front">Anteriore</option>
-                                        <option value="rear">Posteriore</option>
+                                        <option value="front">{{ __('equipment.side_front') }}</option>
+                                        <option value="rear">{{ __('equipment.side_rear') }}</option>
                                     </select>
                                     @error('positionOrient')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">U iniziale</label>
+                                    <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_u_start') }}</label>
                                     <input type="number" min="1" wire:model="positionUStart"
                                            @disabled($onTop)
                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm disabled:bg-gray-100 disabled:text-gray-400" />
                                     @error('positionUStart')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Altezza (U)</label>
+                                    <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_u_height') }}</label>
                                     <input type="number" min="1" wire:model="positionUHeight"
                                            @disabled($onTop)
                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm disabled:bg-gray-100 disabled:text-gray-400" />
@@ -322,9 +322,9 @@
                              label derived from the rack when device is racked. --}}
                         <div class="mt-3">
                             @if (!$mounted)
-                                <label class="block text-sm font-medium text-gray-700">Locale</label>
+                                <label class="block text-sm font-medium text-gray-700">{{ __('common.room') }}</label>
                                 <select wire:model="roomId" class="mt-1 block w-full sm:w-1/2 rounded-md border-gray-300 shadow-sm text-sm">
-                                    <option value="">— Nessuno —</option>
+                                    <option value="">{{ __('common.none_option') }}</option>
                                     @foreach ($rooms as $r)
                                         <option value="{{ $r->id }}">{{ $r->name }} @if ($r->site) ({{ $r->site->name }}) @endif</option>
                                     @endforeach
@@ -335,46 +335,46 @@
                                     $derivedRoom = $rackId ? optional($racks->firstWhere('id', (int) $rackId))->room?->name : null;
                                 @endphp
                                 <p class="text-xs text-gray-500">
-                                    Locale: <span class="font-medium text-gray-700">{{ $derivedRoom ?? '—' }}</span>
-                                    <span class="text-gray-400">(derivato dal rack)</span>
+                                    {{ __('common.room') }}: <span class="font-medium text-gray-700">{{ $derivedRoom ?? '—' }}</span>
+                                    <span class="text-gray-400">{{ __('equipment.room_derived') }}</span>
                                 </p>
                             @endif
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Descrizione</label>
+                        <label class="block text-sm font-medium text-gray-700">{{ __('common.description') }}</label>
                         <textarea wire:model="description" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Icona (opzionale)</label>
+                        <label class="block text-sm font-medium text-gray-700">{{ __('equipment.label_icon') }}</label>
                         @if ($iconUpload)
                             <div class="mt-1 flex items-center gap-3">
-                                <img src="{{ $iconUpload->temporaryUrl() }}" alt="anteprima" class="h-16 w-16 object-contain rounded border border-gray-200 bg-gray-50" />
-                                <button type="button" wire:click="$set('iconUpload', null)" class="text-xs text-red-600 hover:underline">Annulla upload</button>
+                                <img src="{{ $iconUpload->temporaryUrl() }}" alt="{{ __('common.preview_alt') }}" class="h-16 w-16 object-contain rounded border border-gray-200 bg-gray-50" />
+                                <button type="button" wire:click="$set('iconUpload', null)" class="text-xs text-red-600 hover:underline">{{ __('common.cancel_upload') }}</button>
                             </div>
                         @elseif ($existingIconPath)
                             <div class="mt-1 flex items-center gap-3">
-                                <img src="/storage/{{ ltrim($existingIconPath, '/') }}" alt="icona attuale" class="h-16 w-16 object-contain rounded border border-gray-200 bg-gray-50" />
-                                <button type="button" wire:click="removeIcon" wire:confirm="Rimuovere l'icona di questo dispositivo?" class="text-xs text-red-600 hover:underline">Rimuovi</button>
+                                <img src="/storage/{{ ltrim($existingIconPath, '/') }}" alt="{{ __('common.current_icon_alt') }}" class="h-16 w-16 object-contain rounded border border-gray-200 bg-gray-50" />
+                                <button type="button" wire:click="removeIcon" wire:confirm="{{ __('equipment.remove_icon_confirm') }}" class="text-xs text-red-600 hover:underline">{{ __('common.remove') }}</button>
                             </div>
                         @endif
                         <input type="file" accept="image/*" wire:model="iconUpload" class="mt-1 block w-full text-sm" />
-                        <p class="text-xs text-gray-500 mt-1">Sostituisce per questo dispositivo l'icona globale/cliente. Lascia vuoto per usare il default.</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ __('equipment.icon_help') }}</p>
                         @error('iconUpload')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
-                        <div wire:loading wire:target="iconUpload" class="text-xs text-indigo-600 mt-1">Caricamento…</div>
+                        <div wire:loading wire:target="iconUpload" class="text-xs text-indigo-600 mt-1">{{ __('common.uploading') }}</div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tag</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('common.tags') }}</label>
                         <x-tag-selector :tags="$allTags" model="selectedTagIds" />
                         @error('selectedTagIds')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div class="flex justify-end gap-x-2 pt-2">
-                        <button type="button" wire:click="$set('showForm', false)" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Annulla</button>
-                        <button type="submit" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Salva</button>
+                        <button type="button" wire:click="$set('showForm', false)" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">{{ __('common.cancel') }}</button>
+                        <button type="submit" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">{{ __('common.save') }}</button>
                     </div>
                 </form>
             </div>

@@ -16,7 +16,7 @@
                 {{ __('rooms.plan_editor_open') }}
             </a>
         @endcan
-        <a href="{{ route('sites.show', $room->site) }}" wire:navigate class="text-sm text-gray-600 hover:text-gray-800">← Torna alla sede</a>
+        <a href="{{ route('sites.show', $room->site) }}" wire:navigate class="text-sm text-gray-600 hover:text-gray-800">{{ __('rooms.back_to_site') }}</a>
     </x-page-header>
 
     <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md p-4">

@@ -48,4 +48,5 @@ return [
     'plan_editor_show_devices' => 'Mostra dispositivi',
     'plan_editor_hide_devices' => 'Nascondi dispositivi',
     'plan_editor_no_dimensions' => 'Imposta prima larghezza e profondità del locale per disegnare la planimetria.',
+    'back_to_site' => '← Torna alla sede',
 ];

@@ -48,4 +48,5 @@ return [
     'plan_editor_show_devices' => 'Show devices',
     'plan_editor_hide_devices' => 'Hide devices',
     'plan_editor_no_dimensions' => 'Set the room width and depth first to draw the floor plan.',
+    'back_to_site' => '← Back to site',
 ];

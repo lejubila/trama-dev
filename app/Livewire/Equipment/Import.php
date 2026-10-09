@@ -96,8 +96,8 @@ class Import extends Component
         $created = $import->summary['created'] ?? 0;
         $errors = count($import->summary['errors'] ?? []);
         $msg = $import->status === 'completed'
-            ? "Import completato: {$created} creati, {$errors} errori."
-            : "Import fallito: {$errors} errori, transazione annullata.";
+            ? __('equipment.import_toast_done', ['created' => $created, 'errors' => $errors])
+            : __('equipment.import_toast_failed', ['errors' => $errors]);
         $this->dispatch('toast', type: $type, message: $msg);
     }
 

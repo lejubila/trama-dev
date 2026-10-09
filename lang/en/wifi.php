@@ -51,4 +51,5 @@ return [
     'err_iface_required' => 'Pick a wireless interface or check "auto-create".',
     'toast_attached' => 'Client attached to the Wi-Fi network.',
     'toast_detached' => 'Client detached from the Wi-Fi network.',
+    'security_placeholder' => 'wpa2 / wpa3 / open / …',
 ];

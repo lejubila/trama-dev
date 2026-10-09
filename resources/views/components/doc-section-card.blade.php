@@ -15,16 +15,16 @@
             <span class="font-semibold text-gray-700">{{ $title }}</span>
         </label>
         <div class="flex items-center gap-3 text-xs text-gray-500">
-            <span>Selezionati: {{ $count }} / {{ $total }}</span>
+            <span>{{ __('common.selected_count', ['count' => $count, 'total' => $total]) }}</span>
             <button type="button" wire:click="selectAll('{{ $selectAllTarget }}')"
-                    class="text-indigo-600 hover:underline">Tutti</button>
+                    class="text-indigo-600 hover:underline">{{ __('common.all') }}</button>
             <button type="button" wire:click="selectNone('{{ $selectAllTarget }}')"
-                    class="text-gray-600 hover:underline">Nessuno</button>
+                    class="text-gray-600 hover:underline">{{ __('common.none') }}</button>
         </div>
     </div>
     <div class="p-4 space-y-3 @if (!$attributes->get('enabled', $enabledModel)) @endif">
         <div>
-            <label class="block text-sm font-medium text-gray-700">Descrizione di sezione</label>
+            <label class="block text-sm font-medium text-gray-700">{{ __('common.section_description') }}</label>
             <textarea wire:model="{{ $descriptionModel }}" rows="2"
                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"></textarea>
         </div>

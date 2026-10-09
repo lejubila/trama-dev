@@ -1,11 +1,11 @@
 <div>
-    <x-page-header title="Import dispositivi" subtitle="Carica un CSV con i dispositivi da importare nel cliente attivo">
-        <a href="{{ route('equipment.index') }}" wire:navigate class="text-sm text-gray-600 hover:text-gray-800">← Annulla</a>
-        <a href="{{ route('export.equipment.template') }}" class="text-sm text-indigo-700 hover:underline">Scarica template CSV</a>
+    <x-page-header :title="__('equipment.import_title')" :subtitle="__('equipment.import_subtitle')">
+        <a href="{{ route('equipment.index') }}" wire:navigate class="text-sm text-gray-600 hover:text-gray-800">{{ __('common.cancel_back') }}</a>
+        <a href="{{ route('export.equipment.template') }}" class="text-sm text-indigo-700 hover:underline">{{ __('equipment.import_template') }}</a>
     </x-page-header>
 
     <ol class="flex gap-x-2 mb-6 text-xs max-w-3xl">
-        @foreach (['Upload', 'Preview', 'Risultato'] as $i => $label)
+        @foreach ([__('equipment.import_step_upload'), __('equipment.import_step_preview'), __('equipment.import_step_result')] as $i => $label)
             <li class="flex-1 px-3 py-2 rounded-md text-center {{ $step >= $i + 1 ? 'bg-indigo-100 text-indigo-700 font-medium' : 'bg-gray-100 text-gray-500' }}">
                 {{ $i + 1 }}. {{ $label }}
             </li>
@@ -16,17 +16,17 @@
         @if ($step === 1)
             <form wire:submit="toPreview" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">File CSV</label>
+                    <label class="block text-sm font-medium text-gray-700">{{ __('equipment.import_file_label') }}</label>
                     <input type="file" wire:model="file" accept=".csv,text/csv" class="mt-1 block w-full text-sm" />
                     @error('file')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
-                    <p class="text-xs text-gray-500 mt-1">Max 5 MB. Header attesi: name, type, vendor, model, serial, …</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ __('equipment.import_file_help') }}</p>
                 </div>
                 <div class="flex justify-end">
-                    <button type="submit" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Avanti →</button>
+                    <button type="submit" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">{{ __('common.next') }}</button>
                 </div>
             </form>
         @elseif ($step === 2)
-            <p class="text-sm text-gray-600 mb-3">Anteprima delle prime {{ count($rowsPreview) }} righe:</p>
+            <p class="text-sm text-gray-600 mb-3">{{ __('equipment.import_preview_intro', ['count' => count($rowsPreview)]) }}</p>
             <div class="overflow-x-auto border border-gray-200 rounded-md mb-4">
                 <table class="min-w-full text-xs divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -50,27 +50,27 @@
 
             <label class="inline-flex items-center gap-x-2 text-sm">
                 <input type="checkbox" wire:model="ignoreErrors" class="rounded border-gray-300 text-indigo-600" />
-                Importa righe valide anche se altre falliscono (no rollback)
+                {{ __('equipment.import_ignore_errors') }}
             </label>
 
             <div class="flex justify-between mt-6">
-                <button wire:click="reset_" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">← Cambia file</button>
-                <button wire:click="runImport" class="px-3 py-2 text-sm text-white bg-emerald-600 rounded-md hover:bg-emerald-700">Esegui import</button>
+                <button wire:click="reset_" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">{{ __('common.change_file') }}</button>
+                <button wire:click="runImport" class="px-3 py-2 text-sm text-white bg-emerald-600 rounded-md hover:bg-emerald-700">{{ __('equipment.import_run') }}</button>
             </div>
         @else
             @if ($summary)
                 <div class="space-y-3">
                     <div class="grid grid-cols-3 gap-3">
                         <div class="bg-emerald-50 text-emerald-900 p-3 rounded">
-                            <div class="text-xs uppercase">Creati</div>
+                            <div class="text-xs uppercase">{{ __('equipment.import_created') }}</div>
                             <div class="text-2xl font-semibold">{{ $summary['created'] }}</div>
                         </div>
                         <div class="bg-amber-50 text-amber-900 p-3 rounded">
-                            <div class="text-xs uppercase">Saltati</div>
+                            <div class="text-xs uppercase">{{ __('equipment.import_skipped') }}</div>
                             <div class="text-2xl font-semibold">{{ $summary['skipped'] }}</div>
                         </div>
                         <div class="bg-red-50 text-red-900 p-3 rounded">
-                            <div class="text-xs uppercase">Errori</div>
+                            <div class="text-xs uppercase">{{ __('equipment.import_errors') }}</div>
                             <div class="text-2xl font-semibold">{{ count($summary['errors']) }}</div>
                         </div>
                     </div>
@@ -80,8 +80,8 @@
                             <table class="min-w-full text-xs">
                                 <thead class="bg-red-50 text-red-900">
                                     <tr>
-                                        <th class="px-3 py-2 text-left">Riga</th>
-                                        <th class="px-3 py-2 text-left">Errori</th>
+                                        <th class="px-3 py-2 text-left">{{ __('equipment.import_row') }}</th>
+                                        <th class="px-3 py-2 text-left">{{ __('equipment.import_errors') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-red-100">
@@ -104,8 +104,8 @@
                 </div>
             @endif
             <div class="flex justify-end mt-6">
-                <button wire:click="reset_" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Nuovo import</button>
-                <a href="{{ route('equipment.index') }}" wire:navigate class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700 ml-2">Vai ai dispositivi</a>
+                <button wire:click="reset_" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">{{ __('equipment.import_again') }}</button>
+                <a href="{{ route('equipment.index') }}" wire:navigate class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700 ml-2">{{ __('equipment.import_go_devices') }}</a>
             </div>
         @endif
     </div>

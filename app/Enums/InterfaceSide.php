@@ -17,8 +17,8 @@ enum InterfaceSide: string
     public function label(): string
     {
         return match ($this) {
-            self::Front => 'Anteriore',
-            self::Rear => 'Posteriore',
+            self::Front => __('enums.interface_side.front'),
+            self::Rear => __('enums.interface_side.rear'),
         };
     }
 

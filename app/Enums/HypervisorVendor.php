@@ -21,7 +21,7 @@ enum HypervisorVendor: string
             self::HyperV => 'Microsoft Hyper-V',
             self::XenServer => 'Citrix XenServer',
             self::XcpNg => 'XCP-ng',
-            self::Generic => 'Generico',
+            self::Generic => __('enums.hypervisor_vendor.generic'),
         };
     }
 }
