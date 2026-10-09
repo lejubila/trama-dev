@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Support\Demo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -30,6 +31,8 @@ class TokenController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        abort_if(Demo::enabled(), 403, __('demo.tokens_locked'));
+
         $data = $request->validate([
             'name' => 'required|string|max:80',
             'abilities' => 'nullable|array',

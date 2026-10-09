@@ -25,6 +25,8 @@ new class extends Component
      */
     public function updateProfileInformation(): void
     {
+        abort_if(\App\Support\Demo::enabled(), 403, __('demo.account_locked'));
+
         $user = Auth::user();
 
         $validated = $this->validate([

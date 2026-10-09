@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Support\Demo;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -23,7 +24,9 @@ class SetLocale
         /** @var list<string> $supported */
         $supported = config('app.supported_locales', ['it', 'en']);
 
-        $locale = $request->user()?->preferredLocale();
+        // The demo account is shared by every visitor: its stored preference
+        // would impose one visitor's language on all the others.
+        $locale = Demo::enabled() ? null : $request->user()?->preferredLocale();
 
         if ($locale === null) {
             $session = $request->session()->get('locale');

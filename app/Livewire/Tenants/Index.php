@@ -6,6 +6,7 @@ namespace App\Livewire\Tenants;
 
 use App\Actions\Tenancy\CreateTenant;
 use App\Models\Tenant;
+use App\Support\Tenancy\CurrentTenant;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
@@ -73,9 +74,7 @@ class Index extends Component
         $tenant = Tenant::query()->findOrFail($id);
         $this->authorize('view', $tenant);
 
-        $user = auth()->user();
-        $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
-        TenantContext::setId($tenant->getKey());
+        CurrentTenant::set(auth()->user(), (int) $tenant->getKey());
 
         $this->dispatch('toast', type: 'success', message: __('tenants.toast_switched', ['name' => $tenant->name]));
         $this->redirectRoute('dashboard', navigate: true);

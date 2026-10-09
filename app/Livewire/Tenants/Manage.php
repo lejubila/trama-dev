@@ -9,6 +9,7 @@ use App\Actions\Tenancy\RemoveMember;
 use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Demo;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
@@ -85,6 +86,7 @@ class Manage extends Component
     public function addMember(AssignTenant $action): void
     {
         $this->authorize('update', $this->tenant);
+        abort_if(Demo::enabled(), 403, __('demo.members_locked'));
 
         $this->validate([
             'newUserId' => 'required|integer|exists:users,id',
@@ -108,6 +110,7 @@ class Manage extends Component
     public function removeMember(int $userId, RemoveMember $action): void
     {
         $this->authorize('update', $this->tenant);
+        abort_if(Demo::enabled(), 403, __('demo.members_locked'));
 
         $member = User::query()->findOrFail($userId);
 

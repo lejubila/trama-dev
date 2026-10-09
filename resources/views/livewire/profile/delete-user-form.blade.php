@@ -13,6 +13,8 @@ new class extends Component
      */
     public function deleteUser(Logout $logout): void
     {
+        abort_if(\App\Support\Demo::enabled(), 403, __('demo.account_locked'));
+
         $this->validate([
             'password' => ['required', 'string', 'current_password'],
         ]);

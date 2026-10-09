@@ -17,6 +17,8 @@ new class extends Component
      */
     public function updatePassword(): void
     {
+        abort_if(\App\Support\Demo::enabled(), 403, __('demo.account_locked'));
+
         try {
             $validated = $this->validate([
                 'current_password' => ['required', 'string', 'current_password'],

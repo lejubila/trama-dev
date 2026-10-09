@@ -69,7 +69,11 @@
     @endif
 
     @if ($activeTab === 'members')
+        @demo
+            <p class="text-sm text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/20 rounded-md px-3 py-2 mb-3">{{ __('demo.members_locked') }}</p>
+        @enddemo
         @can('update', $tenant)
+        @unless (App\Support\Demo::enabled())
             <p class="text-sm text-gray-500 dark:text-slate-400 mb-3">{!! __('tenants.members_help_html') !!}</p>
             <form wire:submit="addMember" class="bg-white dark:bg-slate-800 shadow ring-1 ring-black ring-opacity-5 dark:ring-slate-600 rounded-md p-4 mb-6 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
                 <div>
@@ -88,6 +92,7 @@
                 </div>
                 <button type="submit" @disabled($candidates->isEmpty()) class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">{{ __('common.assign') }}</button>
             </form>
+        @endunless
         @endcan
 
         <div class="bg-white dark:bg-slate-800 shadow ring-1 ring-black ring-opacity-5 dark:ring-slate-600 rounded-md overflow-hidden">
@@ -105,13 +110,13 @@
                             <td class="px-4 py-3 font-medium text-gray-900 dark:text-slate-100">{{ $m->name }}</td>
                             <td class="px-4 py-3 text-gray-600 dark:text-slate-400">{{ $m->email }}</td>
                             <td class="px-4 py-3 text-right">
-                                @can('update', $tenant)
+                                @if (! App\Support\Demo::enabled() && auth()->user()->can('update', $tenant))
                                     <button
                                         wire:click="removeMember({{ $m->id }})"
                                         wire:confirm="{{ __('tenants.remove_member_confirm', ['name' => $m->name]) }}"
                                         class="text-xs text-red-600 hover:text-red-800"
                                     >{{ __('common.remove') }}</button>
-                                @endcan
+                                @endif
                             </td>
                         </tr>
                     @empty

@@ -7,6 +7,8 @@ namespace App\Providers;
 use App\Models\NetworkInterface;
 use App\Models\User;
 use App\Observers\NetworkInterfacePairObserver;
+use App\Support\Demo;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -31,6 +33,17 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.force_https')) {
             URL::forceScheme('https');
         }
+
+        // Demo mode: nobody may manage users, not even the (admin) demo
+        // account. Registered before the admin bypass so false wins.
+        Gate::before(function (User $user, string $ability, array $arguments): ?bool {
+            $target = $arguments[0] ?? null;
+            $onUsers = $target instanceof User || $target === User::class;
+
+            return Demo::enabled() && $onUsers && in_array($ability, Demo::LOCKED_USER_ABILITIES, true) ? false : null;
+        });
+
+        Blade::if('demo', fn (): bool => Demo::enabled());
 
         // Admin is a global superuser: it bypasses every Policy. Returning null
         // (not false) lets non-admins fall through to the individual policies.

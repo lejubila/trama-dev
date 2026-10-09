@@ -7,11 +7,17 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    <livewire:profile.update-profile-information-form />
+            @demo
+                <div class="p-4 sm:p-6 bg-amber-50 border border-amber-200 text-amber-900 sm:rounded-lg text-sm">
+                    {{ __('demo.account_locked') }}
                 </div>
-            </div>
+            @else
+                <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+                    <div class="max-w-xl">
+                        <livewire:profile.update-profile-information-form />
+                    </div>
+                </div>
+            @enddemo
 
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <div class="max-w-xl">
@@ -19,17 +25,19 @@
                 </div>
             </div>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    <livewire:profile.update-password-form />
+            @unless (App\Support\Demo::enabled())
+                <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+                    <div class="max-w-xl">
+                        <livewire:profile.update-password-form />
+                    </div>
                 </div>
-            </div>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    <livewire:profile.delete-user-form />
+                <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+                    <div class="max-w-xl">
+                        <livewire:profile.delete-user-form />
+                    </div>
                 </div>
-            </div>
+            @endunless
         </div>
     </div>
 </x-app-layout>

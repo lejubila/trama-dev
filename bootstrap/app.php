@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\DisabledInDemo;
 use App\Http\Middleware\EnsureTenantHeader;
 use App\Http\Middleware\ForceHttpsRequest;
 use App\Http\Middleware\SetCurrentTenant;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ->trustProxies(at: '*');
         $middleware->alias([
             'tenant.required' => EnsureTenantHeader::class,
+            'demo.disabled' => DisabledInDemo::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

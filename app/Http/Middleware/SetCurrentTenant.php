@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Models\Tenant;
+use App\Support\Tenancy\CurrentTenant;
 use App\Support\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
@@ -26,7 +27,9 @@ class SetCurrentTenant
             ? Tenant::query()
             : $user->tenants();
 
-        $current = $user->current_tenant_id;
+        $current = CurrentTenant::perSession()
+            ? $request->session()->get(CurrentTenant::SESSION_KEY)
+            : $user->current_tenant_id;
 
         $valid = $current !== null
             && (clone $accessibleQuery)->whereKey($current)->exists();
@@ -35,7 +38,12 @@ class SetCurrentTenant
             // Bootstrap (or repair) the current tenant with the first accessible one.
             $first = (clone $accessibleQuery)->orderBy('tenants.id')->first();
             $current = $first?->getKey();
-            $user->forceFill(['current_tenant_id' => $current])->save();
+            CurrentTenant::set($user, $current);
+        } elseif (CurrentTenant::perSession()) {
+            // Policies read current_tenant_id from the model: mirror the
+            // session value in memory, never on the shared demo row.
+            $user->setAttribute('current_tenant_id', $current);
+            $user->syncOriginalAttribute('current_tenant_id');
         }
 
         if ($current !== null) {

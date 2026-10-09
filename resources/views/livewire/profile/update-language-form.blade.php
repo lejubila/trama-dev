@@ -10,7 +10,8 @@ new class extends Component
 
     public function mount(): void
     {
-        $this->locale = Auth::user()->preferredLocale() ?? app()->getLocale();
+        // In the demo the account is shared, so the choice lives in the session.
+        $this->locale = (\App\Support\Demo::enabled() ? null : Auth::user()->preferredLocale()) ?? app()->getLocale();
     }
 
     public function updateLanguage(): void
@@ -19,7 +20,11 @@ new class extends Component
             'locale' => ['required', 'string', Rule::in(config('app.supported_locales'))],
         ]);
 
-        Auth::user()->setLocalePreference($validated['locale']);
+        if (\App\Support\Demo::enabled()) {
+            session()->put('locale', $validated['locale']);
+        } else {
+            Auth::user()->setLocalePreference($validated['locale']);
+        }
 
         // Full redirect so SetLocale middleware re-applies the new locale across
         // the whole UI (menu, layout, this page) on the next request.

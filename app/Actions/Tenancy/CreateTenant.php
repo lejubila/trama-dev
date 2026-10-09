@@ -6,6 +6,7 @@ namespace App\Actions\Tenancy;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Tenancy\CurrentTenant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -36,7 +37,7 @@ class CreateTenant
                 'settings' => [],
             ]);
 
-            $creator->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
+            CurrentTenant::set($creator, (int) $tenant->getKey());
 
             return $tenant;
         });

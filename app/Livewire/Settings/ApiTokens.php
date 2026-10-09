@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Settings;
 
+use App\Support\Demo;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
@@ -21,8 +22,15 @@ class ApiTokens extends Component
     /** Plain-text token shown ONCE right after creation; cleared on next render. */
     public ?string $newPlainToken = null;
 
+    public function mount(): void
+    {
+        // Tokens are long-lived credentials for the shared demo account.
+        abort_if(Demo::enabled(), 403, __('demo.tokens_locked'));
+    }
+
     public function create(): void
     {
+        abort_if(Demo::enabled(), 403, __('demo.tokens_locked'));
         $this->validate();
 
         $token = auth()->user()->createToken(
