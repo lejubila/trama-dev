@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Support\Demo;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -32,3 +33,11 @@ Artisan::command('exports:cleanup {--hours=24 : retention window}', function ():
 })->purpose('Delete export files older than --hours');
 
 Schedule::command('exports:cleanup')->dailyAt('03:00');
+
+// Public demo: wipe and restore the demo dataset once a day. The command
+// itself also refuses to run when DEMO_MODE is off.
+Schedule::command('demo:reset')
+    ->dailyAt((string) config('demo.reset_time', '03:00'))
+    ->timezone((string) config('demo.timezone', 'Europe/Rome'))
+    ->when(fn (): bool => Demo::enabled())
+    ->withoutOverlapping();

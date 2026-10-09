@@ -125,6 +125,46 @@ Apri il progetto con Claude Code e digita semplicemente:
 
 Claude Code procederà fase per fase, fermandosi a fine di ognuna per chiedere conferma.
 
+## Pubblicare la demo
+
+Trama può girare come **demo pubblica**: i visitatori entrano con un click,
+modificano liberamente i dati (tranne gli utenti) e ogni giorno tutto viene
+cancellato e ripristinato.
+
+> ⚠️ Con `DEMO_MODE=true` il comando `demo:reset` **cancella tutti i dati**.
+> Usala solo su un'installazione dedicata alla demo.
+
+1. Prepara i dati: crea (anche in locale) un cliente dimostrativo curato, con foto,
+   planimetrie, Wi-Fi, VPN, documenti e snapshot, ed esportalo da
+   *Clienti → Esporta dati*. Metti lo `.zip` in `database/demo/`; ogni archivio
+   presente lì diventa un cliente della demo.
+2. Nel `.env` del server demo:
+   ```dotenv
+   APP_ENV=production
+   APP_DEBUG=false
+   MAIL_MAILER=log
+   DEMO_MODE=true
+   DEMO_USER_EMAIL=demo@trama.test
+   DEMO_USER_PASSWORD=demo
+   DEMO_RESET_TIME=03:00
+   DEMO_TIMEZONE=Europe/Rome
+   ```
+3. Avvia anche lo scheduler e fai il primo popolamento:
+   ```bash
+   docker compose up -d scheduler
+   docker compose exec app php artisan demo:reset
+   ```
+
+In modalità demo:
+- la pagina di login mostra il pulsante **Entra nella demo** e le credenziali;
+- un banner su ogni pagina avvisa che i dati vengono ripristinati ogni giorno
+  (con il conto alla rovescia), e dopo un reset compare un avviso;
+- sono disattivati gestione utenti, modifica di profilo/email/password,
+  eliminazione dell'account, token API, assegnazione utenti ai clienti e
+  recupero password;
+- lingua e cliente attivo sono salvati nella sessione del visitatore, perché
+  l'account demo è condiviso.
+
 ## Licenza
 
 Copyright © 2026 David Bigagli.
