@@ -127,4 +127,9 @@ Claude Code procederà fase per fase, fermandosi a fine di ognuna per chiedere c
 
 ## Licenza
 
-Privato / da definire.
+Copyright © 2026 David Bigagli.
+
+Trama Network è distribuito con licenza [Apache License 2.0](LICENSE): puoi usarlo,
+modificarlo e ridistribuirlo liberamente, anche per scopi commerciali, a condizione di
+mantenere la nota di copyright, il file [NOTICE](NOTICE) con l'attribuzione all'autore
+originale e di indicare le modifiche apportate.
