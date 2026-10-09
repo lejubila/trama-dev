@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Trama') }}</title>
+        <title>@demo[{{ __('demo.badge') }}] @enddemo{{ config('app.name', 'Trama') }}</title>
 
         <link rel="icon" type="image/svg+xml" href="{{ asset('logo_favicon.svg') }}">
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon_32.png') }}">
@@ -29,6 +29,7 @@
              x-effect="$dispatch('sidebar-state', { open: sidebar })">
             <!-- Top bar — hidden in topology fullscreen mode -->
             <div x-show="!fullscreen">
+                <x-demo-banner />
                 <livewire:layout.navigation />
             </div>
 
@@ -67,7 +68,9 @@
                             @endcan
                             <x-nav-item :href="route('imports.index')" :active="request()->routeIs('imports.*')" icon="clock">{{ __('nav.imports') }}</x-nav-item>
                             <x-nav-item :href="route('audit.index')" :active="request()->routeIs('audit.*')" icon="clock">{{ __('nav.audit') }}</x-nav-item>
+                            @unless (App\Support\Demo::enabled())
                             <x-nav-item :href="route('settings.api-tokens')" :active="request()->routeIs('settings.*')" icon="link">{{ __('nav.api_tokens') }}</x-nav-item>
+                            @endunless
                         </x-nav-section>
                     </nav>
                     <livewire:layout.profile-menu />

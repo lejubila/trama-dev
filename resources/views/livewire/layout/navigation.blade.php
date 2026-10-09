@@ -26,6 +26,9 @@ new class extends Component
                     <a href="{{ route('dashboard') }}" wire:navigate>
                         <x-application-logo class="block h-9 w-auto" />
                     </a>
+                    @demo
+                        <span class="ms-2 inline-flex items-center rounded bg-amber-400 px-1.5 py-0.5 text-xs font-bold tracking-wider text-amber-950">{{ __('demo.badge') }}</span>
+                    @enddemo
                 </div>
 
                 <!-- Navigation Links -->

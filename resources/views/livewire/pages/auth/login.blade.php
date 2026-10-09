@@ -1,7 +1,12 @@
 <?php
 
 use App\Livewire\Forms\LoginForm;
+use App\Models\User;
+use App\Support\Demo;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
@@ -22,11 +27,49 @@ new #[Layout('layouts.guest')] class extends Component
 
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
+
+    /**
+     * One-click access to the shared demo account (demo mode only).
+     */
+    public function loginAsDemo(): void
+    {
+        abort_unless(Demo::enabled(), 404);
+
+        $key = 'demo-login:'.request()->ip();
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            throw ValidationException::withMessages([
+                'form.email' => trans('auth.throttle', ['seconds' => RateLimiter::availableIn($key)]),
+            ]);
+        }
+        RateLimiter::hit($key, 60);
+
+        $user = User::query()->where('email', config('demo.user.email'))->first();
+        if ($user === null) {
+            throw ValidationException::withMessages(['form.email' => __('demo.not_available')]);
+        }
+
+        Auth::login($user);
+        Session::regenerate();
+
+        $this->redirect(route('dashboard', absolute: false), navigate: true);
+    }
 }; ?>
 
 <div>
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
+
+    @demo
+        <div class="mb-6 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <h2 class="text-base font-semibold">{{ __('demo.login_title') }}</h2>
+            <p class="mt-1">{{ __('demo.login_text', ['time' => App\Support\Demo::resetTimeLabel()]) }}</p>
+            <button type="button" wire:click="loginAsDemo" wire:loading.attr="disabled"
+                    class="mt-3 w-full inline-flex justify-center rounded-md bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-700 disabled:opacity-50">
+                {{ __('demo.login_button') }}
+            </button>
+            <p class="mt-2 text-xs text-amber-800">{{ __('demo.login_credentials', ['email' => config('demo.user.email'), 'password' => config('demo.user.password')]) }}</p>
+        </div>
+    @enddemo
 
     <form wire:submit="login">
         <!-- Email Address -->
@@ -57,7 +100,7 @@ new #[Layout('layouts.guest')] class extends Component
         </div>
 
         <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
+            @if (Route::has('password.request') && ! App\Support\Demo::enabled())
                 <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}" wire:navigate>
                     {{ __('Forgot your password?') }}
                 </a>
