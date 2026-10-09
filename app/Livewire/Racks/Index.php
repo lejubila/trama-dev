@@ -165,7 +165,7 @@ class Index extends Component
                 $rack->update(['icon_path' => $this->storeIcon($this->iconUpload, null, (int) $rack->tenant_id)]);
             }
 
-            $message = 'Rack creato.';
+            $message = __('racks.toast_created');
         }
 
         $this->showForm = false;

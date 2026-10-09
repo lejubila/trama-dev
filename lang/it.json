@@ -34,5 +34,9 @@
     "Are you sure you want to delete your account?": "Sei sicuro di voler eliminare il tuo account?",
     "Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.": "Una volta eliminato l'account, tutte le sue risorse e i suoi dati verranno cancellati definitivamente. Prima di procedere, scarica eventuali dati o informazioni che desideri conservare.",
     "Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.": "Una volta eliminato l'account, tutte le sue risorse e i suoi dati verranno cancellati definitivamente. Inserisci la password per confermare di voler eliminare definitivamente il tuo account.",
-    "Cancel": "Annulla"
+    "Cancel": "Annulla",
+    "Showing": "Mostrati",
+    "to": "a",
+    "of": "di",
+    "results": "risultati"
 }

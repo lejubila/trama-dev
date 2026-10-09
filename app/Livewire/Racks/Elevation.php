@@ -224,9 +224,12 @@ class Elevation extends Component
 
         $equipment->tags()->sync($this->selectedTagIds);
 
-        $sideLabel = $this->orient === 'rear' ? ' (posteriore)' : ' (anteriore)';
-        $location = $this->onTop ? 'sopra il rack' : "in U{$this->selectedU}{$sideLabel}";
-        $this->dispatch('toast', type: 'success', message: "Dispositivo \"{$this->name}\" creato {$location}.");
+        $message = match (true) {
+            $this->onTop => __('racks.toast_eq_created_on_top', ['name' => $this->name]),
+            $this->orient === 'rear' => __('racks.toast_eq_created_rear', ['name' => $this->name, 'u' => $this->selectedU]),
+            default => __('racks.toast_eq_created_front', ['name' => $this->name, 'u' => $this->selectedU]),
+        };
+        $this->dispatch('toast', type: 'success', message: $message);
         $this->closeForm();
     }
 
