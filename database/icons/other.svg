@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Generica</title>
+  <desc>Dispositivo di rete generico con punto interrogativo</desc>
+  <!-- Ombra -->
+  <ellipse cx="64" cy="106" rx="38" ry="4" fill="#2C2C2A" opacity="0.12"/>
+
+  <!-- Punto interrogativo sopra -->
+  <g transform="translate(64, 30)">
+    <!-- Cerchio di sfondo -->
+    <circle cx="0" cy="0" r="14" fill="#888780" stroke="#2C2C2A" stroke-width="1.5"/>
+    <!-- Punto interrogativo -->
+    <text x="0" y="6" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">?</text>
+  </g>
+
+  <!-- Linea connessione -->
+  <line x1="64" y1="46" x2="64" y2="62" stroke="#888780" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Case generico: cubo neutro -->
+  <g transform="translate(64, 78)">
+    <path d="M -32 -8 L 0 -24 L 32 -8 L 0 8 Z" fill="#E8E6DE" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M -32 -8 L 0 8 L 0 26 L -32 10 Z" fill="#B4B2A9" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M 0 8 L 32 -8 L 32 10 L 0 26 Z" fill="#888780" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- Display LED neutri sul front -->
+    <g transform="translate(-32, -8) skewY(26.5)">
+      <rect x="6" y="10" width="14" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.5" rx="0.3"/>
+      <circle cx="24" cy="15" r="1" fill="#888780"/>
+      <circle cx="27" cy="17" r="1" fill="#888780"/>
+    </g>
+  </g>
+</svg>

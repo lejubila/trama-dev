@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Notebook</title>
+  <desc>Notebook portatile aperto con schermo, tastiera con tasti singoli</desc>
+  <!-- Ombra -->
+  <ellipse cx="64" cy="114" rx="40" ry="4" fill="#2C2C2A" opacity="0.12"/>
+
+  <g transform="translate(64, 64)">
+
+    <!-- ============ BASE ============ -->
+    <!-- TOP base -->
+    <path d="M -30 -16 L 50 8 L 14 30 L -66 6 Z"
+          fill="#E8E6DE" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- Lato spessore destro -->
+    <path d="M 50 8 L 14 30 L 14 34 L 50 12 Z"
+          fill="#888780" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- Lato spessore frontale -->
+    <path d="M -66 6 L 14 30 L 14 34 L -66 10 Z"
+          fill="#B4B2A9" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- ============ TASTIERA (tasti singoli isometrici) ============ -->
+    <g fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.5" stroke-linejoin="round">
+
+      <!-- FILA 1 (più lontana) -->
+      <g transform="translate(-46, -10)">
+        <path d="M 0 0 L 5 1.5 L 3 4 L -2 2.5 Z"/>
+        <path d="M 7 2 L 12 3.5 L 10 6 L 5 4.5 Z"/>
+        <path d="M 14 4 L 19 5.5 L 17 8 L 12 6.5 Z"/>
+        <path d="M 21 6 L 26 7.5 L 24 10 L 19 8.5 Z"/>
+        <path d="M 28 8 L 33 9.5 L 31 12 L 26 10.5 Z"/>
+        <path d="M 35 10 L 40 11.5 L 38 14 L 33 12.5 Z"/>
+        <path d="M 42 12 L 47 13.5 L 45 16 L 40 14.5 Z"/>
+        <path d="M 49 14 L 54 15.5 L 52 18 L 47 16.5 Z"/>
+        <path d="M 56 16 L 61 17.5 L 59 20 L 54 18.5 Z"/>
+        <path d="M 63 18 L 68 19.5 L 66 22 L 61 20.5 Z"/>
+        <path d="M 70 20 L 75 21.5 L 73 24 L 68 22.5 Z"/>
+      </g>
+
+      <!-- FILA 2 -->
+      <g transform="translate(-48, -5)">
+        <path d="M 0 0 L 5 1.5 L 3 4 L -2 2.5 Z"/>
+        <path d="M 7 2 L 12 3.5 L 10 6 L 5 4.5 Z"/>
+        <path d="M 14 4 L 19 5.5 L 17 8 L 12 6.5 Z"/>
+        <path d="M 21 6 L 26 7.5 L 24 10 L 19 8.5 Z"/>
+        <path d="M 28 8 L 33 9.5 L 31 12 L 26 10.5 Z"/>
+        <path d="M 35 10 L 40 11.5 L 38 14 L 33 12.5 Z"/>
+        <path d="M 42 12 L 47 13.5 L 45 16 L 40 14.5 Z"/>
+        <path d="M 49 14 L 54 15.5 L 52 18 L 47 16.5 Z"/>
+        <path d="M 56 16 L 61 17.5 L 59 20 L 54 18.5 Z"/>
+        <path d="M 63 18 L 68 19.5 L 66 22 L 61 20.5 Z"/>
+        <path d="M 70 20 L 75 21.5 L 73 24 L 68 22.5 Z"/>
+      </g>
+
+      <!-- FILA 3 -->
+      <g transform="translate(-50, 0)">
+        <path d="M 0 0 L 5 1.5 L 3 4 L -2 2.5 Z"/>
+        <path d="M 7 2 L 12 3.5 L 10 6 L 5 4.5 Z"/>
+        <path d="M 14 4 L 19 5.5 L 17 8 L 12 6.5 Z"/>
+        <path d="M 21 6 L 26 7.5 L 24 10 L 19 8.5 Z"/>
+        <path d="M 28 8 L 33 9.5 L 31 12 L 26 10.5 Z"/>
+        <path d="M 35 10 L 40 11.5 L 38 14 L 33 12.5 Z"/>
+        <path d="M 42 12 L 47 13.5 L 45 16 L 40 14.5 Z"/>
+        <path d="M 49 14 L 54 15.5 L 52 18 L 47 16.5 Z"/>
+        <path d="M 56 16 L 61 17.5 L 59 20 L 54 18.5 Z"/>
+        <path d="M 63 18 L 68 19.5 L 66 22 L 61 20.5 Z"/>
+        <path d="M 70 20 L 75 21.5 L 73 24 L 68 22.5 Z"/>
+      </g>
+
+      <!-- FILA 4 (con barra spazio lunga) -->
+      <g transform="translate(-52, 5)">
+        <path d="M 0 0 L 5 1.5 L 3 4 L -2 2.5 Z"/>
+        <path d="M 7 2 L 12 3.5 L 10 6 L 5 4.5 Z"/>
+        <path d="M 14 4 L 40 11.5 L 38 14 L 12 6.5 Z"/>
+        <path d="M 42 12 L 47 13.5 L 45 16 L 40 14.5 Z"/>
+        <path d="M 49 14 L 54 15.5 L 52 18 L 47 16.5 Z"/>
+        <path d="M 56 16 L 61 17.5 L 59 20 L 54 18.5 Z"/>
+        <path d="M 63 18 L 68 19.5 L 66 22 L 61 20.5 Z"/>
+        <path d="M 70 20 L 75 21.5 L 73 24 L 68 22.5 Z"/>
+      </g>
+    </g>
+
+    <!-- ============ SCHERMO ============ -->
+    <!-- Retro schermo (visibile dietro) -->
+    <path d="M -30 -16 L 50 8 L 50 -54 L -30 -78 Z"
+          fill="#B4B2A9" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- Cornice (bezel scuro) -->
+    <path d="M -26 -19 L 46 4 L 46 -50 L -26 -72 Z"
+          fill="#2C2C2A" stroke="#1A1918" stroke-width="1" stroke-linejoin="round"/>
+    <!-- Schermo interno blu -->
+    <path d="M -22 -22 L 42 0 L 42 -46 L -22 -68 Z"
+          fill="#0C447C" stroke="#04223F" stroke-width="0.8" stroke-linejoin="round"/>
+
+    <!-- Barra menu -->
+    <path d="M -22 -68 L 42 -46 L 42 -42 L -22 -64 Z" fill="#E8E6DE"/>
+    <circle cx="38" cy="-45" r="0.9" fill="#1D9E75"/>
+    <circle cx="34" cy="-46" r="0.9" fill="#FFC107"/>
+    <circle cx="30" cy="-47" r="0.9" fill="#C62828"/>
+
+    <!-- Finestre simulate -->
+    <path d="M -18 -60 L 8 -52 L 8 -34 L -18 -42 Z" fill="#1565C0" opacity="0.7"/>
+    <path d="M 10 -50 L 38 -40 L 38 -22 L 10 -32 Z" fill="#FFFFFF" opacity="0.85"/>
+    <line x1="14" y1="-46" x2="34" y2="-38" stroke="#5F5E5A" stroke-width="0.4" opacity="0.6"/>
+    <line x1="14" y1="-42" x2="32" y2="-34" stroke="#5F5E5A" stroke-width="0.4" opacity="0.6"/>
+    <line x1="14" y1="-38" x2="34" y2="-30" stroke="#5F5E5A" stroke-width="0.4" opacity="0.6"/>
+
+    <!-- Camera/LED in alto -->
+    <circle cx="10" cy="-60" r="0.8" fill="#2C2C2A"/>
+  </g>
+</svg>

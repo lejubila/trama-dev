@@ -110,6 +110,12 @@ docker compose exec app php artisan queue:work
 
 # Reset completo del DB
 docker compose exec app php artisan migrate:fresh --seed
+
+# Icone globali di default (database/icons): installa quelle mancanti
+# su un'installazione esistente, senza toccare quelle già personalizzate
+docker compose exec app php artisan icons:defaults
+# …oppure aggiorna il set di default con le icone globali impostate ora
+docker compose exec app php artisan icons:defaults --export
 ```
 
 ## Struttura del progetto

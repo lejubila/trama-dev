@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\Icons\DefaultIcons;
 use App\Services\TenantTransfer\TenantArchiveImporter;
 use App\Services\TenantTransfer\TenantArchiveReader;
 use App\Support\Demo;
@@ -57,6 +58,8 @@ class DemoReset extends Command
             $this->wipeDatabase();
             $this->wipeFiles();
             $demoUser = $this->createDemoUser();
+            // Global icons are not part of tenant archives: restore the bundled set.
+            (new DefaultIcons)->install();
             $imported = $this->restoreData($reader, $importer, $demoUser);
             Demo::markReset();
 

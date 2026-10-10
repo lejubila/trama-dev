@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Switch</title>
+  <desc>Switch di rete con simbolo frecce incrociate (forwarding)</desc>
+  <!-- Ombra base -->
+  <ellipse cx="64" cy="108" rx="42" ry="4" fill="#2C2C2A" opacity="0.12"/>
+
+  <!-- Frecce incrociate (switching) -->
+  <g transform="translate(64, 30)" stroke="#185FA5" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Freccia verso destra -->
+    <path d="M -16 -8 L 16 -8"/>
+    <path d="M 10 -13 L 16 -8 L 10 -3"/>
+    <!-- Freccia verso sinistra -->
+    <path d="M 16 8 L -16 8"/>
+    <path d="M -10 3 L -16 8 L -10 13"/>
+  </g>
+
+  <!-- Linea connessione -->
+  <line x1="64" y1="50" x2="64" y2="68" stroke="#888780" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Case Switch (isometrico, basso e largo) -->
+  <g transform="translate(64, 80)">
+    <path d="M -42 -6 L 0 -22 L 42 -6 L 0 10 Z" fill="#E8E6DE" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M -42 -6 L 0 10 L 0 24 L -42 8 Z" fill="#B4B2A9" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M 0 10 L 42 -6 L 42 8 L 0 24 Z" fill="#888780" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- File di porte sul front (caratteristica switch) -->
+    <g transform="translate(-42, -6) skewY(26.5)">
+      <!-- Fila 1 di 6 porte -->
+      <rect x="5" y="6" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+      <rect x="9" y="8" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+      <rect x="13" y="10" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+      <rect x="17" y="12" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+      <rect x="21" y="14" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+      <rect x="25" y="16" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+      <!-- Fila 2 di 6 porte -->
+      <rect x="5" y="13" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+      <rect x="9" y="15" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+      <rect x="13" y="17" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+      <rect x="17" y="19" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+      <rect x="21" y="21" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+      <rect x="25" y="23" width="3" height="3" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4"/>
+    </g>
+  </g>
+</svg>

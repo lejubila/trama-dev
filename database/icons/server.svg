@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Server</title>
+  <desc>Server tower con drive bay e griglia di ventilazione</desc>
+  <!-- Ombra -->
+  <ellipse cx="64" cy="116" rx="40" ry="4" fill="#2C2C2A" opacity="0.12"/>
+
+  <!-- Case Server: tower verticale -->
+  <g transform="translate(64, 64)">
+    <!-- TOP face -->
+    <path d="M -36 -36 L 0 -56 L 36 -36 L 0 -16 Z" fill="#E8E6DE" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- FRONT face (alto) -->
+    <path d="M -36 -36 L 0 -16 L 0 48 L -36 28 Z" fill="#B4B2A9" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- SIDE face -->
+    <path d="M 0 -16 L 36 -36 L 36 28 L 0 48 Z" fill="#888780" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- Dettagli sul front -->
+    <g transform="translate(-36, -36) skewY(28.5)">
+      <!-- 2 slot drive bay -->
+      <rect x="5" y="6" width="20" height="5" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.6" rx="0.5"/>
+      <rect x="5" y="14" width="20" height="5" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.6" rx="0.5"/>
+
+      <!-- LED -->
+      <circle cx="29" cy="9" r="1" fill="#1D9E75"/>
+      <circle cx="29" cy="17" r="1" fill="#1D9E75"/>
+
+      <!-- Griglia ventilazione 3 fessure -->
+      <rect x="5" y="44" width="26" height="2.5" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4" rx="0.3"/>
+      <rect x="5" y="49" width="26" height="2.5" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4" rx="0.3"/>
+      <rect x="5" y="54" width="26" height="2.5" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.4" rx="0.3"/>
+    </g>
+  </g>
+</svg>

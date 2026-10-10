@@ -7,9 +7,11 @@ use App\Livewire\Settings\ApiTokens;
 use App\Livewire\Sites\Index as SitesIndex;
 use App\Livewire\Tenants\Manage as TenantsManage;
 use App\Livewire\Users\Index as UsersIndex;
+use App\Models\DeviceIcon;
 use App\Models\Site;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Icons\DefaultIcons;
 use App\Services\TenantTransfer\TenantArchiveExporter;
 use App\Support\Demo;
 use App\Support\Tenancy\CurrentTenant;
@@ -181,6 +183,7 @@ it('wipes everything and restores the demo archives', function (): void {
         ->and(User::query()->pluck('email')->all())->toBe(['demo@trama.test'])
         ->and(User::query()->first()->role)->toBe(UserRole::Admin)
         ->and(Storage::disk('public')->exists("rack-photos/{$junk->getKey()}/1/x.jpg"))->toBeFalse()
+        ->and(DeviceIcon::query()->whereNull('tenant_id')->count())->toBe(count((new DefaultIcons)->bundled()))
         ->and(Cache::get(Demo::LAST_RESET_KEY))->toBeInt();
 
     array_map('unlink', glob($dir.'/*'));

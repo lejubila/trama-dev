@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Firewall</title>
+  <desc>Firewall con simbolo fiamma (barriera di sicurezza)</desc>
+  <!-- Ombra -->
+  <ellipse cx="64" cy="108" rx="42" ry="4" fill="#2C2C2A" opacity="0.12"/>
+
+  <!-- Case Firewall: cubo scuro (muro) -->
+  <g transform="translate(64, 72)">
+    <!-- TOP face (scuro) -->
+    <path d="M -38 -18 L 0 -38 L 38 -18 L 0 2 Z" fill="#5F5E5A" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- FRONT (più scuro) -->
+    <path d="M -38 -18 L 0 2 L 0 36 L -38 18 Z" fill="#444441" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- SIDE -->
+    <path d="M 0 2 L 38 -18 L 38 18 L 0 36 Z" fill="#888780" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- Linee mattoni sul front -->
+    <g transform="translate(-38, -18) skewY(28)" stroke="#2C2C2A" stroke-width="0.5" opacity="0.6">
+      <line x1="2" y1="8" x2="36" y2="8"/>
+      <line x1="2" y1="16" x2="36" y2="16"/>
+      <line x1="2" y1="24" x2="36" y2="24"/>
+      <line x1="12" y1="2" x2="12" y2="8"/>
+      <line x1="24" y1="2" x2="24" y2="8"/>
+      <line x1="6" y1="8" x2="6" y2="16"/>
+      <line x1="18" y1="8" x2="18" y2="16"/>
+      <line x1="30" y1="8" x2="30" y2="16"/>
+      <line x1="12" y1="16" x2="12" y2="24"/>
+      <line x1="24" y1="16" x2="24" y2="24"/>
+    </g>
+
+    <!-- Fiamma davanti al muro -->
+    <g transform="translate(8, 12)">
+      <!-- Fiamma esterna arancio -->
+      <path d="M 0 18 Q -10 12 -8 0 Q -4 6 -2 0 Q 2 -10 0 -18 Q 8 -10 10 -2 Q 14 6 12 14 Q 8 22 0 18 Z"
+            fill="#FF6B1A" stroke="#A33D00" stroke-width="1.2" stroke-linejoin="round"/>
+      <!-- Fiamma interna gialla -->
+      <path d="M 0 14 Q -4 10 -3 4 Q 0 -2 0 -10 Q 5 -2 6 4 Q 7 10 0 14 Z"
+            fill="#FFD180" stroke="none"/>
+    </g>
+  </g>
+</svg>

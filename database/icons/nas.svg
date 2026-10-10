@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>NAS</title>
+  <desc>NAS con simbolo hard disk (cilindri impilati)</desc>
+  <!-- Ombra -->
+  <ellipse cx="64" cy="116" rx="38" ry="4" fill="#2C2C2A" opacity="0.12"/>
+
+  <!-- Hard disk simbolo (cilindri impilati) -->
+  <g transform="translate(64, 30)">
+    <!-- Disco inferiore -->
+    <ellipse cx="0" cy="10" rx="13" ry="3.5" fill="#888780" stroke="#2C2C2A" stroke-width="1.2"/>
+    <!-- Parete tra mid e bottom -->
+    <path d="M -13 5 L -13 10 M 13 5 L 13 10" stroke="#2C2C2A" stroke-width="1.2" fill="none"/>
+    <path d="M -13 10 Q -13 13.5 0 13.5 Q 13 13.5 13 10" stroke="#2C2C2A" stroke-width="1.2" fill="#888780"/>
+    <!-- Disco medio -->
+    <ellipse cx="0" cy="5" rx="13" ry="3.5" fill="#B4B2A9" stroke="#2C2C2A" stroke-width="1.2"/>
+    <path d="M -13 0 L -13 5 M 13 0 L 13 5" stroke="#2C2C2A" stroke-width="1.2" fill="none"/>
+    <!-- Disco superiore -->
+    <ellipse cx="0" cy="0" rx="13" ry="3.5" fill="#E8E6DE" stroke="#2C2C2A" stroke-width="1.2"/>
+    <!-- Tracce piatto -->
+    <ellipse cx="0" cy="0" rx="8" ry="2.2" fill="none" stroke="#888780" stroke-width="0.6"/>
+    <ellipse cx="0" cy="0" rx="4" ry="1.2" fill="none" stroke="#888780" stroke-width="0.6"/>
+    <circle cx="0" cy="0" r="0.8" fill="#5F5E5A"/>
+  </g>
+
+  <!-- Linea connessione -->
+  <line x1="64" y1="48" x2="64" y2="62" stroke="#888780" stroke-width="1" stroke-dasharray="2 2"/>
+
+  <!-- Case NAS: tower con 4 drive bay prominenti -->
+  <g transform="translate(64, 64)">
+    <path d="M -34 -2 L 0 -22 L 34 -2 L 0 18 Z" fill="#E8E6DE" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M -34 -2 L 0 18 L 0 56 L -34 36 Z" fill="#B4B2A9" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M 0 18 L 34 -2 L 34 36 L 0 56 Z" fill="#888780" stroke="#5F5E5A" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- 4 Drive bay prominenti -->
+    <g transform="translate(-34, -2) skewY(28)">
+      <rect x="5" y="6" width="24" height="8" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.6" rx="0.5"/>
+      <rect x="5" y="16" width="24" height="8" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.6" rx="0.5"/>
+      <rect x="5" y="26" width="24" height="8" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.6" rx="0.5"/>
+      <rect x="5" y="36" width="24" height="8" fill="#FFFFFF" stroke="#5F5E5A" stroke-width="0.6" rx="0.5"/>
+
+      <!-- LED status -->
+      <circle cx="8" cy="10" r="0.9" fill="#1D9E75"/>
+      <circle cx="8" cy="20" r="0.9" fill="#1D9E75"/>
+      <circle cx="8" cy="30" r="0.9" fill="#1D9E75"/>
+      <circle cx="8" cy="40" r="0.9" fill="#FAC775"/>
+
+      <!-- Maniglie -->
+      <rect x="23" y="9" width="4" height="2.5" fill="#888780"/>
+      <rect x="23" y="19" width="4" height="2.5" fill="#888780"/>
+      <rect x="23" y="29" width="4" height="2.5" fill="#888780"/>
+      <rect x="23" y="39" width="4" height="2.5" fill="#888780"/>
+    </g>
+  </g>
+</svg>

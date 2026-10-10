@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>TV</title>
+  <desc>Televisore con schermo blu e piedistallo</desc>
+  <!-- Ombra -->
+  <ellipse cx="64" cy="112" rx="36" ry="4" fill="#2C2C2A" opacity="0.12"/>
+
+  <!-- Schermo TV isometrico (orizzontale, widescreen) -->
+  <g transform="translate(64, 60)">
+    <!-- Lato destro cornice -->
+    <path d="M 42 -28 L 42 12 L 28 4 L 28 -36 Z" fill="#888780" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- TOP cornice -->
+    <path d="M -42 -16 L 28 -36 L 42 -28 L -28 -8 Z" fill="#444441" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round"/>
+    <!-- Cornice fronte -->
+    <path d="M -42 -16 L 28 -36 L 28 4 L -42 24 Z" fill="#5F5E5A" stroke="#2C2C2A" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- Schermo interno blu -->
+    <path d="M -36 -14 L 22 -32 L 22 0 L -36 18 Z" fill="#0C447C" stroke="#04223F" stroke-width="1" stroke-linejoin="round"/>
+    <!-- Riflesso schermo (diagonale luminosa) -->
+    <path d="M -32 -12 L -8 -19 L -14 -3 L -32 3 Z" fill="#1565C0" opacity="0.4"/>
+
+    <!-- LED standby in basso al centro cornice -->
+    <circle cx="-7" cy="14" r="1.3" fill="#1D9E75"/>
+  </g>
+
+  <!-- Collo piedistallo -->
+  <g transform="translate(64, 86)">
+    <path d="M -6 -8 L 6 -12 L 6 0 L -6 4 Z" fill="#5F5E5A" stroke="#2C2C2A" stroke-width="1"/>
+    <!-- Base piatta -->
+    <path d="M -18 4 L 16 -4 L 22 -2 L -12 6 Z" fill="#444441" stroke="#2C2C2A" stroke-width="1" stroke-linejoin="round"/>
+    <path d="M -18 4 L 16 -4 L 16 0 L -18 8 Z" fill="#2C2C2A" stroke="#1A1918" stroke-width="1"/>
+  </g>
+</svg>
