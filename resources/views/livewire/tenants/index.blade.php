@@ -4,7 +4,7 @@
             <a href="{{ route('tenants.import') }}" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-white dark:bg-slate-700 px-3 py-2 text-sm font-medium text-gray-700 dark:text-slate-200 shadow-sm ring-1 ring-gray-300 dark:ring-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600">
                 {{ __('tenants.import') }}
             </a>
-            <button wire:click="openCreate" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+            <button wire:click="openCreate" data-guide="tenants.new" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
                 <x-icon name="plus" class="h-4 w-4" /> {{ __('tenants.new') }}
             </button>
         @endcan
@@ -64,7 +64,7 @@
 
     @if ($showForm)
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-            <div class="bg-white dark:bg-slate-800 rounded-md shadow-lg w-full max-w-md p-6">
+            <div data-guide="tenants.form" class="bg-white dark:bg-slate-800 rounded-md shadow-lg w-full max-w-md p-6">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">{{ __('tenants.new') }}</h2>
                 <form wire:submit="save" class="space-y-3">
                     <div>

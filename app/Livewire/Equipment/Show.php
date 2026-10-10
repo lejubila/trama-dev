@@ -12,6 +12,7 @@ use App\Enums\InterfaceSide;
 use App\Enums\InterfaceStatus;
 use App\Enums\InterfaceType;
 use App\Enums\InterfaceVlanMode;
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
@@ -25,6 +26,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Show extends Component
 {
+    use NotifiesGuide;
+
     public Equipment $equipment;
 
     #[Url(as: 'tab', except: 'general')]
@@ -245,7 +248,7 @@ class Show extends Component
         $this->authorize('create', NetworkInterface::class);
 
         if ($this->shouldCreateAsKeystonePair()) {
-            app(CreateKeystonePair::class)->execute($this->equipment, [
+            [$created] = app(CreateKeystonePair::class)->execute($this->equipment, [
                 'name' => $this->ifName,
                 'connector' => $this->ifConnector !== '' ? $this->ifConnector : null,
                 'description' => $this->ifDescription !== '' ? $this->ifDescription : null,
@@ -253,10 +256,11 @@ class Show extends Component
             ]);
             $this->dispatch('toast', type: 'success', message: __('equipment.toast_port_created'));
         } else {
-            NetworkInterface::create(array_merge($this->basePayload(), ['name' => $this->ifName]));
+            $created = NetworkInterface::create(array_merge($this->basePayload(), ['name' => $this->ifName]));
             $this->dispatch('toast', type: 'success', message: __('equipment.toast_if_created'));
         }
 
+        $this->guideCreated('interface', $created);
         $this->showIfForm = false;
     }
 

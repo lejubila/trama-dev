@@ -8,7 +8,7 @@
         <a href="{{ $cancelUrl }}" wire:navigate class="text-sm text-gray-600 hover:text-gray-800">{{ __('common.cancel_back') }}</a>
     </x-page-header>
 
-    <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md p-6 max-w-3xl">
+    <div data-guide="connections.wizard" class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md p-6 max-w-3xl">
         <ol class="flex gap-x-2 mb-6 text-xs">
             @foreach ([__('connections.col_end_a'), __('connections.col_end_b'), __('connections.step_cable')] as $i => $label)
                 <li class="flex-1 px-3 py-2 rounded-md text-center {{ $step >= $i + 1 ? 'bg-indigo-100 text-indigo-700 font-medium' : 'bg-gray-100 text-gray-500' }}">

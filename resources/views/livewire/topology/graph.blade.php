@@ -164,6 +164,7 @@
             @if ($canEdit)
                 <button
                     x-data
+                    data-guide="topology.save-snapshot"
                     x-on:click="Livewire.dispatch('snapshot-open', { viewState: {
                         siteId: $wire.siteId,
                         roomFilter: $wire.roomFilter,
@@ -205,6 +206,7 @@
     @endif
 
     <div
+        data-guide="topology.canvas"
         x-data="topologyGraph({
             graph: @js($graph),
             layout: @js($layout),

@@ -6,6 +6,7 @@ namespace App\Livewire\Racks;
 
 use App\Enums\EquipmentStatus;
 use App\Enums\EquipmentType;
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Models\Equipment;
 use App\Models\Rack;
 use App\Models\Tag;
@@ -19,7 +20,7 @@ use Livewire\WithFileUploads;
 
 class Elevation extends Component
 {
-    use WithFileUploads;
+    use NotifiesGuide, WithFileUploads;
 
     public Rack $rack;
 
@@ -223,6 +224,7 @@ class Elevation extends Component
         }
 
         $equipment->tags()->sync($this->selectedTagIds);
+        $this->guideCreated('equipment', $equipment);
 
         $message = match (true) {
             $this->onTop => __('racks.toast_eq_created_on_top', ['name' => $this->name]),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Tenants;
 
 use App\Actions\Tenancy\CreateTenant;
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Models\Tenant;
 use App\Support\Tenancy\CurrentTenant;
 use App\Support\Tenancy\TenantContext;
@@ -17,6 +18,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Index extends Component
 {
+    use NotifiesGuide;
+
     public bool $showForm = false;
 
     #[Validate('required|string|max:150')]
@@ -64,6 +67,7 @@ class Index extends Component
         // request so the next render sees the right tenant scope.
         TenantContext::setId($tenant->getKey());
 
+        $this->guideCreated('tenant', $tenant);
         $this->showForm = false;
         $this->dispatch('toast', type: 'success', message: __('tenants.toast_created', ['name' => $tenant->name]));
         $this->redirectRoute('tenants.manage', ['tenant' => $tenant], navigate: true);

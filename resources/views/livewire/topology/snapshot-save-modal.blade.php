@@ -6,7 +6,7 @@
         x-transition.opacity
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
     >
-        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
+        <div data-guide="snapshot.form" class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">
                 {{ $mode === 'overwrite' ? __('topology.snap_replace_title') : __('topology.snap_save_title') }}
             </h3>

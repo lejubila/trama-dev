@@ -56,7 +56,7 @@
         @endif
     </div>
 
-    <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
+    <div data-guide="equipment.list" class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>

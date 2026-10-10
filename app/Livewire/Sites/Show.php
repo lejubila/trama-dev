@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Sites;
 
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Models\Room;
 use App\Models\Site;
 use Illuminate\Contracts\View\View;
@@ -17,7 +18,7 @@ use Livewire\WithFileUploads;
 #[Layout('layouts.app')]
 class Show extends Component
 {
-    use WithFileUploads;
+    use NotifiesGuide, WithFileUploads;
 
     public Site $site;
 
@@ -109,7 +110,7 @@ class Show extends Component
                 $payload['floor_plan_path'] = $this->storeFloorPlan($this->roomFloorPlan, null);
             }
 
-            Room::create($payload);
+            $this->guideCreated('room', Room::create($payload));
             $this->dispatch('toast', type: 'success', message: __('sites.room_toast_created'));
         }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Documents;
 
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Models\Document;
 use App\Models\Equipment;
 use App\Models\Rack;
@@ -24,6 +25,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Editor extends Component
 {
+    use NotifiesGuide;
+
     public ?Document $document = null;
 
     // Header
@@ -474,6 +477,7 @@ class Editor extends Component
                 'parameters' => $parameters,
                 'created_by' => auth()->id(),
             ]);
+            $this->guideCreated('document', $doc);
         }
 
         try {

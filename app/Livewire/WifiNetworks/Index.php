@@ -6,6 +6,7 @@ namespace App\Livewire\WifiNetworks;
 
 use App\Enums\EquipmentType;
 use App\Enums\InterfaceMedia;
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Livewire\Concerns\RemembersFilters;
 use App\Models\NetworkInterface;
 use App\Models\Site;
@@ -20,7 +21,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    use RemembersFilters, WithPagination;
+    use NotifiesGuide, RemembersFilters, WithPagination;
 
     #[Url(except: '')]
     public string $search = '';
@@ -123,6 +124,7 @@ class Index extends Component
         } else {
             $this->authorize('create', WifiNetwork::class);
             $net = WifiNetwork::create($payload);
+            $this->guideCreated('wifi', $net);
             $message = __('wifi.toast_created');
         }
 

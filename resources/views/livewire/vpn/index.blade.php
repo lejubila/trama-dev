@@ -1,7 +1,7 @@
 <div>
     <x-page-header :title="__('vpn.title')" :subtitle="__('vpn.subtitle')">
         @can('create', App\Models\VpnRemoteAccess::class)
-            <button type="button" wire:click="openCreateRemote" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+            <button type="button" wire:click="openCreateRemote" data-guide="vpn.new-remote" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
                 <x-icon name="plus" class="h-4 w-4" />
                 {{ __('vpn.new_remote') }}
             </button>
@@ -101,7 +101,7 @@
 
     @if ($formType !== '')
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-            <div class="bg-white rounded-md shadow-lg w-full max-w-lg p-6">
+            <div data-guide="vpn.form" class="bg-white rounded-md shadow-lg w-full max-w-lg p-6">
                 <h2 class="text-lg font-semibold mb-4">
                     {{ $editingId
                         ? ($formType === 'remote' ? __('vpn.form_edit_remote') : __('vpn.form_edit_site'))

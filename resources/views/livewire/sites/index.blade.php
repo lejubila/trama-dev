@@ -4,6 +4,7 @@
             <button
                 type="button"
                 wire:click="openCreate"
+                data-guide="sites.new"
                 class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
             >
                 <x-icon name="plus" class="h-4 w-4" />
@@ -21,7 +22,7 @@
         />
     </div>
 
-    <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
+    <div data-guide="sites.list" class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
@@ -63,7 +64,7 @@
 
     @if ($showForm)
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-            <div class="bg-white rounded-md shadow-lg w-full max-w-md p-6">
+            <div data-guide="sites.form" class="bg-white rounded-md shadow-lg w-full max-w-md p-6">
                 <h2 class="text-lg font-semibold mb-4">{{ $editingId ? __('sites.form_edit') : __('sites.form_new') }}</h2>
                 <form wire:submit="save" class="space-y-3">
                     <div>

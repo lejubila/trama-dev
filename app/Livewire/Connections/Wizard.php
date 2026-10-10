@@ -6,6 +6,7 @@ namespace App\Livewire\Connections;
 
 use App\Enums\EquipmentType;
 use App\Enums\InterfaceType;
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
@@ -21,6 +22,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Wizard extends Component
 {
+    use NotifiesGuide;
+
     public int $step = 1;
 
     public ?int $fromInterfaceId = null;
@@ -166,6 +169,7 @@ class Wizard extends Component
         }
 
         $conn->tags()->sync($this->selectedTagIds);
+        $this->guideCreated('connection', $conn);
 
         $this->dispatch('toast', type: 'success', message: __('connections.toast_created'));
         $this->redirectAfterExit();

@@ -1,7 +1,7 @@
 <div>
     <x-page-header :title="__('racks.title')" :subtitle="__('racks.subtitle')">
         @can('create', App\Models\Rack::class)
-            <button wire:click="openCreate" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+            <button wire:click="openCreate" data-guide="racks.new" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
                 <x-icon name="plus" class="h-4 w-4" /> {{ __('racks.new') }}
             </button>
         @endcan
@@ -17,7 +17,7 @@
         </select>
     </div>
 
-    <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
+    <div data-guide="racks.list" class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
@@ -56,7 +56,7 @@
 
     @if ($showForm)
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-            <div class="bg-white rounded-md shadow-lg w-full max-w-lg p-6">
+            <div data-guide="racks.form" class="bg-white rounded-md shadow-lg w-full max-w-lg p-6">
                 <h2 class="text-lg font-semibold mb-4">{{ $editingId ? __('racks.form_edit') : __('racks.form_new') }}</h2>
                 <form wire:submit="save" class="space-y-3">
                     <div>

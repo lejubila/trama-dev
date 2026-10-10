@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Topology;
 
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Models\TopologySnapshot;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Contracts\View\View;
@@ -14,6 +15,8 @@ use Livewire\Component;
 
 class SnapshotSaveModal extends Component
 {
+    use NotifiesGuide;
+
     public bool $open = false;
 
     /** 'new' = create record; 'overwrite' = replace metadata + image of an existing one. */
@@ -155,6 +158,7 @@ class SnapshotSaveModal extends Component
                 'created_by' => auth()->id(),
             ]);
 
+            $this->guideCreated('snapshot', $snap);
             $message = __('topology.snap_toast_saved');
         }
 

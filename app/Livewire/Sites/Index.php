@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Sites;
 
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Livewire\Concerns\RemembersFilters;
 use App\Models\Site;
 use Illuminate\Contracts\View\View;
@@ -16,7 +17,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    use RemembersFilters, WithPagination;
+    use NotifiesGuide, RemembersFilters, WithPagination;
 
     #[Url(except: '')]
     public string $search = '';
@@ -79,7 +80,7 @@ class Index extends Component
             $message = __('sites.toast_updated');
         } else {
             $this->authorize('create', Site::class);
-            Site::create($this->payload());
+            $this->guideCreated('site', Site::create($this->payload()));
             $message = __('sites.toast_created');
         }
 

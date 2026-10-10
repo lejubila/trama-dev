@@ -18,6 +18,7 @@
     <div
         x-data="rackDnD"
         x-init="init($el)"
+        data-guide="rack.elevation"
         class="bg-gray-50 dark:bg-slate-900 rounded-md p-4 ring-1 ring-black ring-opacity-5 overflow-x-auto"
     >
         <x-rack-elevation :rack="$rack" :orient="$orient" :interactive="$canEdit" />
@@ -32,7 +33,7 @@
 
     @if ($showForm && ($selectedU !== null || $onTop))
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
-            <div class="bg-white dark:bg-slate-800 rounded-md shadow-lg w-full max-w-2xl p-6 my-8">
+            <div data-guide="rack.equipment-form" class="bg-white dark:bg-slate-800 rounded-md shadow-lg w-full max-w-2xl p-6 my-8">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-1">
                     {{ __('racks.new_equipment') }} · {{ $onTop ? __('racks.on_top_label') : 'U'.$selectedU.' · '.($orient === 'rear' ? __('racks.rear') : __('racks.front')) }}
                 </h2>

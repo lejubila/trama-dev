@@ -8,6 +8,7 @@ use App\Actions\Equipment\DuplicateEquipment;
 use App\Enums\EquipmentStatus;
 use App\Enums\EquipmentType;
 use App\Enums\HypervisorVendor;
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Livewire\Concerns\RemembersFilters;
 use App\Models\Equipment;
 use App\Models\Rack;
@@ -30,7 +31,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    use RemembersFilters, WithFileUploads, WithPagination;
+    use NotifiesGuide, RemembersFilters, WithFileUploads, WithPagination;
 
     #[Url(except: '')]
     public string $search = '';
@@ -487,6 +488,7 @@ class Index extends Component
                 ? __('equipment.toast_duplicated', ['count' => $copied])
                 : __('equipment.toast_created'));
             $this->duplicatingFromId = null;
+            $this->guideCreated('equipment', $eq);
         }
 
         $eq->tags()->sync($this->selectedTagIds);

@@ -11,7 +11,7 @@
     <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg font-semibold">{{ __('sites.rooms_heading') }}</h2>
         @can('create', App\Models\Room::class)
-            <button wire:click="openRoomCreate" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+            <button wire:click="openRoomCreate" data-guide="rooms.new" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
                 <x-icon name="plus" class="h-4 w-4" /> {{ __('sites.new_room') }}
             </button>
         @endcan
@@ -80,7 +80,7 @@
 
     @if ($showRoomForm)
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-            <div class="bg-white rounded-md shadow-lg w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+            <div data-guide="rooms.form" class="bg-white rounded-md shadow-lg w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
                 <h2 class="text-lg font-semibold mb-4">{{ $editingRoomId ? __('sites.room_form_edit') : __('sites.room_form_new') }}</h2>
                 <form wire:submit="saveRoom" class="space-y-3">
                     <div>

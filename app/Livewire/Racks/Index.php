@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Racks;
 
 use App\Enums\RackNumbering;
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Livewire\Concerns\RemembersFilters;
 use App\Models\Rack;
 use App\Models\Room;
@@ -21,7 +22,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    use RemembersFilters, WithFileUploads, WithPagination;
+    use NotifiesGuide, RemembersFilters, WithFileUploads, WithPagination;
 
     #[Url(except: '')]
     public string $search = '';
@@ -160,6 +161,7 @@ class Index extends Component
         } else {
             $this->authorize('create', Rack::class);
             $rack = Rack::create($payload);
+            $this->guideCreated('rack', $rack);
 
             if ($this->iconUpload instanceof TemporaryUploadedFile) {
                 $rack->update(['icon_path' => $this->storeIcon($this->iconUpload, null, (int) $rack->tenant_id)]);

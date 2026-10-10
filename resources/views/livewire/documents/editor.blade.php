@@ -8,7 +8,7 @@
     <form wire:submit="save" class="space-y-6">
 
         {{-- Header --}}
-        <div class="bg-white shadow ring-1 ring-black/5 rounded-md p-4 space-y-3">
+        <div data-guide="documents.info" class="bg-white shadow ring-1 ring-black/5 rounded-md p-4 space-y-3">
             <h3 class="font-semibold text-gray-700">{{ __('documents.info_heading') }}</h3>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div class="sm:col-span-2">
@@ -64,7 +64,7 @@
         </div>
 
         {{-- Sezione: Contenuti (albero gerarchico Sedi → Locali → Rack → Dispositivi) --}}
-        <div class="bg-white shadow ring-1 ring-black/5 rounded-md p-4 space-y-4">
+        <div data-guide="documents.sections" class="bg-white shadow ring-1 ring-black/5 rounded-md p-4 space-y-4">
             <h3 class="font-semibold text-gray-700">{{ __('documents.contents') }}</h3>
 
             <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
@@ -356,7 +356,7 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-3 pt-2">
+        <div data-guide="documents.save" class="flex items-center gap-3 pt-2">
             <button type="submit"
                     wire:loading.attr="disabled"
                     wire:target="save"

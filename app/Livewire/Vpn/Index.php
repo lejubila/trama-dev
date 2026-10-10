@@ -7,6 +7,7 @@ namespace App\Livewire\Vpn;
 use App\Enums\EquipmentType;
 use App\Enums\VpnProtocol;
 use App\Enums\VpnRoutingMode;
+use App\Livewire\Concerns\NotifiesGuide;
 use App\Models\NetworkInterface;
 use App\Models\VpnRemoteAccess;
 use App\Models\VpnSiteToSite;
@@ -18,6 +19,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Index extends Component
 {
+    use NotifiesGuide;
+
     // --- form state shared between Remote-access and Site-to-Site ---------
     public string $formType = '';        // '' | 'remote' | 'site'
 
@@ -148,7 +151,7 @@ class Index extends Component
                 $message = __('vpn.toast_updated');
             } else {
                 $this->authorize('create', VpnRemoteAccess::class);
-                VpnRemoteAccess::create($payload);
+                $this->guideCreated('vpn', VpnRemoteAccess::create($payload));
                 $message = __('vpn.toast_created');
             }
         } elseif ($this->formType === 'site') {
