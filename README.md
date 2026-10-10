@@ -40,6 +40,9 @@ cd trama
 
 # 2. Configura env
 cp .env.example .env
+# Allinea l'utente del container a quello che possiede la cartella del progetto
+# (altrimenti composer/npm non possono scrivere vendor/ e node_modules/):
+sed -i "s/^TRAMA_UID=.*/TRAMA_UID=$(id -u)/; s/^TRAMA_GID=.*/TRAMA_GID=$(id -g)/" .env
 
 # 3. Avvia i container
 docker compose up -d --build
@@ -59,6 +62,21 @@ docker compose exec app npm install
 docker compose exec app npm run build
 # (in dev usa: docker compose exec app npm run dev)
 ```
+
+> **Errore `vendor does not exist and could not be created`** (o permessi negati su
+> `storage/`, `node_modules/`): i comandi nel container girano come l'utente `app`,
+> con UID/GID presi da `TRAMA_UID`/`TRAMA_GID` nel `.env` (default 1000). Devono
+> coincidere con il proprietario della cartella del progetto sull'host:
+>
+> ```bash
+> ls -ldn .          # UID e GID proprietari della cartella
+> id -u; id -g       # UID e GID del tuo utente
+> ```
+>
+> Imposta nel `.env` `TRAMA_UID`/`TRAMA_GID` con quei valori, poi ricostruisci:
+> `docker compose build app scheduler && docker compose up -d`. Se la cartella è
+> stata clonata da root, prima rendila tua con `sudo chown -R $(id -u):$(id -g) .`.
+> Non usare `TRAMA_UID=0`: se lavori da root, lascia 1000 e fai `chown -R 1000:1000 .`.
 
 App raggiungibile su **http://localhost:8081**.
 Mailpit (cattura email in dev) su **http://localhost:8025**.
