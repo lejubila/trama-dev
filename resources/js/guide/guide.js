@@ -56,6 +56,15 @@ function readConfig() {
     }
 }
 
+// Below this the popover text wraps too much to be worth docking beside.
+const MIN_DOCKED_WIDTH = 240;
+
+function overlapArea(a, b) {
+    const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+    const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+    return w > 0 && h > 0 ? w * h : 0;
+}
+
 function findTarget(name) {
     const el = document.querySelector(`[data-guide="${name}"]`);
     return el && el.getClientRects().length > 0 ? el : null;
@@ -96,6 +105,8 @@ export default function guideStore() {
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && this.state && !this.menuOpen) this.stop();
             });
+            // driver.js repositions the popover on resize: dock it again.
+            window.addEventListener('resize', () => this.dockPopoverSoon());
 
             // livewire:navigated also fires on the first load; this covers
             // pages where it ran before the store existed.
@@ -377,6 +388,7 @@ export default function guideStore() {
                 el.setAttribute('aria-expanded', 'true');
                 el.setAttribute('aria-controls', 'driver-popover-content');
                 rt.driver.refresh();
+                this.dockPopoverSoon();
                 return;
             }
             const focused = document.activeElement;
@@ -448,6 +460,64 @@ export default function guideStore() {
             });
             const popover = { title, description: text };
             rt.driver.highlight(el ? { element: el, popover } : { popover });
+            if (el) {
+                // Once now and once after the smooth scroll has settled.
+                this.dockPopoverSoon();
+                rt.timers.push(window.setTimeout(() => this.dockPopover(), 600));
+            }
+        },
+
+        // A target taller than the free space (a long form, a document
+        // section) leaves driver.js no side to use, so the popover lands on
+        // top of the fields to fill in: move it to the viewport corner.
+        // driver.js repositions in an animation frame of its own: run after it.
+        dockPopoverSoon() {
+            window.requestAnimationFrame(() => window.requestAnimationFrame(() => this.dockPopover()));
+        },
+
+        dockPopover() {
+            const el = rt.current?.el;
+            const pop = document.querySelector('.driver-popover.trama-guide-popover');
+            if (!rt.driver || !el || !pop) return;
+            const arrow = pop.querySelector('.driver-popover-arrow');
+            arrow?.style.removeProperty('display');
+            pop.style.removeProperty('width');
+            const p = pop.getBoundingClientRect();
+            const e = el.getBoundingClientRect();
+            if (overlapArea(p, e) === 0) return;
+
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const pad = 16;
+            const place = (style) => {
+                Object.assign(pop.style, { top: 'auto', left: 'auto', right: 'auto', bottom: 'auto', ...style });
+                arrow?.style.setProperty('display', 'none');
+            };
+
+            // Beside the target (a centred modal leaves room on its sides),
+            // narrowed to fit if needed.
+            const right = vw - e.right - 2 * pad;
+            const left = e.left - 2 * pad;
+            const side = Math.max(right, left);
+            if (side >= MIN_DOCKED_WIDTH) {
+                const width = Math.min(p.width, side);
+                place({ width: `${width}px`, bottom: `${pad}px`, ...(right >= left ? { right: `${pad}px` } : { left: `${pad}px` }) });
+                return;
+            }
+
+            // Otherwise the viewport corner covering the least of it.
+            const corners = [
+                { right: pad, bottom: pad },
+                { left: pad, bottom: pad },
+                { right: pad, top: pad },
+                { left: pad, top: pad },
+            ].map((c) => {
+                const x = 'left' in c ? c.left : vw - c.right - p.width;
+                const y = 'top' in c ? c.top : vh - c.bottom - p.height;
+                return { c, area: overlapArea({ left: x, right: x + p.width, top: y, bottom: y + p.height }, e) };
+            });
+            const best = corners.reduce((a, b) => (b.area < a.area ? b : a)).c;
+            place(Object.fromEntries(Object.entries(best).map(([k, v]) => [k, `${v}px`])));
         },
 
         destroyDriver() {
