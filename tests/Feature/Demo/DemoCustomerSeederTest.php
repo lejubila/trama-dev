@@ -54,6 +54,10 @@ it('builds the demo customer', function (): void {
         'sites' => 1, 'rooms' => 2, 'racks' => 1, 'equipment' => 24, 'vms' => 4,
         'connections' => 24, 'wifi' => 2, 'vpn' => 1,
     ]);
+
+    // Rack devices must actually be mounted, or the rack elevation is empty.
+    expect(Equipment::query()->whereNotNull('rack_id')->where('mounted', true)->orderByDesc('position_u_start')->pluck('name')->all())
+        ->toBe(['PP-01', 'RTR-INTERNET', 'FW-01', 'SW-CORE', 'PVE-01', 'NAS-01', 'UPS-01']);
 });
 
 it('refuses to create the demo customer twice', function (): void {

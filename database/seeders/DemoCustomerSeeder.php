@@ -381,14 +381,14 @@ class DemoCustomerSeeder extends Seeder
      */
     private function equipment(EquipmentType $type, string $name, ?string $vendor, ?string $model, array $extra = []): Equipment
     {
-        return Equipment::query()->create([
+        return Equipment::query()->create($extra + [
             'name' => $name,
             'type' => $type,
             'vendor' => $vendor,
             'model' => $model,
             'mounted' => false,
             'status' => EquipmentStatus::Active,
-        ] + $extra);
+        ]);
     }
 
     /**
