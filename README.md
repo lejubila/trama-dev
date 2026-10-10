@@ -29,7 +29,7 @@ Laravel 11 · Livewire 3 · Alpine.js · Tailwind · PostgreSQL 16 · Redis 7 ·
 
 - Docker Desktop (o Docker Engine + Compose plugin)
 - Almeno 4 GB di RAM liberi
-- Porte libere: 8081 (web), 5432 (postgres), 6379 (redis), 1025/8025 (mailpit)
+- Porte libere: 8081 (web), 5432 (postgres), 6379 (redis), 1025/8025 (mailpit). Se sono occupate, cambiale con le variabili `TRAMA_*_PORT` nel `.env` (vedi `.env.example`).
 
 ## Quick start
 
@@ -148,6 +148,12 @@ cancellato e ripristinato.
    DEMO_USER_PASSWORD=demo
    DEMO_RESET_TIME=03:00
    DEMO_TIMEZONE=Europe/Rome
+
+   # Se sull'host le porte di default sono occupate:
+   APP_URL=http://tuo-host:8083
+   SANCTUM_STATEFUL_DOMAINS=tuo-host:8083
+   TRAMA_HTTP_PORT=8083
+   TRAMA_REDIS_PORT=6380
    ```
 3. Avvia anche lo scheduler e fai il primo popolamento:
    ```bash
