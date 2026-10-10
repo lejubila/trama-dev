@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Export\DocumentPdfController;
 use App\Http\Controllers\Export\EquipmentCsvController;
 use App\Http\Controllers\Export\TenantArchiveController;
+use App\Http\Controllers\GuideOfferController;
 use App\Http\Controllers\Tenancy\SwitchTenantController;
 use App\Livewire\Audit\Trail as AuditTrail;
 use App\Livewire\Connections\Edit as ConnectionsEdit;
@@ -53,6 +54,7 @@ Route::view('profile', 'profile')
 Route::middleware(['auth'])->group(function (): void {
     // Tenancy
     Route::post('tenant/switch/{tenant}', SwitchTenantController::class)->name('tenant.switch');
+    Route::post('guide/offer/dismiss', GuideOfferController::class)->name('guide.offer.dismiss');
     Route::get('tenants', TenantsIndex::class)->name('tenants.index');
     Route::get('tenants/{tenant}/manage', TenantsManage::class)->name('tenants.manage');
     Route::get('tenants/import', TenantsImport::class)->name('tenants.import');

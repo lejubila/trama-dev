@@ -41,6 +41,13 @@ new class extends Component
 
             <!-- Settings -->
             <div class="hidden sm:flex sm:items-center sm:ms-6 sm:gap-x-4">
+                @if (auth()->user()?->canManageData())
+                    <button type="button" x-data x-on:click="$store.guide.openMenu()" data-guide="guide.button"
+                            class="inline-flex items-center gap-x-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-600 dark:text-slate-300 ring-1 ring-gray-200 dark:ring-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700">
+                        <x-icon name="question-mark-circle" class="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                        {{ __('guide.button') }}
+                    </button>
+                @endif
                 <livewire:layout.global-search />
                 <livewire:layout.tenant-selector />
             </div>

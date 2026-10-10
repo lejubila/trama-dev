@@ -92,6 +92,7 @@
             </div>
 
             <livewire:layout.toaster />
+            <x-guide />
         </div>
         @livewireScripts
     </body>

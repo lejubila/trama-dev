@@ -3,6 +3,7 @@
    scoped to the topology panel instead (overrides below). PostCSS requires
    @import to come before any other statement, hence above @tailwind. */
 @import "cytoscape-navigator/cytoscape.js-navigator.css";
+@import "driver.js/dist/driver.css";
 
 @tailwind base;
 @tailwind components;
@@ -30,4 +31,59 @@
     width: clamp(14rem, 28vw, 30rem) !important;
     height: clamp(10rem, 22vh, 22rem) !important;
     z-index: 5;
+}
+
+/* Guided tour (driver.js). Its stylesheet re-enables pointer events on every
+   descendant of the highlighted element, including overlays that are
+   click-through on purpose (e.g. the "+" over a free rack unit). */
+.driver-active .driver-active-element .pointer-events-none {
+    pointer-events: none;
+}
+
+/* Guided tour popover, restyled to match the app. */
+.driver-popover.trama-guide-popover {
+    @apply max-w-sm rounded-lg bg-white p-4 text-gray-700 shadow-xl ring-1 ring-black/5;
+}
+.driver-popover.trama-guide-popover .driver-popover-title {
+    @apply text-base font-semibold text-gray-900;
+}
+.driver-popover.trama-guide-popover .driver-popover-description {
+    @apply mt-1 text-sm leading-relaxed text-gray-600;
+}
+.driver-popover.trama-guide-popover .driver-popover-progress-text {
+    @apply text-xs text-gray-400;
+}
+.driver-popover.trama-guide-popover .driver-popover-footer {
+    @apply mt-3 flex-col items-stretch gap-2;
+}
+.driver-popover.trama-guide-popover .driver-popover-navigation-btns {
+    @apply flex flex-wrap justify-end gap-2;
+}
+.trama-guide-popover .driver-popover-footer button.trama-guide-btn-primary,
+.trama-guide-popover .driver-popover-footer button.trama-guide-btn-secondary {
+    @apply whitespace-nowrap rounded-md border-0 px-3 py-1.5 text-sm;
+    font-family: inherit;
+    text-shadow: none;
+}
+.trama-guide-popover .driver-popover-footer button.trama-guide-btn-primary {
+    @apply bg-indigo-600 font-medium text-white hover:bg-indigo-700 focus-visible:bg-indigo-700;
+}
+.trama-guide-popover .driver-popover-footer button.trama-guide-btn-secondary {
+    @apply bg-transparent text-gray-600 hover:bg-gray-100 focus-visible:bg-gray-100;
+}
+.dark .driver-popover.trama-guide-popover {
+    @apply bg-slate-800 text-slate-200 ring-slate-700;
+}
+.dark .driver-popover.trama-guide-popover .driver-popover-title {
+    @apply text-slate-100;
+}
+.dark .driver-popover.trama-guide-popover .driver-popover-description {
+    @apply text-slate-300;
+}
+.dark .trama-guide-popover .driver-popover-arrow-side-left { border-left-color: theme('colors.slate.800'); }
+.dark .trama-guide-popover .driver-popover-arrow-side-right { border-right-color: theme('colors.slate.800'); }
+.dark .trama-guide-popover .driver-popover-arrow-side-top { border-top-color: theme('colors.slate.800'); }
+.dark .trama-guide-popover .driver-popover-arrow-side-bottom { border-bottom-color: theme('colors.slate.800'); }
+.dark .trama-guide-popover .driver-popover-footer button.trama-guide-btn-secondary {
+    @apply text-slate-300 hover:bg-slate-700 focus-visible:bg-slate-700;
 }
