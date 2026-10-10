@@ -43,7 +43,7 @@
         return rad2deg(atan2($pts[$seg + 1][1] - $pts[$seg][1], $pts[$seg + 1][0] - $pts[$seg][0]));
     };
 @endphp
-<div x-data="roomMapDnD" x-init="init($el)">
+<div x-data="roomMapDnD">
     @php
         $hasFloorPlan = $floorPlanUrl !== null || $drawing !== null;
         $hasItems = $racks->isNotEmpty() || $equipments->isNotEmpty();

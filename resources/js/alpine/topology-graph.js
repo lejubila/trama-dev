@@ -1,7 +1,7 @@
 /**
  * Alpine factory wrapping a Cytoscape.js instance for the topology page.
  *
- * Wired with `x-data="topologyGraph({ graph, layout })"` `x-init="init($el)"`
+ * Wired with `x-data="topologyGraph({ graph, layout })"` (Alpine calls `init()` on its own)
  * on the wire:ignore container; the inner #cy/navigator <div>s are addressed
  * via $refs.
  *
@@ -134,9 +134,9 @@ export default function topologyGraph({ graph, layout, iconSize, restore }) {
         // Flattened cache by interface id for O(1) edge label refresh.
         _interfacesById: {},
 
-        init(rootEl) {
+        init() {
             registerExtensions();
-            this._root = rootEl;
+            this._root = this.$el;
 
             this.cy = cytoscape({
                 container: this.$refs.cy,

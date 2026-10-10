@@ -17,7 +17,6 @@
 
     <div
         x-data="rackDnD"
-        x-init="init($el)"
         data-guide="rack.elevation"
         class="bg-gray-50 dark:bg-slate-900 rounded-md p-4 ring-1 ring-black ring-opacity-5 overflow-x-auto"
     >

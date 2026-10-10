@@ -1,7 +1,7 @@
 /**
  * Alpine factory for the rack-elevation drag & drop.
  *
- * Wired up with `x-data="rackDnD" x-init="init($el)"` on the SVG container
+ * Wired up with `x-data="rackDnD"` on the SVG container
  * (see resources/views/livewire/racks/elevation.blade.php). The factory:
  *  - tracks a mousedown on any `<g.rack-equipment>` whose `data-locked="0"`
  *  - shows a small ghost label with the candidate U as the pointer moves
@@ -32,7 +32,8 @@ export default function rackDnD() {
         _DRAG_THRESHOLD: 4,
         _moved: false,
 
-        init(root) {
+        init() {
+            const root = this.$el;
             this._root = root;
             this._svg = root.querySelector('svg.rack-elevation');
             if (!this._svg) return;

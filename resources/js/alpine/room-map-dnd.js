@@ -13,7 +13,7 @@
  * name kept "*_px" for backward compatibility with the column/property,
  * but no per-screen-pixel computation happens anymore.
  *
- * On the wrapper `<div x-data="roomMapDnD" x-init="init($el)">` it:
+ * On the wrapper `<div x-data="roomMapDnD">` it:
  *  - on `pointerdown` over `<g.room-map-node>` either drags (moves the
  *    center), resizes (handle), or resets (small × button when override
  *    is active).
@@ -47,7 +47,8 @@ export default function roomMapDnD() {
         _centerSvgY: 0,
         _resizePx: 40,
 
-        init(root) {
+        init() {
+            const root = this.$el;
             this._svg = root.querySelector('svg.room-map');
             if (!this._svg) return;
 

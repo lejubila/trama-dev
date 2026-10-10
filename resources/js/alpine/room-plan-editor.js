@@ -135,7 +135,8 @@ export default function roomPlanEditor() {
         // follows the user's language without a client-side i18n library.
         _i18n: { labelPrompt: 'Testo etichetta:', clearConfirm: 'Cancellare tutto il disegno?' },
 
-        init(root) {
+        init() {
+            const root = this.$el;
             this._i18n = {
                 labelPrompt: root.dataset.i18nLabelPrompt || this._i18n.labelPrompt,
                 clearConfirm: root.dataset.i18nClearConfirm || this._i18n.clearConfirm,

@@ -213,7 +213,6 @@
             iconSize: {{ $topologyIconSize }},
             restore: @js($restore ?? null),
         })"
-        x-init="init($el)"
         wire:ignore
         class="flex-1 relative bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden"
     >
