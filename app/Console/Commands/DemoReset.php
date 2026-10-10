@@ -11,8 +11,7 @@ use App\Services\TenantTransfer\TenantArchiveImporter;
 use App\Services\TenantTransfer\TenantArchiveReader;
 use App\Support\Demo;
 use App\Support\Tenancy\TenantContext;
-use Database\Seeders\DemoDataSeeder;
-use Database\Seeders\TenantSeeder;
+use Database\Seeders\DemoCustomerSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -119,19 +118,19 @@ class DemoReset extends Command
 
     /**
      * Loads every tenant archive found at DEMO_ARCHIVE (a .zip or a
-     * directory of them). Without archives the bundled seeders are used,
-     * so a fresh demo is never empty.
+     * directory of them). Without archives the demo customer is seeded
+     * instead (without snapshots and documents, which need a browser).
      */
     private function restoreData(TenantArchiveReader $reader, TenantArchiveImporter $importer, User $demoUser): int
     {
         $archives = $this->archivePaths();
 
         if ($archives === []) {
-            $this->warn('No demo archive found: falling back to the built-in demo seeders.');
-            $this->callSilently('db:seed', ['--class' => TenantSeeder::class, '--force' => true]);
-            $this->callSilently('db:seed', ['--class' => DemoDataSeeder::class, '--force' => true]);
+            $this->warn('No demo archive found: falling back to the demo customer seeder.');
+            $this->callSilently('db:seed', ['--class' => DemoCustomerSeeder::class, '--force' => true]);
+            $demoUser->forceFill(['current_tenant_id' => DB::table('tenants')->min('id')])->save();
 
-            return 2;
+            return 1;
         }
 
         foreach ($archives as $path) {
