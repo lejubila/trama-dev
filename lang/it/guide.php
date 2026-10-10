@@ -70,7 +70,10 @@ return [
         'snapshot_open' => ['title' => 'Salva lo snapshot', 'text' => 'Uno snapshot congela questa vista (posizioni, filtri, zoom) per riaprirla o inserirla nei documenti. Clicca «Salva snapshot».'],
         'snapshot_form' => ['title' => 'Titolo dello snapshot', 'text' => 'Dai un titolo e, se vuoi, una descrizione. Poi salva.'],
         'document_info' => ['title' => 'Il documento', 'text' => 'Titolo, data e lingua del PDF. Puoi aggiungere una descrizione introduttiva.'],
-        'document_sections' => ['title' => 'Cosa includere', 'text' => 'Scegli le sezioni (sedi, locali, rack, apparati, topologie, Wi‑Fi, VPN) e gli elementi di ciascuna.'],
+        'document_sections' => ['title' => 'Sedi, locali, rack e apparati', 'text' => 'Scegli quali livelli includere e, nell\'albero, le sedi, i locali, i rack e gli apparati da descrivere.'],
+        'document_topologies' => ['title' => 'Topologie', 'text' => 'Attiva la sezione per inserire gli snapshot della topologia salvati: spunta quelli da includere e scegli per ciascuno l\'orientamento della pagina.'],
+        'document_wifi' => ['title' => 'Reti Wi‑Fi', 'text' => 'Attiva la sezione e spunta le reti wireless da documentare, con SSID, sicurezza, VLAN e access point.'],
+        'document_vpn' => ['title' => 'VPN', 'text' => 'Attiva la sezione e scegli le VPN di accesso remoto e site-to-site da includere.'],
         'document_save' => ['title' => 'Genera il PDF', 'text' => 'Premi il pulsante: Trama salva il documento e genera il PDF, che potrai scaricare dall\'elenco.'],
     ],
 ];

@@ -23,6 +23,7 @@ use App\Support\Guide\GuideTours;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Testing\TestResponse;
 use Livewire\Livewire;
+use Symfony\Component\HttpFoundation\Response;
 
 afterEach(function (): void {
     TenantContext::clear();
@@ -41,7 +42,7 @@ function guideUser(UserRole $role = UserRole::Admin, ?Tenant $tenant = null): Us
 }
 
 /**
- * @param  TestResponse<\Symfony\Component\HttpFoundation\Response>  $response
+ * @param  TestResponse<Response>  $response
  * @return array<string, mixed>|null the <x-guide> payload of a page
  */
 function guideConfig(TestResponse $response): ?array
@@ -147,6 +148,9 @@ it('finds every element a tour step points at', function (): void {
         'snapshot.form' => $modal(SnapshotSaveModal::class, [], 'openModal', [[]]),
         'documents.info' => $page(route('documents.create')),
         'documents.sections' => $page(route('documents.create')),
+        'documents.topologies' => $page(route('documents.create')),
+        'documents.wifi' => $page(route('documents.create')),
+        'documents.vpn' => $page(route('documents.create')),
         'documents.save' => $page(route('documents.create')),
     ];
 

@@ -209,7 +209,7 @@
         </div>
 
         {{-- Sezione: Topologie (snapshot) — selezione + orientamento --}}
-        <div class="bg-white shadow ring-1 ring-black/5 rounded-md">
+        <div data-guide="documents.topologies" class="bg-white shadow ring-1 ring-black/5 rounded-md">
             <div class="p-4 border-b border-gray-200 flex items-center justify-between">
                 <label class="inline-flex items-center gap-3">
                     <input type="checkbox" wire:model.live="topologiesEnabled"
@@ -266,7 +266,7 @@
         </div>
 
         {{-- Sezione: Reti Wi-Fi --}}
-        <div class="bg-white shadow ring-1 ring-black/5 rounded-md">
+        <div data-guide="documents.wifi" class="bg-white shadow ring-1 ring-black/5 rounded-md">
             <div class="p-4 border-b border-gray-200 flex items-center justify-between">
                 <label class="inline-flex items-center gap-3">
                     <input type="checkbox" wire:model.live="wifiEnabled" class="rounded border-gray-300 text-indigo-600">
@@ -301,7 +301,7 @@
         </div>
 
         {{-- Sezione: VPN --}}
-        <div class="bg-white shadow ring-1 ring-black/5 rounded-md">
+        <div data-guide="documents.vpn" class="bg-white shadow ring-1 ring-black/5 rounded-md">
             <div class="p-4 border-b border-gray-200 flex items-center justify-between">
                 <label class="inline-flex items-center gap-3">
                     <input type="checkbox" wire:model.live="vpnEnabled" class="rounded border-gray-300 text-indigo-600">

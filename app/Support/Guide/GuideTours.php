@@ -96,9 +96,12 @@ final class GuideTours
                 ['key' => 'snapshot.open', 'route' => 'topology.index', 'target' => 'topology.save-snapshot', 'advance' => 'appear:snapshot.form'],
                 ['key' => 'snapshot.form', 'route' => 'topology.index', 'target' => 'snapshot.form', 'advance' => 'created:snapshot'],
             ]],
-            'document' => ['ability' => Document::class, 'minutes' => 2, 'steps' => [
+            'document' => ['ability' => Document::class, 'minutes' => 3, 'steps' => [
                 ['key' => 'document.info', 'route' => 'documents.create', 'target' => 'documents.info', 'advance' => 'next'],
                 ['key' => 'document.sections', 'route' => 'documents.create', 'target' => 'documents.sections', 'advance' => 'next'],
+                ['key' => 'document.topologies', 'route' => 'documents.create', 'target' => 'documents.topologies', 'advance' => 'next'],
+                ['key' => 'document.wifi', 'route' => 'documents.create', 'target' => 'documents.wifi', 'advance' => 'next'],
+                ['key' => 'document.vpn', 'route' => 'documents.create', 'target' => 'documents.vpn', 'advance' => 'next'],
                 ['key' => 'document.save', 'route' => 'documents.create', 'target' => 'documents.save', 'advance' => 'created:document'],
             ]],
         ];

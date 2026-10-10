@@ -70,7 +70,10 @@ return [
         'snapshot_open' => ['title' => 'Save the snapshot', 'text' => 'A snapshot freezes this view (positions, filters, zoom) to reopen it or put it in documents. Click “Save snapshot”.'],
         'snapshot_form' => ['title' => 'Snapshot title', 'text' => 'Give it a title and, optionally, a description. Then save.'],
         'document_info' => ['title' => 'The document', 'text' => 'Title, date and language of the PDF. You can add an introduction.'],
-        'document_sections' => ['title' => 'What to include', 'text' => 'Choose the sections (sites, rooms, racks, devices, topologies, Wi‑Fi, VPN) and the items of each.'],
+        'document_sections' => ['title' => 'Sites, rooms, racks and devices', 'text' => 'Choose which levels to include and, in the tree, the sites, rooms, racks and devices to describe.'],
+        'document_topologies' => ['title' => 'Topologies', 'text' => 'Turn the section on to include the saved topology snapshots: tick the ones you want and pick the page orientation of each.'],
+        'document_wifi' => ['title' => 'Wi‑Fi networks', 'text' => 'Turn the section on and tick the wireless networks to document, with SSID, security, VLAN and access points.'],
+        'document_vpn' => ['title' => 'VPN', 'text' => 'Turn the section on and choose the remote-access and site-to-site VPNs to include.'],
         'document_save' => ['title' => 'Generate the PDF', 'text' => 'Press the button: Trama saves the document and generates the PDF, which you can download from the list.'],
     ],
 ];
