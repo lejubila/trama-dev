@@ -366,11 +366,22 @@ export default function guideStore() {
             const cur = rt.current;
             if (!this.state || !cur || !rt.driver) return;
             const el = findTarget(cur.step.target);
-            if (el && (el !== cur.el || !el.classList.contains('driver-active-element'))) {
-                this.highlight(el, cur.step, cur.tour);
-            } else if (el) {
+            if (!el) return;
+            if (el === cur.el) {
+                // Same node, but the morph reset its class attribute (e.g. a
+                // wire:model.live field in the form): restore driver.js's
+                // marks in place. Rebuilding would flash the overlay and move
+                // the focus to the popover on every keystroke.
+                el.classList.add('driver-active-element');
+                el.setAttribute('aria-haspopup', 'dialog');
+                el.setAttribute('aria-expanded', 'true');
+                el.setAttribute('aria-controls', 'driver-popover-content');
                 rt.driver.refresh();
+                return;
             }
+            const focused = document.activeElement;
+            this.highlight(el, cur.step, cur.tour);
+            if (focused && focused !== document.body && el.contains(focused)) focused.focus();
         },
 
         showNotFound(step, url) {
