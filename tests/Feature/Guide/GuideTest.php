@@ -235,8 +235,10 @@ it('keeps the invitation per session for the shared demo account', function (): 
 it('knows whether the customer can host a Wi-Fi network and a VPN', function (): void {
     guideUser();
     $facts = fn () => app(GuideTours::class)->facts();
+    // Explicit names: two random factory names on one device may collide.
     $port = fn (Equipment $eq, InterfaceMedia $media) => NetworkInterface::factory()->create([
         'equipment_id' => $eq->getKey(),
+        'name' => $media->value.'0',
         'type' => $media === InterfaceMedia::Wireless ? InterfaceType::Wireless : InterfaceType::Ethernet,
         'media' => $media,
     ]);
