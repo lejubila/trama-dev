@@ -273,3 +273,22 @@ it('puts a wireless port on a wireless medium', function (): void {
         ->set('ifType', 'wireless')
         ->assertSet('ifMedia', 'wireless');
 });
+
+it('serves fresh facts, so a device deleted on the same page counts', function (UserRole $role, int $status): void {
+    guideUser($role);
+    $fw = Equipment::factory()->create(['type' => EquipmentType::Firewall]);
+    NetworkInterface::factory()->create(['equipment_id' => $fw->getKey()]);
+
+    if ($status !== 200) {
+        $this->getJson(route('guide.facts'))->assertStatus($status);
+
+        return;
+    }
+
+    $this->getJson(route('guide.facts'))->assertOk()->assertJson(['vpn_ready' => true]);
+    $fw->delete();
+    $this->getJson(route('guide.facts'))->assertOk()->assertJson(['vpn_ready' => false]);
+})->with([
+    'tecnico' => [UserRole::Tecnico, 200],
+    'cliente' => [UserRole::Cliente, 403],
+]);

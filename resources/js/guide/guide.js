@@ -207,6 +207,22 @@ export default function guideStore() {
             if (rerun) this.runStep();
         },
 
+        // The facts in the page date from the last navigation: the device the
+        // step would skip may have been deleted since. On failure the page's
+        // copy is still the best guess.
+        async refreshFacts() {
+            if (!this.config?.factsUrl) return;
+            try {
+                const response = await window.fetch(this.config.factsUrl, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                });
+                if (response.ok) this.config.facts = await response.json();
+            } catch {
+                // Offline or similar: keep the page's facts.
+            }
+        },
+
         tour() {
             return this.state ? this.config?.tours?.[this.state.tourId] : null;
         },
@@ -231,6 +247,10 @@ export default function guideStore() {
             const step = tour.steps[this.state.step];
             if (!step) return this.showDone(tour);
 
+            if (step.skipWhen) {
+                await this.refreshFacts();
+                if (run !== rt.runId) return;
+            }
             if ((step.skipIf && this.state.ctx[step.skipIf]) || (step.skipWhen && this.config.facts?.[step.skipWhen])) {
                 // Kept out of the "step x of y" count.
                 this.state.skipped = [...new Set([...(this.state.skipped ?? []), this.state.step])];

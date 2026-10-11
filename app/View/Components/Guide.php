@@ -40,6 +40,7 @@ class Guide extends Component
             'order' => array_values(array_intersect(GuideTours::ORDER, array_keys($this->tours))),
             'routes' => $guideTours->routeTemplates(),
             'facts' => $guideTours->facts(),
+            'factsUrl' => route('guide.facts', absolute: false),
             'lastCreated' => session()->pull(GuideTours::LAST_CREATED_KEY),
             'offer' => GuideOffer::pending($user),
             'dismissUrl' => route('guide.offer.dismiss', absolute: false),
