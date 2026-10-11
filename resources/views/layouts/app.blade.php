@@ -27,9 +27,12 @@
              x-on:topology-fullscreen.window="fullscreen = $event.detail.on"
              x-on:keydown.escape.window="sidebar = false"
              x-effect="$dispatch('sidebar-state', { open: sidebar })">
-            <!-- Top bar — hidden in topology fullscreen mode -->
+            <!-- Top bar — hidden in topology fullscreen mode. The demo banner
+                 scrolls away, the navigation bar stays at the top. -->
             <div x-show="!fullscreen">
                 <x-demo-banner />
+            </div>
+            <div x-show="!fullscreen" class="sticky top-0 z-30">
                 <livewire:layout.navigation />
             </div>
 
@@ -41,7 +44,7 @@
                     x-show="!fullscreen"
                     :class="sidebar ? 'translate-x-0' : '-translate-x-full'"
                     class="fixed z-40 top-0 left-0 h-screen w-64 overflow-y-auto transition-transform duration-200 ease-out
-                           md:static md:translate-x-0 md:h-auto md:w-56 md:min-h-[calc(100vh-4rem)]
+                           md:static md:z-auto md:translate-x-0 md:h-auto md:w-56 md:min-h-[calc(100vh-4rem)]
                            shrink-0 border-r border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800
                            flex flex-col">
                     <nav class="py-4 flex-1" @click="if (window.innerWidth < 768) sidebar = false">

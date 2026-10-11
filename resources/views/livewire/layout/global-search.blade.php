@@ -1,4 +1,4 @@
-<div x-data="{ openLocal: false }" @click.outside="openLocal = false" class="relative w-72">
+<div x-data="{ openLocal: false }" @click.outside="openLocal = false" class="relative w-full min-w-[6rem] max-w-72 lg:w-72">
     <input
         type="text"
         wire:model.live.debounce.300ms="query"
@@ -13,7 +13,7 @@
         <div
             x-show="openLocal"
             x-cloak
-            class="absolute right-0 z-50 mt-2 w-96 rounded-md bg-white dark:bg-slate-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-slate-600 max-h-96 overflow-y-auto"
+            class="fixed inset-x-4 top-16 z-50 sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-96 rounded-md bg-white dark:bg-slate-800 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-slate-600 max-h-96 overflow-y-auto"
         >
             @if ($totalHits === 0)
                 <div class="p-4 text-sm text-gray-500 dark:text-slate-400">{{ __('search.no_results') }}</div>
