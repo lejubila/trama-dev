@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Livewire\Vpn;
 
-use App\Enums\EquipmentType;
 use App\Enums\VpnProtocol;
 use App\Enums\VpnRoutingMode;
 use App\Livewire\Concerns\NotifiesGuide;
@@ -230,7 +229,7 @@ class Index extends Component
     {
         return NetworkInterface::query()
             ->with('equipment')
-            ->whereHas('equipment', fn ($q) => $q->where('type', EquipmentType::Firewall->value))
+            ->onFirewall()
             ->orderBy('equipment_id')
             ->orderBy('name');
     }

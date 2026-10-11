@@ -160,6 +160,17 @@ class Show extends Component
         return $tabs;
     }
 
+    /**
+     * A wireless port is almost always on a wireless medium: without it the
+     * interface would not show up among the Wi-Fi broadcasters.
+     */
+    public function updatedIfType(string $value): void
+    {
+        if ($value === InterfaceType::Wireless->value) {
+            $this->ifMedia = InterfaceMedia::Wireless->value;
+        }
+    }
+
     public function openIfCreate(): void
     {
         $this->authorize('create', NetworkInterface::class);

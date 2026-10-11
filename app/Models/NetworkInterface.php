@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\EquipmentType;
 use App\Enums\InterfaceMedia;
 use App\Enums\InterfacePoe;
 use App\Enums\InterfaceSide;
@@ -81,6 +82,31 @@ class NetworkInterface extends Model implements AuditableContract
             'vlans_allowed' => 'array',
             'custom_fields' => 'array',
         ];
+    }
+
+    /**
+     * Radios that can broadcast an SSID: wireless interfaces of access
+     * points and controllers.
+     *
+     * @param  Builder<NetworkInterface>  $query
+     */
+    public function scopeWifiBroadcasters(Builder $query): void
+    {
+        $query->where('media', InterfaceMedia::Wireless->value)
+            ->whereHas('equipment', fn (Builder $q) => $q->whereIn('type', [
+                EquipmentType::AccessPoint->value,
+                EquipmentType::Controller->value,
+            ]));
+    }
+
+    /**
+     * Interfaces a VPN can terminate on: any port of a firewall.
+     *
+     * @param  Builder<NetworkInterface>  $query
+     */
+    public function scopeOnFirewall(Builder $query): void
+    {
+        $query->whereHas('equipment', fn (Builder $q) => $q->where('type', EquipmentType::Firewall->value));
     }
 
     /**

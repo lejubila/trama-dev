@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Livewire\WifiNetworks;
 
-use App\Enums\EquipmentType;
-use App\Enums\InterfaceMedia;
 use App\Livewire\Concerns\NotifiesGuide;
 use App\Livewire\Concerns\RemembersFilters;
 use App\Models\NetworkInterface;
@@ -156,11 +154,7 @@ class Index extends Component
     {
         return NetworkInterface::query()
             ->with('equipment')
-            ->where('media', InterfaceMedia::Wireless->value)
-            ->whereHas('equipment', fn ($q) => $q->whereIn('type', [
-                EquipmentType::AccessPoint->value,
-                EquipmentType::Controller->value,
-            ]))
+            ->wifiBroadcasters()
             ->orderBy('equipment_id')
             ->orderBy('name');
     }
