@@ -125,7 +125,7 @@ export default function guideStore() {
             this.menuOpen = false;
             this.offerVisible = false;
             const stale = this.config.lastCreated?.nonce;
-            this.state = { tourId, step: 0, ctx, full, seen: stale ? [stale] : [], navigatedFor: null };
+            this.state = { tourId, step: 0, ctx, full, seen: stale ? [stale] : [], skipped: [], navigatedFor: null };
             this.persist();
             this.runStep();
         },
@@ -231,7 +231,9 @@ export default function guideStore() {
             const step = tour.steps[this.state.step];
             if (!step) return this.showDone(tour);
 
-            if (step.skipIf && this.state.ctx[step.skipIf]) {
+            if ((step.skipIf && this.state.ctx[step.skipIf]) || (step.skipWhen && this.config.facts?.[step.skipWhen])) {
+                // Kept out of the "step x of y" count.
+                this.state.skipped = [...new Set([...(this.state.skipped ?? []), this.state.step])];
                 this.state.step++;
                 this.persist();
                 return this.runStep();
@@ -359,6 +361,8 @@ export default function guideStore() {
         // ── rendering ───────────────────────────────────────────────────
 
         highlight(el, step, tour) {
+            const skipped = this.state.skipped ?? [];
+            const before = skipped.filter((i) => i < this.state.step).length;
             rt.current = { el, step, tour };
             const s = this.config.strings;
             const buttons = [{ label: s.exit, action: () => this.stop(), secondary: true }];
@@ -369,7 +373,7 @@ export default function guideStore() {
                 step.title,
                 step.text,
                 buttons,
-                s.stepOf.replace(':current', this.state.step + 1).replace(':total', tour.steps.length) + ' · ' + tour.title,
+                s.stepOf.replace(':current', this.state.step + 1 - before).replace(':total', tour.steps.length - skipped.length) + ' · ' + tour.title,
             );
         },
 

@@ -33,6 +33,8 @@ use App\Support\Tenancy\TenantContext;
  * Route parameters are filled from that memory (`{site}` → last site
  * created or picked), and `skip_if` drops "pick one" steps when the value
  * is already known, e.g. while running the whole path in sequence.
+ * `skip_when` drops a step when one of the facts() about the tenant holds,
+ * e.g. "create an access point first" when there is one already.
  */
 final class GuideTours
 {
@@ -83,11 +85,21 @@ final class GuideTours
             'connection' => ['ability' => Connection::class, 'minutes' => 2, 'steps' => [
                 ['key' => 'connection.wizard', 'route' => 'connections.create', 'ctx_query' => ['from_equipment' => 'equipment'], 'target' => 'connections.wizard', 'advance' => 'created:connection'],
             ]],
-            'wifi' => ['ability' => WifiNetwork::class, 'minutes' => 1, 'steps' => [
+            // A network needs a radio to broadcast it, a VPN a firewall port
+            // to terminate on: without them the forms have nothing to pick.
+            'wifi' => ['ability' => WifiNetwork::class, 'minutes' => 3, 'steps' => [
+                ['key' => 'wifi.ap_open', 'route' => 'equipment.index', 'target' => 'equipment.new', 'advance' => 'appear:equipment.form', 'skip_when' => 'wifi_ready'],
+                ['key' => 'wifi.ap_form', 'route' => 'equipment.index', 'target' => 'equipment.form', 'advance' => 'created:equipment', 'skip_when' => 'wifi_ready'],
+                ['key' => 'wifi.ap_iface_open', 'route' => 'equipment.show', 'query' => ['tab' => 'interfaces'], 'target' => 'interfaces.new', 'advance' => 'appear:interfaces.form', 'skip_when' => 'wifi_ready'],
+                ['key' => 'wifi.ap_iface_form', 'route' => 'equipment.show', 'query' => ['tab' => 'interfaces'], 'target' => 'interfaces.form', 'advance' => 'created:interface', 'skip_when' => 'wifi_ready'],
                 ['key' => 'wifi.open', 'route' => 'wifi-networks.index', 'target' => 'wifi.new', 'advance' => 'appear:wifi.form'],
                 ['key' => 'wifi.form', 'route' => 'wifi-networks.index', 'target' => 'wifi.form', 'advance' => 'created:wifi'],
             ]],
-            'vpn' => ['ability' => VpnRemoteAccess::class, 'minutes' => 1, 'steps' => [
+            'vpn' => ['ability' => VpnRemoteAccess::class, 'minutes' => 3, 'steps' => [
+                ['key' => 'vpn.fw_open', 'route' => 'equipment.index', 'target' => 'equipment.new', 'advance' => 'appear:equipment.form', 'skip_when' => 'vpn_ready'],
+                ['key' => 'vpn.fw_form', 'route' => 'equipment.index', 'target' => 'equipment.form', 'advance' => 'created:equipment', 'skip_when' => 'vpn_ready'],
+                ['key' => 'vpn.fw_iface_open', 'route' => 'equipment.show', 'query' => ['tab' => 'interfaces'], 'target' => 'interfaces.new', 'advance' => 'appear:interfaces.form', 'skip_when' => 'vpn_ready'],
+                ['key' => 'vpn.fw_iface_form', 'route' => 'equipment.show', 'query' => ['tab' => 'interfaces'], 'target' => 'interfaces.form', 'advance' => 'created:interface', 'skip_when' => 'vpn_ready'],
                 ['key' => 'vpn.open', 'route' => 'vpns.index', 'target' => 'vpn.new-remote', 'advance' => 'appear:vpn.form'],
                 ['key' => 'vpn.form', 'route' => 'vpns.index', 'target' => 'vpn.form', 'advance' => 'created:vpn'],
             ]],
@@ -142,6 +154,7 @@ final class GuideTours
                     'target' => $step['target'],
                     'advance' => $step['advance'],
                     'skipIf' => $step['skip_if'] ?? null,
+                    'skipWhen' => $step['skip_when'] ?? null,
                     'loop' => $step['loop'] ?? null,
                 ], $tour['steps']),
             ];
@@ -154,6 +167,25 @@ final class GuideTours
         }
 
         return $tours;
+    }
+
+    /**
+     * What the active tenant already has, for `skip_when`. Computed on every
+     * page, so a step created by the user in the meantime is taken into
+     * account at the next navigation.
+     *
+     * @return array<string, bool>
+     */
+    public function facts(): array
+    {
+        if (TenantContext::id() === null) {
+            return [];
+        }
+
+        return [
+            'wifi_ready' => NetworkInterface::query()->wifiBroadcasters()->exists(),
+            'vpn_ready' => NetworkInterface::query()->onFirewall()->exists(),
+        ];
     }
 
     /**

@@ -3,7 +3,7 @@
         <a href="{{ route('export.equipment.csv') }}" class="text-sm text-gray-700 hover:text-gray-900 inline-flex items-center gap-x-1">{{ __('equipment.export_csv') }}</a>
         @can('create', App\Models\Equipment::class)
             <a href="{{ route('equipment.import') }}" wire:navigate class="text-sm text-gray-700 hover:text-gray-900 inline-flex items-center gap-x-1">{{ __('equipment.import_csv') }}</a>
-            <button wire:click="openCreate" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+            <button wire:click="openCreate" data-guide="equipment.new" class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
                 <x-icon name="plus" class="h-4 w-4" /> {{ __('equipment.new') }}
             </button>
         @endcan
@@ -141,7 +141,7 @@
 
     @if ($showForm)
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
-            <div class="bg-white rounded-md shadow-lg w-full max-w-2xl p-6 my-8">
+            <div data-guide="equipment.form" class="bg-white rounded-md shadow-lg w-full max-w-2xl p-6 my-8">
                 <h2 class="text-lg font-semibold mb-4">{{ $editingId ? __('equipment.form_edit') : ($duplicatingFromId ? __('equipment.form_duplicate') : __('equipment.new')) }}</h2>
                 @if ($duplicatingFromId)
                     <p class="-mt-2 mb-4 text-sm text-gray-500">{{ __('equipment.duplicate_note', ['count' => $duplicatingInterfaceCount]) }}</p>

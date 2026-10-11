@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use App\Enums\EquipmentType;
+use App\Enums\InterfaceMedia;
+use App\Enums\InterfaceType;
 use App\Enums\UserRole;
+use App\Livewire\Equipment\Index as EquipmentIndex;
 use App\Livewire\Equipment\Show as EquipmentShow;
 use App\Livewire\Racks\Elevation;
 use App\Livewire\Racks\Index as RacksIndex;
@@ -14,6 +17,7 @@ use App\Livewire\Topology\SnapshotSaveModal;
 use App\Livewire\Vpn\Index as VpnIndex;
 use App\Livewire\WifiNetworks\Index as WifiIndex;
 use App\Models\Equipment;
+use App\Models\NetworkInterface;
 use App\Models\Rack;
 use App\Models\Room;
 use App\Models\Site;
@@ -136,6 +140,8 @@ it('finds every element a tour step points at', function (): void {
         'rack.elevation' => $page(route('racks.show', $rack)),
         'rack.equipment-form' => $modal(Elevation::class, ['rack' => $rack], 'slotClicked', [1]),
         'equipment.list' => $page(route('equipment.index')),
+        'equipment.new' => $page(route('equipment.index')),
+        'equipment.form' => $modal(EquipmentIndex::class, [], 'openCreate'),
         'interfaces.new' => $page(route('equipment.show', ['equipment' => $equipment, 'tab' => 'interfaces'])),
         'interfaces.form' => $modal(EquipmentShow::class, ['equipment' => $equipment], 'openIfCreate'),
         'connections.wizard' => $page(route('connections.create')),
@@ -224,4 +230,46 @@ it('keeps the invitation per session for the shared demo account', function (): 
 
     expect($user->fresh()->preferences['guide_offered'] ?? null)->toBeNull()
         ->and(guideConfig($this->get(route('dashboard')))['offer'])->toBeFalse();
+});
+
+it('knows whether the customer can host a Wi-Fi network and a VPN', function (): void {
+    guideUser();
+    $facts = fn () => app(GuideTours::class)->facts();
+    $port = fn (Equipment $eq, InterfaceMedia $media) => NetworkInterface::factory()->create([
+        'equipment_id' => $eq->getKey(),
+        'type' => $media === InterfaceMedia::Wireless ? InterfaceType::Wireless : InterfaceType::Ethernet,
+        'media' => $media,
+    ]);
+
+    expect($facts())->toBe(['wifi_ready' => false, 'vpn_ready' => false]);
+
+    // A copper uplink cannot broadcast an SSID.
+    $ap = Equipment::factory()->create(['type' => EquipmentType::AccessPoint]);
+    $port($ap, InterfaceMedia::Copper);
+    expect($facts()['wifi_ready'])->toBeFalse();
+
+    $port($ap, InterfaceMedia::Wireless);
+    $port(Equipment::factory()->create(['type' => EquipmentType::Firewall]), InterfaceMedia::Copper);
+
+    expect($facts())->toBe(['wifi_ready' => true, 'vpn_ready' => true]);
+});
+
+it('asks for an access point and a firewall only when they are missing', function (): void {
+    $tours = app(GuideTours::class)->forUser(guideUser());
+    $skips = fn (string $tour) => array_column($tours[$tour]['steps'], 'skipWhen');
+
+    expect($skips('wifi'))->toBe(['wifi_ready', 'wifi_ready', 'wifi_ready', 'wifi_ready', null, null])
+        ->and($skips('vpn'))->toBe(['vpn_ready', 'vpn_ready', 'vpn_ready', 'vpn_ready', null, null])
+        ->and(guideConfig($this->get(route('dashboard')))['facts'])->toBe(['wifi_ready' => false, 'vpn_ready' => false]);
+});
+
+it('puts a wireless port on a wireless medium', function (): void {
+    guideUser();
+    $ap = Equipment::factory()->create(['type' => EquipmentType::AccessPoint]);
+
+    Livewire::test(EquipmentShow::class, ['equipment' => $ap])
+        ->call('openIfCreate')
+        ->assertSet('ifMedia', 'copper')
+        ->set('ifType', 'wireless')
+        ->assertSet('ifMedia', 'wireless');
 });
