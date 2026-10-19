@@ -24,6 +24,9 @@ Laravel 11 · Livewire 3 · Alpine.js · Tailwind · PostgreSQL 16 · Redis 7 ·
   token creati dagli admin con permessi per risorsa/azione e per cliente; copre sedi, locali,
   rack, apparati, interfacce, connessioni, topologia, reti Wi‑Fi e VPN.
   Documentazione completa in **[docs/API.md](docs/API.md)**, Postman collection in `docs/postman/trama.json`.
+- **Server MCP per assistenti AI**: endpoint `/mcp` per Claude Code, Claude Desktop, Cursor e altri
+  client MCP; 35 tool per consultare e modificare l'impianto, limitati dai permessi del token.
+  Guida in **[docs/MCP.md](docs/MCP.md)**.
 - **Polish** (FASE 8): dashboard con KPI cached, ricerca globale debounced, dark mode persistente,
   notifiche persistenti con bell badge, mini-mappa room.
 
@@ -132,6 +135,7 @@ docker compose exec app php artisan icons:defaults --export
 │   └── postgres/
 ├── docs/                    # Documentazione di progetto
 │   ├── API.md               # Documentazione API REST
+│   ├── MCP.md               # Server MCP per assistenti AI
 │   ├── DATA_MODEL.md
 │   ├── UI_UX.md
 │   └── PHASE_*.md           # Roadmap a fasi

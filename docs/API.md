@@ -10,6 +10,7 @@ monitoraggio, strumenti di provisioning o assistenti AI.
 - **Cliente:** header `X-Tenant-Id: <id>` obbligatorio su quasi tutte le rotte.
 - **Limite:** 60 richieste al minuto per utente.
 - **Collezione Postman:** [`docs/postman/trama.json`](postman/trama.json).
+- **Assistenti AI:** per collegare Claude, Cursor o un altro client MCP vedi [MCP.md](MCP.md).
 
 ## Indice
 
@@ -85,8 +86,9 @@ Regole:
   è una modifica della rete o della VPN, quindi richiede `wifi:update` o `vpn:update`.
 - Concedere un'azione di scrittura concede automaticamente anche `read` sulla
   stessa risorsa.
-- C'è un permesso speciale, `tokens:manage`, che consente di gestire i token via
-  API (vedi [sotto](#gestione-dei-token-via-api)). Non è incluso in nessun preset.
+- Ci sono due permessi speciali, non inclusi in nessun preset:
+  - `tokens:manage` consente di gestire i token via API (vedi [sotto](#gestione-dei-token-via-api));
+  - `mcp:access` consente di usare il token con il [server MCP](MCP.md).
 - Una rotta nuova senza un permesso associato è **negata** per default.
 
 ## Header e cliente attivo
