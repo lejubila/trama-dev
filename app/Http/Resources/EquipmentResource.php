@@ -37,6 +37,7 @@ class EquipmentResource extends JsonResource
                     'u_height' => $this->position_u_height,
                     'orient' => $this->position_orient,
                 ] : null,
+                'room_id' => $this->room_id,
                 'host_equipment_id' => $this->host_equipment_id,
                 'status' => $this->status?->value,
                 'management_ip' => $this->management_ip,

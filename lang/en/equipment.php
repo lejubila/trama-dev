@@ -116,6 +116,8 @@ return [
     'err_backing_only_virtual' => 'Only virtual interfaces can have a backing NIC.',
     'err_host_only_vm' => 'Only virtual machines have a hypervisor host.',
     'err_vm_not_mountable' => 'A virtual machine cannot be mounted in a rack.',
+    'err_room_missing' => 'The room does not exist.',
+    'err_room_not_rack' => 'The room does not match the rack\'s room.',
     'err_vlan_range' => 'Invalid range: ":token". Use numbers 1-4094.',
     'err_vlan_out_of_range' => 'VLAN out of range 1-4094: ":token".',
     'err_vlan_inverted' => 'Inverted range: ":token" (expected ascending "from-to").',

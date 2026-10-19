@@ -235,8 +235,9 @@ Filtro: `q` (nome contiene).
 | `PUT/PATCH` | `/equipment/{equipment}` | `equipment:update` |
 | `DELETE` | `/equipment/{equipment}` | `equipment:delete` |
 
-Filtri: `q` (nome, seriale o modello contiene), `type`, `site_id`, `rack_id`,
-`host_equipment_id` (le VM di un hypervisor), `status`, `per_page`.
+Filtri: `q` (nome, seriale o modello contiene), `type`, `site_id`, `room_id`
+(apparati del locale, nei rack o fuori), `rack_id`, `host_equipment_id` (le VM di un
+hypervisor), `status`, `per_page`.
 
 | Campo | Tipo | Note |
 |---|---|---|
@@ -247,6 +248,7 @@ Filtri: `q` (nome, seriale o modello contiene), `type`, `site_id`, `rack_id`,
 | `management_ip` | IP | |
 | `description` | string | |
 | `rack_id` | int | Rack in cui è montato |
+| `room_id` | int | Locale. Per un apparato in rack è quello del rack; da solo colloca l'apparato nel locale **senza armadio** |
 | `mounted` | bool | Con `true` sono obbligatori `rack_id`, `position_u_start` e `position_u_height` |
 | `position_u_start` / `position_u_height` | int 1…60 | Prima U e numero di U occupate |
 | `position_orient` | `front` \| `rear` | |
@@ -254,6 +256,15 @@ Filtri: `q` (nome, seriale o modello contiene), `type`, `site_id`, `rack_id`,
 | `host_equipment_id` | int | Solo per `virtual_machine`, dove è obbligatorio: l'hypervisor su cui gira la VM |
 
 Se la posizione è occupata o esce dal rack, la risposta è `422` su `position_u_start`.
+
+**Apparato in un locale senza armadio** (switch a muro, firewall da scrivania, NAS…):
+- Passa `room_id` senza `mounted: true`, per esempio `{"name":"SW-WALL","type":"switch","room_id":7}`.
+  L'apparato non è montato e non occupa U.
+- Con un `PATCH` di `room_id` su un apparato montato in un rack, l'apparato esce dal
+  rack e passa nel locale. Fa eccezione il caso in cui il locale indicato è quello del
+  rack: allora non cambia nulla.
+- Per un apparato montato, `room_id` viene preso dal rack. Se lo indichi insieme a
+  `mounted: true` deve coincidere con il locale del rack, altrimenti la risposta è `422`.
 
 **Macchine virtuali:**
 - Una `virtual_machine` deve avere come `host_equipment_id` un apparato di tipo

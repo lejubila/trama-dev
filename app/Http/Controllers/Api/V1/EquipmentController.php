@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\EquipmentRequest;
 use App\Http\Resources\EquipmentResource;
 use App\Models\Equipment;
 use App\Models\Rack;
+use App\Models\Room;
 use App\Services\RackPlacementService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -30,6 +31,7 @@ class EquipmentController extends Controller
      *   @OA\Parameter(name="q", in="query", @OA\Schema(type="string")),
      *   @OA\Parameter(name="type", in="query", @OA\Schema(type="string")),
      *   @OA\Parameter(name="site_id", in="query", @OA\Schema(type="integer")),
+     *   @OA\Parameter(name="room_id", in="query", description="Apparati del locale, nei rack o fuori", @OA\Schema(type="integer")),
      *   @OA\Parameter(name="rack_id", in="query", @OA\Schema(type="integer")),
      *   @OA\Parameter(name="host_equipment_id", in="query", description="VM ospitate da questo hypervisor", @OA\Schema(type="integer")),
      *   @OA\Parameter(name="status", in="query", @OA\Schema(type="string")),
@@ -44,7 +46,13 @@ class EquipmentController extends Controller
 
         $query = Equipment::query()
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->string('type')))
-            ->when($request->filled('site_id'), fn ($q) => $q->whereHas('rack.room', fn ($qq) => $qq->where('site_id', $request->integer('site_id'))))
+            // A device sits in a room either through its rack or directly (no rack).
+            ->when($request->filled('site_id'), fn ($q) => $q->where(fn ($qq) => $qq
+                ->whereHas('room', fn ($qr) => $qr->where('site_id', $request->integer('site_id')))
+                ->orWhereHas('rack.room', fn ($qr) => $qr->where('site_id', $request->integer('site_id')))))
+            ->when($request->filled('room_id'), fn ($q) => $q->where(fn ($qq) => $qq
+                ->where('room_id', $request->integer('room_id'))
+                ->orWhereHas('rack', fn ($qr) => $qr->where('room_id', $request->integer('room_id')))))
             ->when($request->filled('rack_id'), fn ($q) => $q->where('rack_id', $request->integer('rack_id')))
             ->when($request->filled('host_equipment_id'), fn ($q) => $q->where('host_equipment_id', $request->integer('host_equipment_id')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
@@ -62,7 +70,7 @@ class EquipmentController extends Controller
 
     public function store(EquipmentRequest $request, RackPlacementService $placement): EquipmentResource
     {
-        $data = $this->withHost($request->validated(), null);
+        $data = $this->withRoom($this->withHost($request->validated(), null), null);
         $this->ensurePlacement($data, null, $placement);
 
         $equipment = Equipment::create($data);
@@ -79,7 +87,7 @@ class EquipmentController extends Controller
 
     public function update(EquipmentRequest $request, Equipment $equipment, RackPlacementService $placement): EquipmentResource
     {
-        $data = $this->withHost($request->validated(), $equipment);
+        $data = $this->withRoom($this->withHost($request->validated(), $equipment), $equipment);
         // Merge current values for fields not in payload to validate placement holistically
         $merged = array_merge($equipment->only(['rack_id', 'mounted', 'position_u_start', 'position_u_height']), $data);
         $this->ensurePlacement($merged, $equipment, $placement);
@@ -146,8 +154,59 @@ class EquipmentController extends Controller
         $data['position_u_start'] = null;
         $data['position_u_height'] = null;
         // Same as the web form: the VM shows up under its host's room in filters.
-        if ($current?->room_id === null) {
+        if ($current?->room_id === null && ! isset($data['room_id'])) {
             $data['room_id'] = $host->room_id ?? $host->rack?->room_id;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Keeps `room_id` coherent with the rack, as the web form does: a
+     * rack-mounted device lives in its rack's room, while a device placed
+     * directly in a room (no rack) drops any previous rack position.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function withRoom(array $data, ?Equipment $current): array
+    {
+        $roomGiven = array_key_exists('room_id', $data) && $data['room_id'] !== null;
+
+        if ($roomGiven && Room::query()->find($data['room_id']) === null) {
+            throw ValidationException::withMessages(['room_id' => __('equipment.err_room_missing')]);
+        }
+
+        $mounted = (bool) ($data['mounted'] ?? $current?->mounted ?? false);
+        $rackId = array_key_exists('rack_id', $data) ? $data['rack_id'] : $current?->rack_id;
+        $rack = $mounted && $rackId !== null ? Rack::query()->find($rackId) : null;
+
+        if ($roomGiven) {
+            $explicitMount = ($data['mounted'] ?? null) === true;
+            if ($rack !== null && (int) $data['room_id'] === (int) $rack->room_id) {
+                return $data; // Same room as the rack: nothing moves.
+            }
+            if ($explicitMount) {
+                // ensurePlacement reports a missing rack; a different room is a contradiction.
+                if ($rack !== null) {
+                    throw ValidationException::withMessages(['room_id' => __('equipment.err_room_not_rack')]);
+                }
+
+                return $data;
+            }
+
+            // Another room, no explicit mounting: the device sits loose in
+            // the room and leaves any rack it was in.
+            $data['mounted'] = false;
+            $data['rack_id'] = null;
+            $data['position_u_start'] = null;
+            $data['position_u_height'] = null;
+
+            return $data;
+        }
+
+        if ($rack !== null) {
+            $data['room_id'] = (int) $rack->room_id;
         }
 
         return $data;
