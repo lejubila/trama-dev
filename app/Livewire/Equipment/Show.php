@@ -16,6 +16,7 @@ use App\Livewire\Concerns\NotifiesGuide;
 use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
+use App\Validation\VnicBacking;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -430,33 +431,9 @@ class Show extends Component
         // Per una VM il backing dev'essere una pNIC dell'hypervisor host;
         // per qualsiasi altro equipment dev'essere una porta fisica dello
         // stesso equipment (una vNIC non può ospitare sé stessa).
-        if ($this->equipment->isVirtualMachine()) {
-            $expectedEquipmentId = $this->equipment->host_equipment_id;
-            if ($expectedEquipmentId === null) {
-                $this->addError('ifBackedById', __('equipment.err_vm_no_host'));
-
-                return false;
-            }
-            $mismatchMessage = __('equipment.err_backing_not_host');
-        } else {
-            $expectedEquipmentId = $this->equipment->getKey();
-            $mismatchMessage = __('equipment.err_backing_not_self');
-        }
-
-        $pnic = NetworkInterface::query()->find($this->ifBackedById);
-        if ($pnic === null || (int) $pnic->equipment_id !== (int) $expectedEquipmentId) {
-            $this->addError('ifBackedById', $mismatchMessage);
-
-            return false;
-        }
-        if ($this->editingIfId !== null && (int) $pnic->id === (int) $this->editingIfId) {
-            $this->addError('ifBackedById', __('equipment.err_backing_self'));
-
-            return false;
-        }
-        $allowed = [InterfaceType::Ethernet, InterfaceType::Fiber, InterfaceType::Wireless];
-        if (! in_array($pnic->type, $allowed, true)) {
-            $this->addError('ifBackedById', __('equipment.err_backing_not_physical'));
+        $error = VnicBacking::error($this->equipment, (int) $this->ifBackedById, $this->editingIfId);
+        if ($error !== null) {
+            $this->addError('ifBackedById', $error);
 
             return false;
         }
@@ -719,18 +696,12 @@ class Show extends Component
         // equipment (firewall, router, server, …): le porte fisiche dello
         // stesso equipment, escludendo l'interfaccia in editing (una vNIC
         // non può ospitare sé stessa).
-        $backingSourceEquipmentId = $this->equipment->isVirtualMachine()
-            ? $this->equipment->host_equipment_id
-            : $this->equipment->getKey();
+        $backingSourceEquipmentId = VnicBacking::sourceEquipmentId($this->equipment);
 
         $backingCandidates = $backingSourceEquipmentId !== null
             ? NetworkInterface::query()
                 ->where('equipment_id', $backingSourceEquipmentId)
-                ->whereIn('type', [
-                    InterfaceType::Ethernet->value,
-                    InterfaceType::Fiber->value,
-                    InterfaceType::Wireless->value,
-                ])
+                ->whereIn('type', array_column(VnicBacking::PHYSICAL_TYPES, 'value'))
                 ->when($this->editingIfId !== null, fn ($q) => $q->where('id', '!=', $this->editingIfId))
                 ->orderBy('name')
                 ->get(['id', 'name', 'type'])
