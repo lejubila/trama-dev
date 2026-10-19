@@ -21,7 +21,9 @@ Laravel 11 · Livewire 3 · Alpine.js · Tailwind · PostgreSQL 16 · Redis 7 ·
 - **Export/Import** (FASE 6): PDF rack via Browsershot, CSV equipment con preview/transaction,
   storico import in audit trail.
 - **REST API** (FASE 7): `/api/v1` con Sanctum + `X-Tenant-Id` header, rate limit 60/min,
-  Swagger UI su `/api/documentation`, Postman collection in `docs/postman/trama.json`.
+  token creati dagli admin con permessi per risorsa/azione e per cliente; copre sedi, locali,
+  rack, apparati, interfacce, connessioni, topologia, reti Wi‑Fi e VPN.
+  Documentazione completa in **[docs/API.md](docs/API.md)**, Postman collection in `docs/postman/trama.json`.
 - **Polish** (FASE 8): dashboard con KPI cached, ricerca globale debounced, dark mode persistente,
   notifiche persistenti con bell badge, mini-mappa room.
 
@@ -129,6 +131,7 @@ docker compose exec app php artisan icons:defaults --export
 │   ├── nginx/
 │   └── postgres/
 ├── docs/                    # Documentazione di progetto
+│   ├── API.md               # Documentazione API REST
 │   ├── DATA_MODEL.md
 │   ├── UI_UX.md
 │   └── PHASE_*.md           # Roadmap a fasi
