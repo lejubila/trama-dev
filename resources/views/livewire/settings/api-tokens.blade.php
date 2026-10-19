@@ -63,11 +63,49 @@
         </table>
     </div>
 
+    <h2 class="mt-8 mb-2 text-base font-semibold text-gray-900">{{ __('settings.apps_title') }}</h2>
+    <p class="mb-3 text-sm text-gray-600">{{ __('settings.apps_subtitle') }}</p>
+    <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-x-auto" data-testid="connected-apps">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.app') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.abilities') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.token_tenants') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.connected_at') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.last_used') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">{{ __('common.actions') }}</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                @forelse ($grants as $g)
+                    <tr wire:key="grant-{{ $g->id }}">
+                        <td class="px-4 py-3">
+                            <span class="font-medium text-gray-900">{{ $g->client?->name }}</span>
+                            <span class="block text-xs text-gray-500">{{ $grantSummaries[$g->id]['host'] }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">{{ $grantSummaries[$g->id]['abilities'] }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $grantSummaries[$g->id]['tenants'] }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $g->created_at?->format('Y-m-d H:i') }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $grantSummaries[$g->id]['last_used'] }}</td>
+                        <td class="px-4 py-3 text-right whitespace-nowrap space-x-3">
+                            <button wire:click="openEditGrant({{ $g->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs">{{ __('settings.edit_permissions') }}</button>
+                            <button wire:click="disconnect({{ $g->id }})" wire:confirm="{{ __('settings.disconnect_confirm', ['name' => $g->client?->name]) }}" class="text-red-600 hover:text-red-800 text-xs">{{ __('settings.disconnect') }}</button>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">{{ __('settings.no_apps') }}</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
     @if ($showForm)
         <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
             <div class="bg-white rounded-md shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-                <h2 class="text-lg font-semibold mb-4">{{ $editingId ? __('settings.form_edit_token') : __('settings.form_new_token') }}</h2>
+                <h2 class="text-lg font-semibold mb-4">{{ $editingGrantId ? __('settings.form_edit_app') : ($editingId ? __('settings.form_edit_token') : __('settings.form_new_token')) }}</h2>
                 <form wire:submit="save" class="space-y-5">
+                    @unless ($editingGrantId)
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-gray-700">{{ __('settings.token_name') }}</label>
@@ -82,13 +120,15 @@
                         </div>
                     </div>
 
+                    @endunless
+
                     <x-token-permissions :resources="$resources" :actions="$actions" :special="$special" :tenants="$tenants" :tenant-scope="$tenantScope" />
 
                     <p class="text-xs text-gray-500">{{ __('settings.token_scope_note') }}</p>
 
                     <div class="flex justify-end gap-x-2">
                         <button type="button" wire:click="$set('showForm', false)" class="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">{{ __('common.cancel') }}</button>
-                        <button type="submit" class="px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">{{ $editingId ? __('common.save') : __('settings.create_token') }}</button>
+                        <button type="submit" class="px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">{{ $editingId || $editingGrantId ? __('common.save') : __('settings.create_token') }}</button>
                     </div>
                 </form>
             </div>
