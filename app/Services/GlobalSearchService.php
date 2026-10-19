@@ -20,7 +20,7 @@ class GlobalSearchService
     public const MIN_CHARS = 2;
 
     /**
-     * @return array{equipment: Collection<int, array<string, mixed>>, interfaces: Collection<int, array<string, mixed>>, sites: Collection<int, array<string, mixed>>, connections: Collection<int, array<string, mixed>>}
+     * @return array<string, Collection<int, mixed>>
      */
     public function search(string $query, int $perGroup = 5): array
     {
