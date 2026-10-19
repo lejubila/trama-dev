@@ -72,7 +72,9 @@
                             <x-nav-item :href="route('imports.index')" :active="request()->routeIs('imports.*')" icon="clock">{{ __('nav.imports') }}</x-nav-item>
                             <x-nav-item :href="route('audit.index')" :active="request()->routeIs('audit.*')" icon="clock">{{ __('nav.audit') }}</x-nav-item>
                             @unless (App\Support\Demo::enabled())
-                            <x-nav-item :href="route('settings.api-tokens')" :active="request()->routeIs('settings.*')" icon="link">{{ __('nav.api_tokens') }}</x-nav-item>
+                                @can('manage-api-tokens')
+                                    <x-nav-item :href="route('settings.api-tokens')" :active="request()->routeIs('settings.*')" icon="link">{{ __('nav.api_tokens') }}</x-nav-item>
+                                @endcan
                             @endunless
                         </x-nav-section>
                     </nav>

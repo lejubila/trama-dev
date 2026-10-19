@@ -1,5 +1,11 @@
 <div>
-    <x-page-header :title="__('settings.tokens_title')" :subtitle="__('settings.tokens_subtitle')" />
+    <x-page-header :title="__('settings.tokens_title')" :subtitle="__('settings.tokens_subtitle')">
+        <button type="button" wire:click="openCreate"
+                class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+            <x-icon name="plus" class="h-4 w-4" />
+            {{ __('settings.create_token') }}
+        </button>
+    </x-page-header>
 
     @if ($newPlainToken)
         <div class="bg-emerald-50 border border-emerald-200 rounded-md p-4 mb-6">
@@ -10,36 +16,14 @@
         </div>
     @endif
 
-    <form wire:submit="create" class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md p-4 mb-6 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-        <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">{{ __('settings.token_name') }}</label>
-            <input type="text" wire:model="name" placeholder="{{ __('settings.token_name_placeholder') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
-            @error('name')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700">{{ __('settings.abilities') }}</label>
-            <div class="mt-1 flex gap-x-3 text-sm">
-                <label class="inline-flex items-center gap-x-1.5">
-                    <input type="checkbox" wire:model="abilities" value="read" class="rounded border-gray-300 text-indigo-600" />
-                    read
-                </label>
-                <label class="inline-flex items-center gap-x-1.5">
-                    <input type="checkbox" wire:model="abilities" value="write" class="rounded border-gray-300 text-indigo-600" />
-                    write
-                </label>
-            </div>
-        </div>
-        <div class="md:col-span-3 flex justify-end">
-            <button type="submit" class="px-3 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700">{{ __('settings.create_token') }}</button>
-        </div>
-    </form>
-
-    <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-hidden">
+    <div class="bg-white shadow ring-1 ring-black ring-opacity-5 rounded-md overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('common.name') }}</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.abilities') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.token_tenants') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.expires') }}</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.last_used') }}</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.created') }}</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">{{ __('common.actions') }}</th>
@@ -49,17 +33,140 @@
                 @forelse ($tokens as $t)
                     <tr wire:key="tok-{{ $t->id }}">
                         <td class="px-4 py-3 font-medium text-gray-900">{{ $t->name }}</td>
-                        <td class="px-4 py-3 text-gray-600">{{ implode(', ', (array) $t->abilities) }}</td>
+                        <td class="px-4 py-3 text-gray-600" title="{{ implode(', ', (array) $t->abilities) }}">
+                            {{ $summaries[$t->id]['abilities'] }}
+                            @if ($summaries[$t->id]['manage'])
+                                <span class="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">{{ __('settings.ability_manage_tokens_short') }}</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">
+                            {{ $summaries[$t->id]['tenants'] }}
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">
+                            @if ($t->expires_at)
+                                <span @class(['text-red-600' => $t->expires_at->isPast()])>{{ $t->expires_at->format('Y-m-d') }}</span>
+                            @else
+                                {{ __('settings.never') }}
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-gray-600">{{ $t->last_used_at?->diffForHumans() ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $t->created_at?->format('Y-m-d H:i') }}</td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 text-right whitespace-nowrap space-x-3">
+                            <button wire:click="openEdit({{ $t->id }})" class="text-indigo-600 hover:text-indigo-800 text-xs">{{ __('settings.edit_permissions') }}</button>
                             <button wire:click="revoke({{ $t->id }})" wire:confirm="{{ __('settings.revoke_confirm', ['name' => $t->name]) }}" class="text-red-600 hover:text-red-800 text-xs">{{ __('settings.revoke') }}</button>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">{{ __('settings.no_tokens') }}</td></tr>
+                    <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">{{ __('settings.no_tokens') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
+
+    @if ($showForm)
+        <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
+            <div class="bg-white rounded-md shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+                <h2 class="text-lg font-semibold mb-4">{{ $editingId ? __('settings.form_edit_token') : __('settings.form_new_token') }}</h2>
+                <form wire:submit="save" class="space-y-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">{{ __('settings.token_name') }}</label>
+                            <input type="text" wire:model="name" placeholder="{{ __('settings.token_name_placeholder') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                            @error('name')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">{{ __('settings.expires') }}</label>
+                            <input type="date" wire:model="expiresAt" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                            <p class="text-xs text-gray-500 mt-1">{{ __('settings.expires_hint') }}</p>
+                            @error('expiresAt')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="block text-sm font-medium text-gray-700">{{ __('settings.abilities') }}</span>
+                            <div class="flex gap-x-2 text-xs">
+                                <button type="button" wire:click="preset('read')" class="rounded-md px-2 py-1 ring-1 ring-gray-300 hover:bg-gray-50">{{ __('settings.preset_read_only') }}</button>
+                                <button type="button" wire:click="preset('all')" class="rounded-md px-2 py-1 ring-1 ring-gray-300 hover:bg-gray-50">{{ __('settings.preset_all') }}</button>
+                                <button type="button" wire:click="preset('none')" class="rounded-md px-2 py-1 ring-1 ring-gray-300 hover:bg-gray-50">{{ __('settings.preset_none') }}</button>
+                            </div>
+                        </div>
+                        <div class="mt-2 overflow-x-auto rounded-md ring-1 ring-gray-200">
+                            <table class="min-w-full text-sm" data-testid="ability-matrix">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">{{ __('settings.resource') }}</th>
+                                        @foreach ($actions as $action)
+                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">{{ __('settings.token_actions.'.$action) }}</th>
+                                        @endforeach
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @foreach ($resources as $resource => $allowed)
+                                        <tr wire:key="res-{{ $resource }}">
+                                            <td class="px-3 py-1.5 text-gray-800">{{ __('settings.token_resources.'.$resource) }}</td>
+                                            @foreach ($actions as $action)
+                                                <td class="px-3 py-1.5 text-center">
+                                                    @if (in_array($action, $allowed, true))
+                                                        <input type="checkbox" wire:model.live="abilities" value="{{ $resource }}:{{ $action }}"
+                                                               aria-label="{{ __('settings.token_resources.'.$resource) }} — {{ __('settings.token_actions.'.$action) }}"
+                                                               class="rounded border-gray-300 text-indigo-600" />
+                                                    @else
+                                                        <span class="text-gray-300">—</span>
+                                                    @endif
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                    @endforeach
+                                    <tr>
+                                        <td class="px-3 py-1.5 text-gray-800" colspan="{{ count($actions) }}">
+                                            {{ __('settings.ability_manage_tokens') }}
+                                            <p class="text-xs text-gray-500">{{ __('settings.ability_manage_tokens_hint') }}</p>
+                                        </td>
+                                        <td class="px-3 py-1.5 text-center">
+                                            <input type="checkbox" wire:model.live="abilities" value="{{ $manageTokens }}"
+                                                   aria-label="{{ __('settings.ability_manage_tokens') }}" class="rounded border-gray-300 text-amber-600" />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        @error('abilities')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <span class="block text-sm font-medium text-gray-700">{{ __('settings.token_tenants') }}</span>
+                        <div class="mt-1 flex flex-wrap gap-x-4 text-sm">
+                            <label class="inline-flex items-center gap-x-1.5">
+                                <input type="radio" wire:model.live="tenantScope" value="all" class="border-gray-300 text-indigo-600" />
+                                {{ __('settings.tenants_all') }}
+                            </label>
+                            <label class="inline-flex items-center gap-x-1.5">
+                                <input type="radio" wire:model.live="tenantScope" value="selected" class="border-gray-300 text-indigo-600" />
+                                {{ __('settings.tenants_selected') }}
+                            </label>
+                        </div>
+                        @if ($tenantScope === 'selected')
+                            <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-40 overflow-y-auto rounded-md p-2 ring-1 ring-gray-200 text-sm">
+                                @foreach ($tenants as $tenant)
+                                    <label wire:key="tn-{{ $tenant->id }}" class="inline-flex items-center gap-x-1.5">
+                                        <input type="checkbox" wire:model="tenantIds" value="{{ $tenant->id }}" class="rounded border-gray-300 text-indigo-600" />
+                                        {{ $tenant->name }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        @endif
+                        @error('tenantIds')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+
+                    <p class="text-xs text-gray-500">{{ __('settings.token_scope_note') }}</p>
+
+                    <div class="flex justify-end gap-x-2">
+                        <button type="button" wire:click="$set('showForm', false)" class="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">{{ __('common.cancel') }}</button>
+                        <button type="submit" class="px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">{{ $editingId ? __('common.save') : __('settings.create_token') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 </div>
