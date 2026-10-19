@@ -11,7 +11,7 @@ final class Payloads
 {
     public const IFACE_KEYS = [
         'name', 'type', 'media', 'status', 'poe', 'speed_mbps', 'connector', 'vlan_mode',
-        'vlan_default', 'vlans_allowed', 'ip_address', 'mac_address', 'description',
+        'vlan_default', 'vlans_allowed', 'ip_address', 'mac_address', 'description', 'backed_by_interface_id',
     ];
 
     public const WIFI_KEYS = [
@@ -20,7 +20,7 @@ final class Payloads
 
     public const EQUIPMENT_KEYS = [
         'name', 'type', 'vendor', 'model', 'serial', 'firmware', 'asset_tag', 'status',
-        'management_ip', 'description', 'rack_id',
+        'management_ip', 'description', 'rack_id', 'host_equipment_id',
     ];
 
     /**

@@ -177,6 +177,32 @@ it('adds ports and cables them, then shows what each port is connected to', func
     expect($detail['interfaces'][0]['connected_to'])->toMatchArray(['equipment' => 'FW-1', 'interface' => $fw->name]);
 });
 
+it('creates a VM with a vNIC backed by a host NIC and shows the link on both sides', function (): void {
+    ['token' => $token, 'tenant' => $tenant] = tokenWith([TokenAbilities::MCP, ...TokenAbilities::all()]);
+    $t = $tenant->getKey();
+
+    [, $host] = mcpTool($token, 'create_equipment', ['tenant_id' => $t, 'name' => 'PVE-1', 'type' => 'hypervisor']);
+    [, $pnic] = mcpTool($token, 'add_interface', ['tenant_id' => $t, 'equipment_id' => $host['data']['id'], 'name' => 'eno1', 'type' => 'ethernet', 'media' => 'copper']);
+    [$err, $vm] = mcpTool($token, 'create_equipment', ['tenant_id' => $t, 'name' => 'VM-1', 'type' => 'virtual_machine', 'host_equipment_id' => $host['data']['id']]);
+    expect($err)->toBeFalse()->and($vm['data']['host_equipment_id'])->toBe($host['data']['id']);
+
+    [$err, $vnic] = mcpTool($token, 'add_interface', [
+        'tenant_id' => $t, 'equipment_id' => $vm['data']['id'], 'name' => 'net0', 'type' => 'virtual', 'media' => 'virtual',
+        'backed_by_interface_id' => $pnic['data']['id'],
+    ]);
+    expect($err)->toBeFalse()->and($vnic['data']['backed_by_interface_id'])->toBe($pnic['data']['id']);
+
+    [, $vmDetail] = mcpTool($token, 'get_equipment', ['tenant_id' => $t, 'equipment_id' => $vm['data']['id']]);
+    expect($vmDetail['interfaces'][0]['backed_by'])->toMatchArray(['interface' => 'eno1', 'equipment' => 'PVE-1']);
+
+    [, $hostDetail] = mcpTool($token, 'get_equipment', ['tenant_id' => $t, 'equipment_id' => $host['data']['id']]);
+    expect($hostDetail['interfaces'][0]['carries'][0])->toMatchArray(['interface' => 'net0', 'equipment' => 'VM-1'])
+        ->and($hostDetail['virtual_machines'][0]['name'])->toBe('VM-1');
+
+    [$err, $msg] = mcpTool($token, 'update_interface', ['tenant_id' => $t, 'interface_id' => $pnic['data']['id'], 'backed_by_interface_id' => $vnic['data']['id']]);
+    expect($err)->toBeTrue()->and($msg)->toMatch('/virtual/i');
+});
+
 it('finds an interface by IP with search', function (): void {
     ['token' => $token, 'tenant' => $tenant] = tokenWith([TokenAbilities::MCP, 'equipment:read']);
     $port = deviceWithPort($tenant, EquipmentType::Router, InterfaceMedia::Copper, 'RTR');

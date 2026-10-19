@@ -39,6 +39,7 @@ class UpdateEquipment extends TramaTool
             'u_start' => $schema->integer()->min(1)->description('Lowest rack unit occupied. Requires rack_id and u_height.'),
             'u_height' => $schema->integer()->min(1)->description('Number of rack units (1 for most switches).'),
             'side' => $schema->string()->enum(['front', 'rear']),
+            'host_equipment_id' => $schema->integer()->description('Only for type virtual_machine (required there): the hypervisor the VM runs on. VMs are never rack-mounted.'),
         ];
     }
 

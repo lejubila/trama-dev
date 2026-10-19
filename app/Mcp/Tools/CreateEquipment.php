@@ -15,7 +15,7 @@ class CreateEquipment extends TramaTool
 {
     protected string $name = 'create_equipment';
 
-    protected string $description = 'Create a device. To mount it in a rack pass rack_id, u_start and u_height (check free units with get_rack first); otherwise it is created unmounted (e.g. ceiling access points, desktops).';
+    protected string $description = 'Create a device. To mount it in a rack pass rack_id, u_start and u_height (check free units with get_rack first); otherwise it is created unmounted (e.g. ceiling access points, desktops). A virtual machine needs host_equipment_id (its hypervisor).';
 
     protected string $ability = 'equipment:create';
 
@@ -36,6 +36,7 @@ class CreateEquipment extends TramaTool
             'u_start' => $schema->integer()->min(1)->description('Lowest rack unit occupied. Requires rack_id and u_height.'),
             'u_height' => $schema->integer()->min(1)->description('Number of rack units (1 for most switches).'),
             'side' => $schema->string()->enum(['front', 'rear']),
+            'host_equipment_id' => $schema->integer()->description('Only for type virtual_machine (required there): the hypervisor the VM runs on. VMs are never rack-mounted.'),
         ];
     }
 

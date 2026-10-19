@@ -28,6 +28,7 @@ class ListEquipment extends TramaTool
             'status' => $schema->string()->enum(EquipmentStatus::class),
             'site_id' => $schema->integer(),
             'rack_id' => $schema->integer(),
+            'host_equipment_id' => $schema->integer()->description('Only the virtual machines running on this hypervisor.'),
             'page' => $schema->integer()->min(1),
         ];
     }
@@ -40,6 +41,7 @@ class ListEquipment extends TramaTool
             'status' => $request->get('status'),
             'site_id' => $request->get('site_id'),
             'rack_id' => $request->get('rack_id'),
+            'host_equipment_id' => $request->get('host_equipment_id'),
             'page' => $request->get('page'),
             'per_page' => 100,
         ]);

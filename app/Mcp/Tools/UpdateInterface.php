@@ -41,6 +41,7 @@ class UpdateInterface extends TramaTool
             'ip_address' => $schema->string()->description('IP, optionally in CIDR, e.g. 10.0.0.1/24.'),
             'mac_address' => $schema->string(),
             'description' => $schema->string(),
+            'backed_by_interface_id' => $schema->integer()->description('Only for type virtual: the physical port that carries this interface. For a VM vNIC, a NIC of the VM\'s hypervisor host; for a VLAN sub-interface, a port of the same device. Pass null to clear.'),
         ];
     }
 

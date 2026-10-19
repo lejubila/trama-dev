@@ -60,6 +60,9 @@ class TramaServer extends Server
         at most one active cable. Wi-Fi networks (SSIDs) are broadcast by wireless interfaces of access
         points/controllers and have associated client devices. VPNs are site-to-site (between two firewall
         interfaces) or remote access (clients connecting to a firewall interface).
+        Virtualization: a virtual_machine runs on a hypervisor (host_equipment_id) and is never in a rack.
+        Its vNICs are interfaces of type virtual, linked to the host's physical NIC that carries them via
+        backed_by_interface_id (not a cable); VLAN sub-interfaces are backed by a port of the same device.
 
         How to work:
         - Call list_tenants first and pass tenant_id to every other tool (it may be omitted only when the

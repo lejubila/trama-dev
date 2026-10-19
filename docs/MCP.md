@@ -139,8 +139,8 @@ Tutti i tool che lavorano sui dati accettano `tenant_id`, l'id del cliente letto
 | `list_rooms` | Locali di una sede | `rooms:read` |
 | `list_racks` | Rack di un locale | `racks:read` |
 | `get_rack` | Rack con apparati montati (U, lato) e **U libere** davanti e dietro | `racks:read` (+ `equipment:read` per gli apparati) |
-| `list_equipment` | Apparati, con filtri per tipo, stato, sede, rack e testo | `equipment:read` |
-| `get_equipment` | Dettaglio di un apparato con tutte le porte e **a cosa è collegata ciascuna** | `equipment:read` (+ `connections:read` per i collegamenti) |
+| `list_equipment` | Apparati, con filtri per tipo, stato, sede, rack, hypervisor (`host_equipment_id`) e testo | `equipment:read` |
+| `get_equipment` | Dettaglio di un apparato con tutte le porte e **a cosa è collegata ciascuna**. Per le interfacce virtuali mostra la NIC fisica che le porta (`backed_by`); per le NIC fisiche, le vNIC che portano (`carries`); per un hypervisor, le sue `virtual_machines` | `equipment:read` (+ `connections:read` per i collegamenti) |
 | `list_connections` | Cavi con i due estremi, filtrabili per apparato e stato | `connections:read` |
 | `get_topology` | Topologia compatta: apparati con posizione (sede / locale / rack) e collegamenti | `topology:read` |
 | `list_wifi_networks` | Reti Wi‑Fi con VLAN, sicurezza, access point e numero di client | `wifi:read` |
@@ -155,10 +155,10 @@ Tutti i tool che lavorano sui dati accettano `tenant_id`, l'id del cliente letto
 | `create_site` | Nuova sede | `sites:create` |
 | `create_room` | Nuovo locale in una sede | `rooms:create` |
 | `create_rack` | Nuovo rack in un locale | `racks:create` |
-| `create_equipment` | Nuovo apparato, montato in un rack (`rack_id`, `u_start`, `u_height`, `side`) o non montato | `equipment:create` |
+| `create_equipment` | Nuovo apparato, montato in un rack (`rack_id`, `u_start`, `u_height`, `side`) o non montato. Una VM richiede `host_equipment_id` (il suo hypervisor) | `equipment:create` |
 | `update_equipment` | Modifica o sposta un apparato (solo i campi indicati) | `equipment:update` |
 | `delete_equipment` | Elimina un apparato ⚠️ | `equipment:delete` |
-| `add_interface` | Nuova porta su un apparato (stato `up` e PoE `none` di default) | `interfaces:create` |
+| `add_interface` | Nuova porta su un apparato (stato `up` e PoE `none` di default). Per una vNIC, `backed_by_interface_id` indica la NIC fisica dell'host che la porta | `interfaces:create` |
 | `update_interface` | Modifica una porta (VLAN, IP, velocità…) | `interfaces:update` |
 | `delete_interface` | Elimina una porta ⚠️ | `interfaces:delete` |
 | `connect_interfaces` | Registra un cavo tra due porte | `connections:create` |
