@@ -41,3 +41,6 @@ Schedule::command('demo:reset')
     ->timezone((string) config('demo.timezone', 'Europe/Rome'))
     ->when(fn (): bool => Demo::enabled())
     ->withoutOverlapping();
+
+// OAuth for the MCP endpoint: expired codes, ended connections, unused clients.
+Schedule::command('oauth:prune')->dailyAt('03:30');

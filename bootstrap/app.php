@@ -15,6 +15,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -31,6 +32,10 @@ return Application::configure(basePath: dirname(__DIR__))
             RateLimiter::for('mcp', fn (Request $r) => Limit::perMinute(120)->by(
                 'mcp:'.($r->user()?->getAuthIdentifier() ?? $r->ip()),
             ));
+            RateLimiter::for('oauth', fn (Request $r) => Limit::perMinute(60)->by('oauth:'.$r->ip()));
+            RateLimiter::for('oauth-register', fn (Request $r) => Limit::perMinute(10)->by('oauth-register:'.$r->ip()));
+
+            Route::middleware('demo.disabled')->group(base_path('routes/oauth.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware) {

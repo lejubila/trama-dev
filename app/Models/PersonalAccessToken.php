@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
 
 /**
@@ -11,6 +12,7 @@ use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
  * tenant the owner can access, otherwise only the listed ids.
  *
  * @property list<int>|null $tenant_ids
+ * @property int|null $oauth_grant_id Set on tokens issued through OAuth (claude.ai, ChatGPT…).
  */
 class PersonalAccessToken extends SanctumPersonalAccessToken
 {
@@ -20,6 +22,7 @@ class PersonalAccessToken extends SanctumPersonalAccessToken
         'abilities',
         'tenant_ids',
         'expires_at',
+        'oauth_grant_id',
     ];
 
     protected function casts(): array
@@ -28,6 +31,14 @@ class PersonalAccessToken extends SanctumPersonalAccessToken
             ...parent::casts(),
             'tenant_ids' => 'array',
         ];
+    }
+
+    /**
+     * @return BelongsTo<OAuthGrant, $this>
+     */
+    public function oauthGrant(): BelongsTo
+    {
+        return $this->belongsTo(OAuthGrant::class, 'oauth_grant_id');
     }
 
     public function allowsTenant(int $tenantId): bool
