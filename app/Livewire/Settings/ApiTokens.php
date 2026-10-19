@@ -171,7 +171,11 @@ class ApiTokens extends Component
             'tokens' => $tokens,
             'summaries' => $tokens->mapWithKeys(fn (PersonalAccessToken $t): array => [$t->id => [
                 'abilities' => $this->abilitiesLabel((array) $t->abilities),
-                'manage' => $t->can(TokenAbilities::MANAGE_TOKENS),
+                'badges' => array_values(array_filter(
+                    TokenAbilities::SPECIAL,
+                    fn (string $label, string $ability): bool => in_array($ability, (array) $t->abilities, true),
+                    ARRAY_FILTER_USE_BOTH,
+                )),
                 'tenants' => $t->tenant_ids === null
                     ? __('settings.tenants_all')
                     : collect($t->tenant_ids)->map(fn ($id) => $tenantNames[$id] ?? "#{$id}")->implode(', '),
@@ -179,7 +183,7 @@ class ApiTokens extends Component
             'resources' => TokenAbilities::RESOURCES,
             'actions' => TokenAbilities::ACTIONS,
             'tenants' => $tenants,
-            'manageTokens' => TokenAbilities::MANAGE_TOKENS,
+            'special' => TokenAbilities::SPECIAL,
         ]);
     }
 

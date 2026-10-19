@@ -35,9 +35,9 @@
                         <td class="px-4 py-3 font-medium text-gray-900">{{ $t->name }}</td>
                         <td class="px-4 py-3 text-gray-600" title="{{ implode(', ', (array) $t->abilities) }}">
                             {{ $summaries[$t->id]['abilities'] }}
-                            @if ($summaries[$t->id]['manage'])
-                                <span class="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">{{ __('settings.ability_manage_tokens_short') }}</span>
-                            @endif
+                            @foreach ($summaries[$t->id]['badges'] as $badge)
+                                <span class="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">{{ __('settings.ability_'.$badge.'_short') }}</span>
+                            @endforeach
                         </td>
                         <td class="px-4 py-3 text-gray-600">
                             {{ $summaries[$t->id]['tenants'] }}
@@ -118,16 +118,18 @@
                                             @endforeach
                                         </tr>
                                     @endforeach
-                                    <tr>
-                                        <td class="px-3 py-1.5 text-gray-800" colspan="{{ count($actions) }}">
-                                            {{ __('settings.ability_manage_tokens') }}
-                                            <p class="text-xs text-gray-500">{{ __('settings.ability_manage_tokens_hint') }}</p>
-                                        </td>
-                                        <td class="px-3 py-1.5 text-center">
-                                            <input type="checkbox" wire:model.live="abilities" value="{{ $manageTokens }}"
-                                                   aria-label="{{ __('settings.ability_manage_tokens') }}" class="rounded border-gray-300 text-amber-600" />
-                                        </td>
-                                    </tr>
+                                    @foreach ($special as $ability => $label)
+                                        <tr wire:key="special-{{ $label }}">
+                                            <td class="px-3 py-1.5 text-gray-800" colspan="{{ count($actions) }}">
+                                                {{ __('settings.ability_'.$label) }}
+                                                <p class="text-xs text-gray-500">{{ __('settings.ability_'.$label.'_hint') }}</p>
+                                            </td>
+                                            <td class="px-3 py-1.5 text-center">
+                                                <input type="checkbox" wire:model.live="abilities" value="{{ $ability }}"
+                                                       aria-label="{{ __('settings.ability_'.$label) }}" class="rounded border-gray-300 text-amber-600" />
+                                            </td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
                             </table>
                         </div>

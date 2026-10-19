@@ -24,6 +24,15 @@ final class TokenAbilities
     /** Lets the token manage other tokens through the API (never granted by presets). */
     public const MANAGE_TOKENS = 'tokens:manage';
 
+    /** Lets the token talk to the MCP server (AI assistants). */
+    public const MCP = 'mcp:access';
+
+    /** Abilities outside the resource matrix, never granted by presets: ability → label key. */
+    public const SPECIAL = [
+        self::MCP => 'mcp',
+        self::MANAGE_TOKENS => 'manage_tokens',
+    ];
+
     /** @var array<string, list<string>> */
     public const RESOURCES = [
         'tenants' => [self::READ],
@@ -96,13 +105,13 @@ final class TokenAbilities
     }
 
     /**
-     * Abilities a token may be granted, including tokens:manage.
+     * Abilities a token may be granted, including the special ones.
      *
      * @return list<string>
      */
     public static function grantable(): array
     {
-        return [...self::all(), self::MANAGE_TOKENS];
+        return [...self::all(), ...array_keys(self::SPECIAL)];
     }
 
     /**
