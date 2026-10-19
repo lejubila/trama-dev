@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Settings;
 
+use App\Livewire\Concerns\EditsTokenPermissions;
 use App\Models\PersonalAccessToken;
 use App\Models\Tenant;
 use App\Support\Api\TokenAbilities;
@@ -12,7 +13,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -23,6 +23,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class ApiTokens extends Component
 {
+    use EditsTokenPermissions;
+
     public bool $showForm = false;
 
     /** Token being edited; null while creating. */
@@ -30,19 +32,7 @@ class ApiTokens extends Component
 
     public string $name = '';
 
-    /** @var list<string> */
-    public array $abilities = [];
-
-    /** 'all' = every tenant, 'selected' = only $tenantIds. */
-    public string $tenantScope = 'all';
-
-    /** @var list<int|string> */
-    public array $tenantIds = [];
-
     public ?string $expiresAt = null;
-
-    /** @var list<string> Abilities before the current checkbox change (request-local). */
-    protected array $previousAbilities = [];
 
     /** Plain-text token shown ONCE right after creation. */
     public ?string $newPlainToken = null;
@@ -70,43 +60,9 @@ class ApiTokens extends Component
         $this->resetForm();
         $this->editingId = $token->id;
         $this->name = $token->name;
-        $this->abilities = TokenAbilities::normalize((array) $token->abilities);
-        $this->tenantScope = $token->tenant_ids === null ? 'all' : 'selected';
-        $this->tenantIds = array_map('intval', $token->tenant_ids ?? []);
+        $this->loadPermissions((array) $token->abilities, $token->tenant_ids);
         $this->expiresAt = $token->expires_at?->format('Y-m-d');
         $this->showForm = true;
-    }
-
-    public function preset(string $preset): void
-    {
-        $this->abilities = match ($preset) {
-            'read' => TokenAbilities::readOnly(),
-            'all' => TokenAbilities::all(),
-            default => [],
-        };
-    }
-
-    /**
-     * Ticking a write action also ticks "read" on the same resource;
-     * unticking "read" drops the write actions that depend on it.
-     */
-    public function updatingAbilities(): void
-    {
-        $this->previousAbilities = $this->abilities;
-    }
-
-    public function updatedAbilities(): void
-    {
-        $readDropped = array_filter(
-            array_keys(TokenAbilities::RESOURCES),
-            fn (string $r): bool => in_array(TokenAbilities::make($r, TokenAbilities::READ), $this->previousAbilities, true)
-                && ! in_array(TokenAbilities::make($r, TokenAbilities::READ), $this->abilities, true),
-        );
-
-        $this->abilities = TokenAbilities::normalize(array_filter(
-            $this->abilities,
-            fn (string $a): bool => ! in_array(explode(':', $a, 2)[0], $readDropped, true),
-        ));
     }
 
     public function save(): void
@@ -115,21 +71,11 @@ class ApiTokens extends Component
 
         $data = $this->validate([
             'name' => 'required|string|max:80',
-            'abilities' => 'array|min:1',
-            'abilities.*' => ['string', Rule::in(TokenAbilities::grantable())],
-            'tenantScope' => 'required|in:all,selected',
-            'tenantIds' => 'array|required_if:tenantScope,selected',
-            'tenantIds.*' => 'integer|exists:tenants,id',
+            ...$this->permissionRules(TokenAbilities::grantable()),
             'expiresAt' => $this->editingId === null ? 'nullable|date|after:today' : 'nullable|date',
-        ], [
-            'abilities.min' => __('settings.err_no_abilities'),
-            'tenantIds.required_if' => __('settings.err_no_tenants'),
-        ]);
+        ], $this->permissionMessages());
 
-        $abilities = TokenAbilities::normalize($data['abilities']);
-        $tenantIds = $data['tenantScope'] === 'selected'
-            ? array_values(array_unique(array_map('intval', $data['tenantIds'])))
-            : null;
+        [$abilities, $tenantIds] = $this->chosenPermissions();
         $expiresAt = filled($data['expiresAt']) ? Carbon::parse($data['expiresAt'])->endOfDay() : null;
 
         if ($this->editingId !== null) {
@@ -171,34 +117,14 @@ class ApiTokens extends Component
             'tokens' => $tokens,
             'summaries' => $tokens->mapWithKeys(fn (PersonalAccessToken $t): array => [$t->id => [
                 'abilities' => $this->abilitiesLabel((array) $t->abilities),
-                'badges' => array_values(array_filter(
-                    TokenAbilities::SPECIAL,
-                    fn (string $label, string $ability): bool => in_array($ability, (array) $t->abilities, true),
-                    ARRAY_FILTER_USE_BOTH,
-                )),
-                'tenants' => $t->tenant_ids === null
-                    ? __('settings.tenants_all')
-                    : collect($t->tenant_ids)->map(fn ($id) => $tenantNames[$id] ?? "#{$id}")->implode(', '),
+                'badges' => $this->specialBadges((array) $t->abilities),
+                'tenants' => $this->tenantsLabel($t->tenant_ids, $tenantNames),
             ]]),
             'resources' => TokenAbilities::RESOURCES,
             'actions' => TokenAbilities::ACTIONS,
             'tenants' => $tenants,
             'special' => TokenAbilities::SPECIAL,
         ]);
-    }
-
-    /**
-     * @param  array<int, string>  $abilities
-     */
-    private function abilitiesLabel(array $abilities): string
-    {
-        $granted = array_values(array_intersect(TokenAbilities::all(), $abilities));
-
-        return match (true) {
-            in_array('*', $abilities, true) || $granted === TokenAbilities::all() => __('settings.abilities_all'),
-            $granted === TokenAbilities::readOnly() => __('settings.abilities_read_only'),
-            default => trans_choice('settings.abilities_count', count($granted), ['count' => count($granted)]),
-        };
     }
 
     private function authorizeTokens(): void
