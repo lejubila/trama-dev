@@ -203,6 +203,20 @@ it('creates a VM with a vNIC backed by a host NIC and shows the link on both sid
     expect($err)->toBeTrue()->and($msg)->toMatch('/virtual/i');
 });
 
+it('places a device in a room without a rack', function (): void {
+    ['token' => $token, 'tenant' => $tenant] = tokenWith([TokenAbilities::MCP, ...TokenAbilities::all()]);
+    $t = $tenant->getKey();
+    TenantContext::setId($t);
+    $room = Room::factory()->create(['site_id' => Site::factory()->create()->getKey()]);
+    TenantContext::clear();
+
+    [$err, $eq] = mcpTool($token, 'create_equipment', ['tenant_id' => $t, 'name' => 'FW-DESK', 'type' => 'firewall', 'room_id' => $room->id]);
+    expect($err)->toBeFalse()->and($eq['data'])->toMatchArray(['room_id' => $room->id, 'mounted' => false]);
+
+    [, $list] = mcpTool($token, 'list_equipment', ['tenant_id' => $t, 'room_id' => $room->id]);
+    expect(array_column($list['data'], 'name'))->toBe(['FW-DESK']);
+});
+
 it('finds an interface by IP with search', function (): void {
     ['token' => $token, 'tenant' => $tenant] = tokenWith([TokenAbilities::MCP, 'equipment:read']);
     $port = deviceWithPort($tenant, EquipmentType::Router, InterfaceMedia::Copper, 'RTR');

@@ -56,6 +56,7 @@ class TramaServer extends Server
         Trama Network documents the network infrastructure of a system integrator's customers.
 
         Data model, per customer (tenant): site → room → rack → device (equipment) → interface (port).
+        A device may also sit directly in a room without a rack (room_id, mounted false), or have no location.
         A connection is a physical cable between two interfaces of different devices; each interface has
         at most one active cable. Wi-Fi networks (SSIDs) are broadcast by wireless interfaces of access
         points/controllers and have associated client devices. VPNs are site-to-site (between two firewall

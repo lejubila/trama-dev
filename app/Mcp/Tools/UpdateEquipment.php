@@ -17,7 +17,7 @@ class UpdateEquipment extends TramaTool
 {
     protected string $name = 'update_equipment';
 
-    protected string $description = 'Change a device. Only the fields you pass are modified; pass rack_id/u_start/u_height to move it.';
+    protected string $description = 'Change a device. Only the fields you pass are modified; pass rack_id/u_start/u_height to move it into a rack, or room_id to move it loose into a room.';
 
     protected string $ability = 'equipment:update';
 
@@ -39,6 +39,7 @@ class UpdateEquipment extends TramaTool
             'u_start' => $schema->integer()->min(1)->description('Lowest rack unit occupied. Requires rack_id and u_height.'),
             'u_height' => $schema->integer()->min(1)->description('Number of rack units (1 for most switches).'),
             'side' => $schema->string()->enum(['front', 'rear']),
+            'room_id' => $schema->integer()->description('Room (list_rooms) to place the device in WITHOUT a rack, e.g. a wall-mounted switch or a desktop firewall. Moves it out of any rack. Leave it out when mounting in a rack: the rack decides the room.'),
             'host_equipment_id' => $schema->integer()->description('Only for type virtual_machine (required there): the hypervisor the VM runs on. VMs are never rack-mounted.'),
         ];
     }

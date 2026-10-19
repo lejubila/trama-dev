@@ -20,7 +20,7 @@ final class Payloads
 
     public const EQUIPMENT_KEYS = [
         'name', 'type', 'vendor', 'model', 'serial', 'firmware', 'asset_tag', 'status',
-        'management_ip', 'description', 'rack_id', 'host_equipment_id',
+        'management_ip', 'description', 'rack_id', 'room_id', 'host_equipment_id',
     ];
 
     /**
