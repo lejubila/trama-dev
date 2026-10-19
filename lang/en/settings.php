@@ -57,5 +57,7 @@ return [
         'interfaces' => 'Interfaces',
         'connections' => 'Connections',
         'topology' => 'Topology',
+        'wifi' => 'Wi‑Fi networks',
+        'vpn' => 'VPN',
     ],
 ];

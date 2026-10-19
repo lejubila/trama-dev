@@ -11,6 +11,11 @@ use App\Http\Controllers\Api\V1\SiteController;
 use App\Http\Controllers\Api\V1\TenantController;
 use App\Http\Controllers\Api\V1\TokenController;
 use App\Http\Controllers\Api\V1\TopologyController;
+use App\Http\Controllers\Api\V1\VpnRemoteAccessController;
+use App\Http\Controllers\Api\V1\VpnRemoteClientController;
+use App\Http\Controllers\Api\V1\VpnSiteToSiteController;
+use App\Http\Controllers\Api\V1\WifiClientController;
+use App\Http\Controllers\Api\V1\WifiNetworkController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -42,4 +47,17 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'tenant.required', 'token.abili
         ->names('interfaces');
     Route::apiResource('connections', ConnectionController::class)->names('connections');
     Route::get('topology', TopologyController::class)->name('topology');
+
+    Route::apiResource('wifi-networks', WifiNetworkController::class)->names('wifi-networks');
+    Route::get('wifi-networks/{wifi_network}/clients', [WifiClientController::class, 'index'])->name('wifi-networks.clients.index');
+    Route::post('wifi-networks/{wifi_network}/clients', [WifiClientController::class, 'store'])->name('wifi-networks.clients.store');
+    Route::delete('wifi-networks/{wifi_network}/clients/{client}', [WifiClientController::class, 'destroy'])->name('wifi-networks.clients.destroy');
+
+    Route::prefix('vpn')->name('vpn.')->group(function (): void {
+        Route::apiResource('site-to-site', VpnSiteToSiteController::class)->parameters(['site-to-site' => 'vpn'])->names('site-to-site');
+        Route::apiResource('remote-access', VpnRemoteAccessController::class)->parameters(['remote-access' => 'vpn'])->names('remote-access');
+        Route::get('remote-access/{vpn}/clients', [VpnRemoteClientController::class, 'index'])->name('remote-access.clients.index');
+        Route::post('remote-access/{vpn}/clients', [VpnRemoteClientController::class, 'store'])->name('remote-access.clients.store');
+        Route::delete('remote-access/{vpn}/clients/{client}', [VpnRemoteClientController::class, 'destroy'])->name('remote-access.clients.destroy');
+    });
 });

@@ -34,7 +34,35 @@ final class TokenAbilities
         'interfaces' => self::ACTIONS,
         'connections' => self::ACTIONS,
         'topology' => [self::READ],
+        'wifi' => self::ACTIONS,
+        'vpn' => self::ACTIONS,
     ];
+
+    /**
+     * Route-name prefix (after "api.v1.") → resource. Explicit on purpose:
+     * an unlisted route has no ability and is denied.
+     */
+    private const ROUTE_RESOURCES = [
+        'tenants' => 'tenants',
+        'sites' => 'sites',
+        'sites.rooms' => 'rooms',
+        'racks' => 'racks',
+        'equipment' => 'equipment',
+        'interfaces' => 'interfaces',
+        'connections' => 'connections',
+        'topology' => 'topology',
+        'wifi-networks' => 'wifi',
+        'wifi-networks.clients' => 'wifi',
+        'vpn.site-to-site' => 'vpn',
+        'vpn.remote-access' => 'vpn',
+        'vpn.remote-access.clients' => 'vpn',
+    ];
+
+    /**
+     * Sub-collections that are part of their parent: attaching or detaching
+     * a client changes the network/VPN, so any write there is an "update".
+     */
+    private const SUB_COLLECTIONS = ['wifi-networks.clients', 'vpn.remote-access.clients'];
 
     /** Route-name action segment → ability action. */
     private const ROUTE_ACTIONS = [
@@ -96,19 +124,28 @@ final class TokenAbilities
             return null;
         }
 
-        $segments = explode('.', substr($routeName, strlen('api.v1.')));
-        $last = array_pop($segments);
+        $name = substr($routeName, strlen('api.v1.'));
+        $last = substr((string) strrchr('.'.$name, '.'), 1);
 
-        if (isset(self::ROUTE_ACTIONS[$last]) && $segments !== []) {
-            $resource = end($segments);
+        if (isset(self::ROUTE_ACTIONS[$last]) && str_contains($name, '.')) {
+            $prefix = substr($name, 0, -strlen($last) - 1);
             $action = self::ROUTE_ACTIONS[$last];
         } else {
             // Single-action routes such as "topology".
-            $resource = $last;
+            $prefix = $name;
             $action = self::READ;
         }
 
-        return in_array($action, self::RESOURCES[$resource] ?? [], true)
+        $resource = self::ROUTE_RESOURCES[$prefix] ?? null;
+        if ($resource === null) {
+            return null;
+        }
+
+        if (in_array($prefix, self::SUB_COLLECTIONS, true) && $action !== self::READ) {
+            $action = self::UPDATE;
+        }
+
+        return in_array($action, self::RESOURCES[$resource], true)
             ? self::make($resource, $action)
             : null;
     }

@@ -13,23 +13,6 @@ use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
-/**
- * Admin + tenant + a token with exactly the given abilities.
- *
- * @param  list<string>  $abilities
- * @param  list<int>|null  $tenantIds
- * @return array{user: User, tenant: Tenant, token: string}
- */
-function tokenWith(array $abilities, ?array $tenantIds = null, ?Tenant $tenant = null): array
-{
-    $tenant ??= Tenant::factory()->create();
-    $user = User::factory()->create(['role' => UserRole::Admin]);
-    $new = $user->createToken('scoped', $abilities);
-    $new->accessToken->forceFill(['tenant_ids' => $tenantIds])->save();
-
-    return ['user' => $user, 'tenant' => $tenant, 'token' => $new->plainTextToken];
-}
-
 function equipmentIn(Tenant $tenant): Equipment
 {
     TenantContext::setId($tenant->getKey());
@@ -52,6 +35,14 @@ it('maps API route names to abilities', function (string $route, ?string $abilit
     ['api.v1.interfaces.index', 'interfaces:read'],
     ['api.v1.topology', 'topology:read'],
     ['api.v1.tenants.index', 'tenants:read'],
+    ['api.v1.wifi-networks.store', 'wifi:create'],
+    ['api.v1.wifi-networks.clients.index', 'wifi:read'],
+    ['api.v1.wifi-networks.clients.store', 'wifi:update'],
+    ['api.v1.wifi-networks.clients.destroy', 'wifi:update'],
+    ['api.v1.vpn.site-to-site.destroy', 'vpn:delete'],
+    ['api.v1.vpn.remote-access.show', 'vpn:read'],
+    ['api.v1.vpn.remote-access.clients.store', 'vpn:update'],
+    ['api.v1.vpn.index', null],
     ['api.v1.unknown.index', null],
     ['dashboard', null],
 ]);
@@ -296,6 +287,9 @@ it('migrates legacy tokens: revokes non-admin ones and converts admin ones', fun
 
     $abilities = fn (int $id): ?array => json_decode((string) DB::table('personal_access_tokens')->where('id', $id)->value('abilities'), true);
     expect(DB::table('personal_access_tokens')->where('id', $tec)->exists())->toBeFalse()
-        ->and($abilities($read))->toBe(TokenAbilities::readOnly())
-        ->and($abilities($write))->toBe(TokenAbilities::grantable());
+        ->and($abilities($read))->toContain('sites:read', 'topology:read')
+        ->and($abilities($read))->not->toContain('sites:create')
+        // Frozen in the migration: resources added later (wifi, vpn) are not granted.
+        ->and($abilities($write))->toContain('equipment:delete', 'tokens:manage')
+        ->and($abilities($write))->not->toContain('wifi:read');
 });

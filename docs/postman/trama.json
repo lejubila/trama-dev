@@ -6,12 +6,27 @@
   },
   "auth": {
     "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8081/api" },
-    { "key": "token", "value": "your-sanctum-plain-text-token" },
-    { "key": "tenantId", "value": "1" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081/api"
+    },
+    {
+      "key": "token",
+      "value": "your-sanctum-plain-text-token"
+    },
+    {
+      "key": "tenantId",
+      "value": "1"
+    }
   ],
   "item": [
     {
@@ -21,7 +36,12 @@
           "name": "List my tokens",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Accept", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
             "url": "{{baseUrl}}/v1/tokens"
           }
         },
@@ -30,14 +50,38 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": "{{baseUrl}}/v1/tokens",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"my integration\",\n  \"abilities\": [\"tenants:read\", \"equipment:read\", \"equipment:create\"],\n  \"tenant_ids\": null,\n  \"expires_at\": null\n}"
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "item": [
+        {
+          "name": "List accessible tenants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/tenants"
           }
         }
       ]
@@ -50,8 +94,14 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/sites"
           }
@@ -61,9 +111,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/sites",
             "body": {
@@ -82,8 +141,14 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/equipment?per_page=50"
           }
@@ -93,9 +158,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/equipment",
             "body": {
@@ -114,9 +188,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/connections",
             "body": {
@@ -135,10 +218,278 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
             ],
             "url": "{{baseUrl}}/v1/topology?site_id="
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wi-Fi",
+      "item": [
+        {
+          "name": "List networks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/wifi-networks?q=&site_id="
+          }
+        },
+        {
+          "name": "Create network",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/wifi-networks",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ssid\": \"Office\",\n  \"security_type\": \"wpa3\",\n  \"vlan_id\": 20,\n  \"hidden_ssid\": false,\n  \"site_id\": null,\n  \"broadcaster_interface_ids\": [\n    1\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Update network",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/wifi-networks/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"broadcaster_interface_ids\": [\n    1,\n    2\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "List clients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/wifi-networks/1/clients"
+          }
+        },
+        {
+          "name": "Attach client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/wifi-networks/1/clients",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipment_id\": 10,\n  \"interface_id\": null,\n  \"preferred_broadcaster_interface_id\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "Detach client",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/wifi-networks/1/clients/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "VPN",
+      "item": [
+        {
+          "name": "List site-to-site",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/vpn/site-to-site"
+          }
+        },
+        {
+          "name": "Create site-to-site",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/vpn/site-to-site",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"HQ-Branch\",\n  \"protocol\": \"ipsec\",\n  \"endpoint_a_interface_id\": 1,\n  \"endpoint_b_interface_id\": 2,\n  \"routed_vlans_a\": [\n    10\n  ],\n  \"routed_vlans_b\": null,\n  \"routed_networks_a\": [\n    \"192.168.10.0/24\"\n  ],\n  \"routed_networks_b\": [\n    \"192.168.50.0/24\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "List remote-access",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/vpn/remote-access"
+          }
+        },
+        {
+          "name": "Create remote-access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/vpn/remote-access",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Smart working\",\n  \"protocol\": \"wireguard\",\n  \"firewall_interface_id\": 1,\n  \"routing_mode\": \"routed\",\n  \"client_network_cidr\": \"10.8.0.0/24\",\n  \"routed_vlans\": [\n    10\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Attach remote client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/vpn/remote-access/1/clients",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipment_id\": 10,\n  \"interface_id\": null,\n  \"username\": \"mrossi\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Detach remote client",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/v1/vpn/remote-access/1/clients/1"
           }
         }
       ]
