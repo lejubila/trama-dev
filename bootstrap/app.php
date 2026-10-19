@@ -59,5 +59,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // MCP clients may only accept text/event-stream: they still need a
+        // JSON 401 (with WWW-Authenticate) to start OAuth, not a login redirect.
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request): bool => $request->is('mcp', 'oauth/register', 'oauth/token', 'oauth/revoke') || $request->expectsJson(),
+        );
     })->create();

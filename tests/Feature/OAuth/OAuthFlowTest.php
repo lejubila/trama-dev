@@ -121,6 +121,9 @@ it('advertises OAuth discovery on a 401 from /mcp', function (): void {
         ->assertUnauthorized()
         ->assertHeader('WWW-Authenticate', 'Bearer realm="mcp", resource_metadata="'.url('/.well-known/oauth-protected-resource/mcp').'"');
 
+    // A client that only accepts SSE still gets the 401, not a login redirect.
+    $this->post('/mcp', [], ['Accept' => 'text/event-stream'])->assertUnauthorized()->assertHeader('WWW-Authenticate');
+
     $this->getJson('/.well-known/oauth-protected-resource/mcp')->assertOk()
         ->assertJson(['resource' => url('/mcp'), 'authorization_servers' => [url('/')]]);
 
