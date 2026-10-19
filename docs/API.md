@@ -58,6 +58,11 @@ sempre.
 > In **modalità demo** l'API è disattivata: tutte le rotte `/api/v1/*`, la documentazione
 > Swagger e la pagina **Token API** rispondono `404`.
 
+> I token emessi via **OAuth** per claude.ai e ChatGPT (vedi [MCP](MCP.md)) sono token
+> come questi: durano 1 ora, hanno i permessi scelti nella pagina di consenso e
+> funzionano anche sull'API REST. Non compaiono nell'elenco dei token, ma nella sezione
+> **App collegate**.
+
 ## Permessi dei token
 
 Ogni permesso ha la forma `risorsa:azione`. Una richiesta senza il permesso

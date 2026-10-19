@@ -15,9 +15,66 @@ Esempi di richieste:
 > «Crea la rete Wi‑Fi Ospiti sulla VLAN 30, trasmessa da tutti gli access point.»
 
 - **Endpoint:** `https://<tuo-host>/mcp` (Streamable HTTP)
-- **Autenticazione:** token API di Trama, header `Authorization: Bearer <token>`
+- **Autenticazione**, in due modi:
+  - **OAuth** per claude.ai e ChatGPT: colleghi il connettore e approvi l'accesso in
+    Trama, senza copiare token. Vedi [claude.ai e ChatGPT](#claudeai-e-chatgpt-oauth).
+  - **Token API** di Trama, con header `Authorization: Bearer <token>`, per Claude
+    Code, Claude Desktop, Cursor e VS Code.
 - **Regole:** le stesse dell'[API REST](API.md). Ogni tool passa per l'API, quindi
   valgono permessi del token, limite per cliente, ruoli, validazioni e registro attività.
+
+## claude.ai e ChatGPT (OAuth)
+
+Requisiti:
+- Trama deve essere **raggiungibile da internet in HTTPS** con un certificato valido.
+  La connessione parte dai server di Anthropic e di OpenAI, non dal tuo browser, quindi
+  un'istanza raggiungibile solo in LAN o via VPN non funziona.
+- Un piano a pagamento della piattaforma AI.
+- Un utente **admin** di Trama.
+
+### claude.ai
+
+1. Su claude.ai apri **Impostazioni → Connettori → Aggiungi connettore personalizzato**.
+   Nei piani Team ed Enterprise lo aggiunge un owner, da *Impostazioni organizzazione →
+   Connettori*.
+2. Come URL inserisci `https://<tuo-host>/mcp` e lascia vuoti i campi OAuth avanzati.
+3. Clicca **Connetti**: si apre Trama. Fai login con un admin.
+4. Nella pagina **«Claude vuole accedere a Trama»** scegli i permessi (preimpostata la
+   sola lettura) ed eventualmente i clienti, poi clicca **Consenti l'accesso**.
+5. Torni su claude.ai con il connettore attivo. In una chat abilitalo dal menu degli
+   strumenti e chiedi, per esempio, *«Elenca i clienti di Trama»*.
+
+### ChatGPT
+
+1. In ChatGPT attiva la **modalità sviluppatore**: *Impostazioni → App e connettori →
+   Impostazioni avanzate → Modalità sviluppatore*. Serve per usare tool di scrittura.
+2. Crea un'app o connettore con URL `https://<tuo-host>/mcp` e autenticazione
+   **OAuth**. La registrazione del client è automatica (DCR).
+3. Collega: si apre Trama. Login come admin, scegli i permessi e consenti.
+
+I nomi dei menu delle due piattaforme cambiano spesso: se non li trovi, cerca
+«connettore personalizzato» o «MCP» nelle loro impostazioni.
+
+### Come funziona l'accesso
+
+- Trama emette un token valido **1 ora**, che il client rinnova da solo. Il rinnovo
+  vale **30 giorni dall'ultimo uso**: se l'app resta inutilizzata più a lungo, va
+  ricollegata.
+- Il token ha i permessi e i clienti scelti nella pagina di consenso, più l'accesso
+  MCP. Non può mai gestire altri token.
+- In **Token API → App collegate** vedi le app collegate. Da lì puoi **modificare i
+  permessi**, con effetto immediato, oppure **scollegarle**: l'accesso termina subito.
+- Ricollegando la stessa app, il collegamento precedente viene sostituito.
+- Anche Claude Code può usare OAuth: basta `claude mcp add --transport http trama
+  https://<tuo-host>/mcp` senza header, poi `/mcp` → *Authenticate*.
+
+Indirizzi di ritorno accettati:
+- claude.ai e claude.com;
+- `chatgpt.com/connector_platform_oauth_redirect` e `chatgpt.com/connector/oauth/…`;
+- `http://localhost` e `http://127.0.0.1` su qualsiasi porta, per i client locali.
+
+Per aggiungerne altri imposta `OAUTH_EXTRA_REDIRECT_URIS` nel `.env`, separati da
+virgola. `*` vale come porta qualsiasi; un percorso che finisce con `*` è un prefisso.
 
 ## 1. Crea il token
 
@@ -120,9 +177,8 @@ curl -s https://<tuo-host>/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_tenants","arguments":{}}}'
 ```
 
-> **claude.ai (web) e ChatGPT** richiedono l'autenticazione OAuth per i connettori
-> personalizzati. Non è ancora supportata: per ora usa un client che accetta header
-> personalizzati, come quelli sopra.
+> Per **claude.ai e ChatGPT** non servono token: vedi
+> [claude.ai e ChatGPT](#claudeai-e-chatgpt-oauth).
 
 ## 3. Tool disponibili
 
@@ -187,12 +243,30 @@ istruzioni del server chiedono all'AI di farsi confermare eliminazioni e scolleg
   nome dell'utente proprietario del token.
 - Limite: 120 chiamate MCP al minuto per utente. Ogni tool usa internamente l'API,
   che ha un suo limite di 60 richieste al minuto.
-- In **modalità demo** l'endpoint `/mcp`, l'API REST e la gestione dei token sono
-  disattivati.
+- In **modalità demo** l'endpoint `/mcp`, l'API REST, la gestione dei token e
+  l'OAuth sono disattivati.
+- **OAuth:**
+  - PKCE S256 obbligatorio;
+  - redirect solo verso indirizzi consentiti e registrati;
+  - codici monouso da 10 minuti;
+  - refresh token a rotazione: il riuso di un refresh token vecchio revoca l'intero
+    collegamento;
+  - codici e refresh token salvati solo come hash.
+- Se l'utente che ha collegato un'app non è più admin, l'app non può più rinnovare
+  l'accesso.
 - Per revocare l'accesso all'AI basta revocare il token, oppure togliergli il permesso
   *Accesso MCP*, dalla pagina **Token API**.
 
 ## Per sviluppatori
+
+- **OAuth:**
+  - le rotte sono in `routes/oauth.php`: discovery `/.well-known/*` e
+    `/oauth/{register,token,revoke}`;
+  - il consenso è in `app/Livewire/OAuth/Authorize.php`;
+  - la logica è in `app/Actions/OAuth/*` e in `app/Services/OAuth/*`;
+  - `TokenIssuer` crea normali token Sanctum collegati a un `OAuthGrant`, così tool e
+    API non distinguono i due tipi di token;
+  - pulizia giornaliera con `php artisan oauth:prune`.
 
 - **Server:** `app/Mcp/Servers/TramaServer.php`, con le istruzioni per il modello e
   l'elenco dei tool. La rotta è in `routes/ai.php` (pacchetto `laravel/mcp`).
