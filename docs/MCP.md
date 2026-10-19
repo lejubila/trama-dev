@@ -187,7 +187,8 @@ istruzioni del server chiedono all'AI di farsi confermare eliminazioni e scolleg
   nome dell'utente proprietario del token.
 - Limite: 120 chiamate MCP al minuto per utente. Ogni tool usa internamente l'API,
   che ha un suo limite di 60 richieste al minuto.
-- In **modalità demo** l'endpoint `/mcp` è disattivato.
+- In **modalità demo** l'endpoint `/mcp`, l'API REST e la gestione dei token sono
+  disattivati.
 - Per revocare l'accesso all'AI basta revocare il token, oppure togliergli il permesso
   *Accesso MCP*, dalla pagina **Token API**.
 

@@ -122,7 +122,7 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('users', UsersIndex::class)->name('users.index');
 
     // Settings
-    Route::get('settings/api-tokens', SettingsApiTokens::class)->name('settings.api-tokens');
+    Route::get('settings/api-tokens', SettingsApiTokens::class)->middleware('demo.disabled')->name('settings.api-tokens');
 });
 
 require __DIR__.'/auth.php';

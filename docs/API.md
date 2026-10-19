@@ -55,7 +55,8 @@ Il token agisce con i permessi dell'admin che lo ha creato, **ristretti** a quel
 scelti per il token. Le regole di Trama (policy, isolamento tra clienti) valgono
 sempre.
 
-> In modalità demo la creazione dei token è disattivata.
+> In **modalità demo** l'API è disattivata: tutte le rotte `/api/v1/*`, la documentazione
+> Swagger e la pagina **Token API** rispondono `404`.
 
 ## Permessi dei token
 

@@ -34,6 +34,10 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // The public demo exposes no API at all (the MCP endpoint is disabled on its own route).
+        $middleware->api(prepend: [
+            DisabledInDemo::class,
+        ]);
         $middleware->web(prepend: [
             ForceHttpsRequest::class,
         ], append: [

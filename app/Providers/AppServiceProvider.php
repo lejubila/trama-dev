@@ -36,11 +36,15 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        // Demo mode: nobody may manage users, not even the (admin) demo
-        // account. Registered before the admin bypass so false wins.
+        // Demo mode: nobody may manage users or API tokens, not even the
+        // (admin) demo account. Registered before the admin bypass so false wins.
         Gate::before(function (User $user, string $ability, array $arguments): ?bool {
             $target = $arguments[0] ?? null;
             $onUsers = $target instanceof User || $target === User::class;
+
+            if (Demo::enabled() && $ability === 'manage-api-tokens') {
+                return false;
+            }
 
             return Demo::enabled() && $onUsers && in_array($ability, Demo::LOCKED_USER_ABILITIES, true) ? false : null;
         });

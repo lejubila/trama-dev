@@ -13,11 +13,13 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Icons\DefaultIcons;
 use App\Services\TenantTransfer\TenantArchiveExporter;
+use App\Support\Api\TokenAbilities;
 use App\Support\Demo;
 use App\Support\Tenancy\CurrentTenant;
 use App\Support\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Livewire\Volt\Volt;
@@ -87,6 +89,24 @@ it('blocks API tokens, member assignment and account changes', function (): void
     Volt::test('profile.update-password-form')->call('updatePassword')->assertForbidden();
     Volt::test('profile.delete-user-form')->call('deleteUser')->assertForbidden();
     Volt::test('profile.update-profile-information-form')->call('updateProfileInformation')->assertForbidden();
+});
+
+it('shuts down the REST API, the MCP server and token management', function (): void {
+    $user = demoUser();
+    ['tenant' => $tenant, 'token' => $token] = tokenWith(TokenAbilities::grantable());
+    $headers = ['Authorization' => 'Bearer '.$token, 'X-Tenant-Id' => (string) $tenant->getKey()];
+
+    expect(Gate::forUser($user)->allows('manage-api-tokens'))->toBeFalse();
+
+    $this->get(route('settings.api-tokens'))->assertNotFound();
+    $this->get(route('dashboard'))->assertOk()->assertDontSee(route('settings.api-tokens'));
+
+    $this->app['auth']->forgetGuards();
+    $this->getJson('/api/v1/sites', $headers)->assertNotFound();
+    $this->getJson('/api/v1/tenants', $headers)->assertNotFound();
+    $this->postJson('/api/v1/tokens', ['name' => 'x'], $headers)->assertNotFound();
+    $this->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'], $headers)->assertNotFound();
+    $this->get('/api/documentation')->assertNotFound();
 });
 
 it('stores the language choice in the session, not on the shared account', function (): void {
