@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Middleware\DisabledInDemo;
 use App\Http\Middleware\EnsureTenantHeader;
+use App\Http\Middleware\EnsureTokenAbility;
 use App\Http\Middleware\ForceHttpsRequest;
 use App\Http\Middleware\SetCurrentTenant;
 use App\Http\Middleware\SetLocale;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -38,6 +40,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tenant.required' => EnsureTenantHeader::class,
             'demo.disabled' => DisabledInDemo::class,
+            'token.ability' => EnsureTokenAbility::class,
+            'abilities' => CheckAbilities::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

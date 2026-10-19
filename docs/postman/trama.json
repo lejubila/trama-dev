@@ -36,7 +36,7 @@
             "url": "{{baseUrl}}/v1/tokens",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"my integration\",\n  \"abilities\": [\"read\", \"write\"]\n}"
+              "raw": "{\n  \"name\": \"my integration\",\n  \"abilities\": [\"tenants:read\", \"equipment:read\", \"equipment:create\"],\n  \"tenant_ids\": null,\n  \"expires_at\": null\n}"
             }
           }
         }

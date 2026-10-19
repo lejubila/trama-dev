@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\NetworkInterface;
+use App\Models\PersonalAccessToken;
 use App\Models\User;
 use App\Observers\NetworkInterfacePairObserver;
 use App\Support\Demo;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Sanctum\Sanctum;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -48,6 +50,11 @@ class AppServiceProvider extends ServiceProvider
         // Admin is a global superuser: it bypasses every Policy. Returning null
         // (not false) lets non-admins fall through to the individual policies.
         Gate::before(fn (User $user) => $user->isAdmin() ? true : null);
+
+        // API tokens are long-lived credentials: only admins may mint them.
+        Gate::define('manage-api-tokens', fn (User $user): bool => $user->isAdmin());
+
+        Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
 
         NetworkInterface::observe(NetworkInterfacePairObserver::class);
     }

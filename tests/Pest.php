@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\UserRole;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Api\TokenAbilities;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -69,7 +70,7 @@ function apiUser(string $role = 'admin'): array
 
     $user->forceFill(['current_tenant_id' => $tenant->getKey()])->save();
 
-    $token = $user->createToken('api-test', ['read', 'write'])->plainTextToken;
+    $token = $user->createToken('api-test', TokenAbilities::grantable())->plainTextToken;
 
     TenantContext::clear();
 

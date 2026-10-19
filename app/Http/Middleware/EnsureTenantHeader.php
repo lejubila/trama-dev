@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Models\PersonalAccessToken;
 use App\Models\Tenant;
 use App\Support\Tenancy\TenantContext;
 use Closure;
@@ -13,7 +14,8 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * API gate that picks the tenant from `X-Tenant-Id` and verifies the
  * authenticated user may access it (admins/tecnici: any tenant; clienti: only
- * the ones they are assigned to). Sets TenantContext so global scopes filter
+ * the ones they are assigned to) and the token's own tenant allow-list, if
+ * any. Sets TenantContext so global scopes filter
  * correctly downstream — the header-driven counterpart of SetCurrentTenant.
  */
 class EnsureTenantHeader
@@ -31,7 +33,10 @@ class EnsureTenantHeader
         }
 
         $tenant = Tenant::query()->find($tenantId);
-        if ($tenant === null || ! $user->canAccessTenant($tenant)) {
+        $token = $user->currentAccessToken();
+        if ($tenant === null
+            || ! $user->canAccessTenant($tenant)
+            || ($token instanceof PersonalAccessToken && ! $token->allowsTenant($tenant->getKey()))) {
             return response()->json(['error' => 'Forbidden tenant'], 403);
         }
 

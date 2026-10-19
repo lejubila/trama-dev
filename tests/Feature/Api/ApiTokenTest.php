@@ -22,7 +22,7 @@ it('creates a new token and returns the plain text once', function (): void {
     $r = $this->withHeaders([
         'Authorization' => "Bearer {$u['token']}",
         'Accept' => 'application/json',
-    ])->postJson('/api/v1/tokens', ['name' => 'CI-runner', 'abilities' => ['read']])
+    ])->postJson('/api/v1/tokens', ['name' => 'CI-runner', 'abilities' => ['sites:read']])
         ->assertCreated();
 
     expect($r->json('data.plain_text'))->toBeString()
@@ -35,7 +35,7 @@ it('the new token can authenticate immediately', function (): void {
     /** @var User $user */
     $user = $u['user'];
 
-    $token = $user->createToken('fresh', ['read'])->plainTextToken;
+    $token = $user->createToken('fresh', ['sites:read'])->plainTextToken;
 
     $this->withHeaders([
         'Authorization' => "Bearer {$token}",

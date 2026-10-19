@@ -8,15 +8,16 @@ use App\Http\Controllers\Api\V1\NetworkInterfaceController;
 use App\Http\Controllers\Api\V1\RackController;
 use App\Http\Controllers\Api\V1\RoomController;
 use App\Http\Controllers\Api\V1\SiteController;
+use App\Http\Controllers\Api\V1\TenantController;
 use App\Http\Controllers\Api\V1\TokenController;
 use App\Http\Controllers\Api\V1\TopologyController;
 use Illuminate\Support\Facades\Route;
 
 /*
- * Token endpoints — auth via Sanctum but NO tenant header (the user might
- * want to mint a token before knowing which tenant to scope it to).
+ * Token endpoints — admin only, and the calling token must hold
+ * tokens:manage. No tenant header (a token isn't tied to one tenant).
  */
-Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
+Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api', 'can:manage-api-tokens', 'abilities:tokens:manage'])->group(function (): void {
     Route::get('tokens', [TokenController::class, 'index'])->name('api.v1.tokens.index');
     Route::post('tokens', [TokenController::class, 'store'])->name('api.v1.tokens.store');
     Route::delete('tokens/{id}', [TokenController::class, 'destroy'])
@@ -24,7 +25,13 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->group(functio
         ->name('api.v1.tokens.destroy');
 });
 
-Route::prefix('v1')->middleware(['auth:sanctum', 'tenant.required', 'throttle:api'])->name('api.v1.')->group(function (): void {
+// Tenant discovery: which X-Tenant-Id values this token may use.
+Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api', 'token.ability'])->name('api.v1.')->group(function (): void {
+    Route::get('tenants', [TenantController::class, 'index'])->name('tenants.index');
+});
+
+// Every route here needs the matching "{resource}:{action}" token ability (see TokenAbilities).
+Route::prefix('v1')->middleware(['auth:sanctum', 'tenant.required', 'token.ability', 'throttle:api'])->name('api.v1.')->group(function (): void {
     Route::apiResource('sites', SiteController::class)->names('sites');
     Route::apiResource('sites.rooms', RoomController::class)->names('sites.rooms');
     Route::apiResource('rooms.racks', RackController::class)->shallow()->names('racks');
