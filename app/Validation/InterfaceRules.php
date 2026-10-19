@@ -35,6 +35,7 @@ class InterfaceRules
             'status' => ['required', Rule::enum(InterfaceStatus::class)],
             'poe' => ['required', Rule::enum(InterfacePoe::class)],
             'description' => 'nullable|string|max:255',
+            'backed_by_interface_id' => 'nullable|integer',
         ];
     }
 }

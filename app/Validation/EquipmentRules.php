@@ -19,6 +19,7 @@ class EquipmentRules
             'name' => 'required|string|max:150',
             'type' => ['required', Rule::enum(EquipmentType::class)],
             'rack_id' => 'nullable|integer|exists:racks,id',
+            'host_equipment_id' => 'nullable|integer',
             'vendor' => 'nullable|string|max:80',
             'model' => 'nullable|string|max:120',
             'serial' => 'nullable|string|max:120',

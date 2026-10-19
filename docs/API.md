@@ -236,7 +236,7 @@ Filtro: `q` (nome contiene).
 | `DELETE` | `/equipment/{equipment}` | `equipment:delete` |
 
 Filtri: `q` (nome, seriale o modello contiene), `type`, `site_id`, `rack_id`,
-`status`, `per_page`.
+`host_equipment_id` (le VM di un hypervisor), `status`, `per_page`.
 
 | Campo | Tipo | Note |
 |---|---|---|
@@ -251,8 +251,17 @@ Filtri: `q` (nome, seriale o modello contiene), `type`, `site_id`, `rack_id`,
 | `position_u_start` / `position_u_height` | int 1…60 | Prima U e numero di U occupate |
 | `position_orient` | `front` \| `rear` | |
 | `locked` | bool | Impedisce lo spostamento dalla vista rack |
+| `host_equipment_id` | int | Solo per `virtual_machine`, dove è obbligatorio: l'hypervisor su cui gira la VM |
 
 Se la posizione è occupata o esce dal rack, la risposta è `422` su `position_u_start`.
+
+**Macchine virtuali:**
+- Una `virtual_machine` deve avere come `host_equipment_id` un apparato di tipo
+  `hypervisor` dello stesso cliente.
+- Non si monta in un rack: con `mounted: true` la risposta è `422`. Se il locale non è
+  indicato, la VM eredita quello dell'host.
+- Se la VM passa su un altro host, le sue vNIC perdono il backing (vedi
+  [Interfacce](#interfacce)), perché le NIC fisiche del vecchio host non la portano più.
 
 ### Interfacce
 
@@ -281,6 +290,29 @@ Se la posizione è occupata o esce dal rack, la risposta è `422` su `position_u
 | `ip_address` | string | Anche in CIDR, es. `10.0.0.1/24` |
 | `mac_address` | string ≤17 | |
 | `description` | string ≤255 | |
+| `backed_by_interface_id` | int \| null | Solo per `type: virtual`: la porta fisica che porta il traffico. Vedi sotto |
+
+**Backing vNIC → NIC fisica:**
+- Un'interfaccia `virtual` può indicare in `backed_by_interface_id` la porta fisica che
+  ne porta il traffico:
+  - per una **vNIC di VM** è una NIC dell'hypervisor host;
+  - per una **sotto-interfaccia VLAN** (firewall, router, server) è una porta dello
+    stesso apparato.
+- La porta deve essere di tipo `ethernet`, `fiber` o `wireless`. Più vNIC possono
+  condividere la stessa NIC fisica.
+- Non è un cavo, quindi non crea una connessione. In topologia appare come
+  collegamento tratteggiato tra VM e hypervisor.
+- `null` toglie il backing. Se l'interfaccia smette di essere `virtual`, il backing
+  viene tolto automaticamente.
+- Una NIC che non appartiene all'host, che non è fisica, o il backing di
+  un'interfaccia non virtuale danno `422` su `backed_by_interface_id`.
+
+```bash
+# vNIC net0 della VM 42, portata dalla NIC eno1 (id 310) dell'hypervisor
+curl -X POST https://<host>/api/v1/equipment/42/interfaces \
+  -H "Authorization: Bearer <token>" -H "X-Tenant-Id: 1" -H "Content-Type: application/json" \
+  -d '{"equipment_id":42,"name":"net0","type":"virtual","media":"virtual","status":"up","poe":"none","backed_by_interface_id":310}'
+```
 
 ### Connessioni
 

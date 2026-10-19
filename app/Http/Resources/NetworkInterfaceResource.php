@@ -37,6 +37,7 @@ class NetworkInterfaceResource extends JsonResource
                 'status' => $this->status?->value,
                 'poe' => $this->poe?->value,
                 'description' => $this->description,
+                'backed_by_interface_id' => $this->backed_by_interface_id,
                 'created_at' => $this->created_at?->toIso8601String(),
                 'updated_at' => $this->updated_at?->toIso8601String(),
             ],

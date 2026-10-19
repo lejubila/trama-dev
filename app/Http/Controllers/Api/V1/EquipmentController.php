@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\EquipmentType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\EquipmentRequest;
 use App\Http\Resources\EquipmentResource;
@@ -13,6 +14,7 @@ use App\Services\RackPlacementService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class EquipmentController extends Controller
@@ -29,6 +31,7 @@ class EquipmentController extends Controller
      *   @OA\Parameter(name="type", in="query", @OA\Schema(type="string")),
      *   @OA\Parameter(name="site_id", in="query", @OA\Schema(type="integer")),
      *   @OA\Parameter(name="rack_id", in="query", @OA\Schema(type="integer")),
+     *   @OA\Parameter(name="host_equipment_id", in="query", description="VM ospitate da questo hypervisor", @OA\Schema(type="integer")),
      *   @OA\Parameter(name="status", in="query", @OA\Schema(type="string")),
      *   @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer", maximum=200)),
      *
@@ -43,6 +46,7 @@ class EquipmentController extends Controller
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->string('type')))
             ->when($request->filled('site_id'), fn ($q) => $q->whereHas('rack.room', fn ($qq) => $qq->where('site_id', $request->integer('site_id'))))
             ->when($request->filled('rack_id'), fn ($q) => $q->where('rack_id', $request->integer('rack_id')))
+            ->when($request->filled('host_equipment_id'), fn ($q) => $q->where('host_equipment_id', $request->integer('host_equipment_id')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
             ->when($request->filled('q'), fn ($q) => $q->where(function ($qq) use ($request): void {
                 $needle = '%'.$request->string('q').'%';
@@ -58,7 +62,7 @@ class EquipmentController extends Controller
 
     public function store(EquipmentRequest $request, RackPlacementService $placement): EquipmentResource
     {
-        $data = $request->validated();
+        $data = $this->withHost($request->validated(), null);
         $this->ensurePlacement($data, null, $placement);
 
         $equipment = Equipment::create($data);
@@ -75,12 +79,23 @@ class EquipmentController extends Controller
 
     public function update(EquipmentRequest $request, Equipment $equipment, RackPlacementService $placement): EquipmentResource
     {
-        $data = $request->validated();
+        $data = $this->withHost($request->validated(), $equipment);
         // Merge current values for fields not in payload to validate placement holistically
         $merged = array_merge($equipment->only(['rack_id', 'mounted', 'position_u_start', 'position_u_height']), $data);
         $this->ensurePlacement($merged, $equipment, $placement);
 
-        $equipment->update($data);
+        DB::transaction(function () use ($equipment, $data): void {
+            $hostChanged = $equipment->host_equipment_id !== null
+                && array_key_exists('host_equipment_id', $data)
+                && $data['host_equipment_id'] !== $equipment->host_equipment_id;
+
+            $equipment->update($data);
+
+            // vNICs carried by the old host's pNICs no longer make sense.
+            if ($hostChanged) {
+                $equipment->interfaces()->whereNotNull('backed_by_interface_id')->update(['backed_by_interface_id' => null]);
+            }
+        });
 
         return new EquipmentResource($equipment);
     }
@@ -91,6 +106,51 @@ class EquipmentController extends Controller
         $equipment->delete();
 
         return response()->noContent();
+    }
+
+    /**
+     * A virtual machine lives on a hypervisor host (required) and is never
+     * rack-mounted; any other device has no host.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function withHost(array $data, ?Equipment $current): array
+    {
+        $type = isset($data['type']) ? EquipmentType::from($data['type']) : $current?->type;
+        $hostId = array_key_exists('host_equipment_id', $data) ? $data['host_equipment_id'] : $current?->host_equipment_id;
+
+        if ($type !== EquipmentType::VirtualMachine) {
+            if (($data['host_equipment_id'] ?? null) !== null) {
+                throw ValidationException::withMessages(['host_equipment_id' => __('equipment.err_host_only_vm')]);
+            }
+            if ($current?->host_equipment_id !== null) {
+                $data['host_equipment_id'] = null;
+            }
+
+            return $data;
+        }
+
+        if ($data['mounted'] ?? false) {
+            throw ValidationException::withMessages(['mounted' => __('equipment.err_vm_not_mountable')]);
+        }
+
+        $host = $hostId !== null ? Equipment::query()->find($hostId) : null;
+        if ($host === null || $host->type !== EquipmentType::Hypervisor) {
+            throw ValidationException::withMessages(['host_equipment_id' => __('equipment.err_host_not_hypervisor')]);
+        }
+
+        $data['host_equipment_id'] = (int) $host->getKey();
+        $data['mounted'] = false;
+        $data['rack_id'] = null;
+        $data['position_u_start'] = null;
+        $data['position_u_height'] = null;
+        // Same as the web form: the VM shows up under its host's room in filters.
+        if ($current?->room_id === null) {
+            $data['room_id'] = $host->room_id ?? $host->rack?->room_id;
+        }
+
+        return $data;
     }
 
     /**
