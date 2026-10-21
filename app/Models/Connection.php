@@ -101,7 +101,7 @@ class Connection extends Model implements AuditableContract
         $guard = function (self $conn): void {
             foreach (['from_interface_id', 'to_interface_id'] as $field) {
                 $ifaceId = $conn->{$field};
-                if ($ifaceId === null) {
+                if ($ifaceId === null || ($conn->exists && ! $conn->isDirty($field))) {
                     continue;
                 }
                 $iface = NetworkInterface::query()

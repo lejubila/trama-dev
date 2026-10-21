@@ -96,8 +96,7 @@ class Elevation extends Component
             return;
         }
 
-        $eqOrient = $eq->position_orient ?: 'front';
-        if (! $placement->canPlace($this->rack, $newStartU, (int) $eq->position_u_height, $eq, $eqOrient)) {
+        if (! $placement->canPlace($this->rack, $newStartU, (int) $eq->position_u_height)) {
             $this->dispatch('toast', type: 'error', message: __('racks.toast_occupied'));
 
             return;
@@ -190,7 +189,7 @@ class Elevation extends Component
         }
         $this->validate($rules);
 
-        if (! $this->onTop && ! $placement->canPlace($this->rack, $this->selectedU, $this->positionUHeight, null, $this->orient)) {
+        if (! $this->onTop && ! $placement->canPlace($this->rack, $this->selectedU, $this->positionUHeight)) {
             $this->addError('positionUHeight', __($this->orient === 'rear' ? 'racks.error_occupied_rear' : 'racks.error_occupied_front'));
 
             return;
@@ -240,7 +239,7 @@ class Elevation extends Component
         return view('livewire.racks.elevation', [
             'types' => EquipmentType::cases(),
             'statuses' => EquipmentStatus::cases(),
-            'allTags' => Tag::query()->orderBy('name')->get(),
+            'allTags' => $this->showForm ? Tag::query()->orderBy('name')->get() : collect(),
             'canEdit' => auth()->user()?->can('create', Equipment::class) ?? false,
         ]);
     }

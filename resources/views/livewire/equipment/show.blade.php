@@ -72,33 +72,33 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                        @php
+                            $describe = function ($conn, $localIf) {
+                                if (! $conn || ! $localIf) return '—';
+                                $other = $conn->otherEndpoint($localIf);
+                                if (! $other) return __('equipment.connected');
+                                $sideLabel = $other->side?->value ? ' ('.$other->side->value.')' : '';
+                                return ($other->equipment?->name ?? '?') . ' · ' . ($other->name ?? '?') . $sideLabel;
+                            };
+                            $connAction = function ($conn, $localIf) use ($equipment) {
+                                if (! $localIf) return null;
+                                if ($conn) {
+                                    return [
+                                        'label' => __('common.edit'),
+                                        'href' => route('connections.edit', ['connection' => $conn, 'from_equipment' => $equipment->id]),
+                                    ];
+                                }
+                                return [
+                                    'label' => __('common.create'),
+                                    'href' => route('connections.create', ['from_equipment' => $equipment->id, 'from_iface' => $localIf->id]),
+                                ];
+                            };
+                        @endphp
                         @forelse ($interfaces as $if)
                             @php
                                 $rear = $if->paired;
-                                $frontConn = $if->activeConnection();
-                                $rearConn = $rear?->activeConnection();
-                                $describe = function ($conn, $localIf) {
-                                    if (! $conn || ! $localIf) return '—';
-                                    $other = $conn->otherEndpoint($localIf);
-                                    if (! $other) return __('equipment.connected');
-                                    $sideLabel = $other->side?->value ? ' ('.$other->side->value.')' : '';
-                                    return ($other->equipment?->name ?? '?') . ' · ' . ($other->name ?? '?') . $sideLabel;
-                                };
-                            @endphp
-                            @php
-                                $connAction = function ($conn, $localIf) use ($equipment) {
-                                    if (! $localIf) return null;
-                                    if ($conn) {
-                                        return [
-                                            'label' => __('common.edit'),
-                                            'href' => route('connections.edit', ['connection' => $conn, 'from_equipment' => $equipment->id]),
-                                        ];
-                                    }
-                                    return [
-                                        'label' => __('common.create'),
-                                        'href' => route('connections.create', ['from_equipment' => $equipment->id, 'from_iface' => $localIf->id]),
-                                    ];
-                                };
+                                $frontConn = $connByIfaceId[$if->id] ?? null;
+                                $rearConn = $rear ? ($connByIfaceId[$rear->id] ?? null) : null;
                                 $frontAction = $connAction($frontConn, $if);
                                 $rearAction = $connAction($rearConn, $rear);
                             @endphp

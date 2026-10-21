@@ -7,7 +7,6 @@ namespace App\Mcp\Tools;
 use App\Mcp\TramaTool;
 use App\Models\Equipment;
 use App\Models\Rack;
-use App\Services\RackPlacementService;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
@@ -38,18 +37,23 @@ class GetRack extends TramaTool
 
         /** @var Rack $model */
         $model = Rack::query()->findOrFail($data['rack_id']);
-        $placement = app(RackPlacementService::class);
-        $all = range(1, (int) $model->height_units);
+        $devices = $model->equipment()->orderByDesc('position_u_start')->get();
 
-        $rack['free_units'] = [
-            'front' => array_values(array_diff($all, $placement->getOccupiedUnits($model, null, 'front'))),
-            'rear' => array_values(array_diff($all, $placement->getOccupiedUnits($model, null, 'rear'))),
-        ];
+        // On-top and unmounted devices occupy no U; NULL orient is front.
+        $free = function (string $side) use ($devices, $model): array {
+            $occupied = $devices
+                ->filter(fn (Equipment $e): bool => $e->mounted && ! $e->on_top && $e->position_u_start !== null && $e->position_u_height !== null
+                    && ($e->position_orient ?: 'front') === $side)
+                ->flatMap(fn (Equipment $e): array => range($e->position_u_start, $e->position_u_start + $e->position_u_height - 1))
+                ->all();
+
+            return array_values(array_diff(range(1, (int) $model->height_units), $occupied));
+        };
+
+        $rack['free_units'] = ['front' => $free('front'), 'rear' => $free('rear')];
 
         if (auth()->user()?->tokenCan('equipment:read')) {
-            $rack['devices'] = $model->equipment()
-                ->orderByDesc('position_u_start')
-                ->get()
+            $rack['devices'] = $devices
                 ->map(fn (Equipment $e): array => [
                     'id' => $e->id,
                     'name' => $e->name,

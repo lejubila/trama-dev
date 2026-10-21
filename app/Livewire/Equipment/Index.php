@@ -11,6 +11,7 @@ use App\Enums\HypervisorVendor;
 use App\Livewire\Concerns\NotifiesGuide;
 use App\Livewire\Concerns\RemembersFilters;
 use App\Models\Equipment;
+use App\Models\NetworkInterface;
 use App\Models\Rack;
 use App\Models\Room;
 use App\Models\Site;
@@ -361,6 +362,10 @@ class Index extends Component
                 return;
             }
 
+            $rack = Rack::query()->findOrFail($this->rackId);
+            // The rack's room is authoritative, so room_id can't drift from it.
+            $this->roomId = (int) $rack->room_id;
+
             if (! $this->onTop) {
                 if ($this->positionUStart === null || $this->positionUHeight === null) {
                     $this->addError('positionUStart', __('equipment.err_u_required'));
@@ -368,10 +373,7 @@ class Index extends Component
                     return;
                 }
 
-                $rack = Rack::query()->findOrFail($this->rackId);
-                $excluding = $this->editingId ? Equipment::query()->find($this->editingId) : null;
-
-                if (! $placement->canPlace($rack, $this->positionUStart, $this->positionUHeight, $excluding, $this->positionOrient)) {
+                if (! $placement->canPlace($rack, $this->positionUStart, $this->positionUHeight)) {
                     $this->addError('positionUStart', __('equipment.err_u_conflict'));
 
                     return;
@@ -383,16 +385,6 @@ class Index extends Component
         // actually occupy a slot. On-top devices reuse the rack association
         // but have NULL Us so they don't clash with anything in the layout.
         $useUs = $this->mounted && ! $this->onTop;
-
-        // When the device sits in a rack, the rack's room is authoritative:
-        // re-derive room_id here so it can't drift out of sync with the rack.
-        // Unracked devices keep whatever room the user selected manually.
-        if ($this->mounted && $this->rackId !== null) {
-            $rackForRoom = Rack::query()->find($this->rackId);
-            if ($rackForRoom !== null) {
-                $this->roomId = (int) $rackForRoom->room_id;
-            }
-        }
 
         $customFields = [];
         if ($isHypervisor && $this->hypervisorVendor !== '') {
@@ -630,14 +622,17 @@ class Index extends Component
             'types' => EquipmentType::cases(),
             'statuses' => EquipmentStatus::cases(),
             'allTags' => Tag::query()->orderBy('name')->get(),
-            'hypervisorOptions' => Equipment::query()
-                ->where('type', EquipmentType::Hypervisor->value)
-                ->when($this->editingId !== null, fn ($q) => $q->where('id', '!=', $this->editingId))
-                ->orderBy('name')
-                ->get(['id', 'name']),
+            // Only the modal form needs these.
+            'hypervisorOptions' => $this->showForm
+                ? Equipment::query()
+                    ->where('type', EquipmentType::Hypervisor->value)
+                    ->when($this->editingId !== null, fn ($q) => $q->where('id', '!=', $this->editingId))
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                : collect(),
             'hypervisorVendors' => HypervisorVendor::cases(),
-            'duplicatingInterfaceCount' => $this->duplicatingFromId !== null
-                ? (int) Equipment::query()->find($this->duplicatingFromId)?->interfaces()->count()
+            'duplicatingInterfaceCount' => $this->showForm && $this->duplicatingFromId !== null
+                ? NetworkInterface::query()->where('equipment_id', $this->duplicatingFromId)->count()
                 : 0,
         ]);
     }

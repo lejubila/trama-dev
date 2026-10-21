@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Equipment;
 
 use App\Actions\Interfaces\CreateKeystonePair;
+use App\Enums\ConnectionStatus;
 use App\Enums\EquipmentType;
 use App\Enums\InterfaceMedia;
 use App\Enums\InterfacePoe;
@@ -683,6 +684,9 @@ class Show extends Component
         // of calling `activeConnection()` from inside the table loop.
         $connByIfaceId = [];
         foreach ($connections as $c) {
+            if ($c->status !== ConnectionStatus::Active) {
+                continue;
+            }
             if ($c->from_interface_id !== null) {
                 $connByIfaceId[(int) $c->from_interface_id] = $c;
             }
@@ -711,7 +715,9 @@ class Show extends Component
             'interfaces' => $interfaces,
             'connections' => $connections,
             'connByIfaceId' => $connByIfaceId,
-            'audits' => $this->equipment->audits()->latest()->limit(50)->get(),
+            'audits' => $this->activeTab === 'audit'
+                ? $this->equipment->audits()->with('user')->latest()->limit(50)->get()
+                : collect(),
             'isPatchLike' => in_array(
                 $this->equipment->type,
                 [EquipmentType::PatchPanel, EquipmentType::WallOutlet],

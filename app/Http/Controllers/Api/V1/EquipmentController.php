@@ -20,6 +20,9 @@ use Illuminate\Validation\ValidationException;
 
 class EquipmentController extends Controller
 {
+    /** @var array<int, Rack|null> withRoom and ensurePlacement look up the same rack */
+    private array $racks = [];
+
     /**
      * @OA\Get(
      *   path="/v1/equipment",
@@ -71,7 +74,7 @@ class EquipmentController extends Controller
     public function store(EquipmentRequest $request, RackPlacementService $placement): EquipmentResource
     {
         $data = $this->withRoom($this->withHost($request->validated(), null), null);
-        $this->ensurePlacement($data, null, $placement);
+        $this->ensurePlacement($data, $placement);
 
         $equipment = Equipment::create($data);
 
@@ -90,7 +93,7 @@ class EquipmentController extends Controller
         $data = $this->withRoom($this->withHost($request->validated(), $equipment), $equipment);
         // Merge current values for fields not in payload to validate placement holistically
         $merged = array_merge($equipment->only(['rack_id', 'mounted', 'position_u_start', 'position_u_height']), $data);
-        $this->ensurePlacement($merged, $equipment, $placement);
+        $this->ensurePlacement($merged, $placement);
 
         DB::transaction(function () use ($equipment, $data): void {
             $hostChanged = $equipment->host_equipment_id !== null
@@ -179,7 +182,7 @@ class EquipmentController extends Controller
 
         $mounted = (bool) ($data['mounted'] ?? $current?->mounted ?? false);
         $rackId = array_key_exists('rack_id', $data) ? $data['rack_id'] : $current?->rack_id;
-        $rack = $mounted && $rackId !== null ? Rack::query()->find($rackId) : null;
+        $rack = $mounted && $rackId !== null ? $this->rack((int) $rackId) : null;
 
         if ($roomGiven) {
             $explicitMount = ($data['mounted'] ?? null) === true;
@@ -219,7 +222,7 @@ class EquipmentController extends Controller
      *
      * @param  array<string, mixed>  $data
      */
-    private function ensurePlacement(array $data, ?Equipment $excluding, RackPlacementService $placement): void
+    private function ensurePlacement(array $data, RackPlacementService $placement): void
     {
         if (! ($data['mounted'] ?? false)) {
             return;
@@ -235,15 +238,20 @@ class EquipmentController extends Controller
             ]);
         }
 
-        $rack = Rack::query()->find($rackId);
+        $rack = $this->rack((int) $rackId);
         if ($rack === null) {
             throw ValidationException::withMessages(['rack_id' => 'Rack inesistente.']);
         }
 
-        if (! $placement->canPlace($rack, (int) $startU, (int) $heightU, $excluding)) {
+        if (! $placement->canPlace($rack, (int) $startU, (int) $heightU)) {
             throw ValidationException::withMessages([
                 'position_u_start' => 'Posizione occupata o fuori dal rack.',
             ]);
         }
+    }
+
+    private function rack(int $id): ?Rack
+    {
+        return array_key_exists($id, $this->racks) ? $this->racks[$id] : ($this->racks[$id] = Rack::query()->find($id));
     }
 }

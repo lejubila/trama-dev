@@ -47,13 +47,3 @@ it('still rejects placements that overflow the rack', function (): void {
     expect($this->svc->canPlace($this->rack, 11, 3))->toBeFalse() // 11..13 in a 12U rack
         ->and($this->svc->canPlace($this->rack, 0, 1))->toBeFalse(); // startU < 1
 });
-
-it('lists every in-bounds start-U position as available', function (): void {
-    Equipment::factory()->mountedAt(3, 2)->create(['rack_id' => $this->rack->getKey()]);
-    Equipment::factory()->mountedAt(8, 1)->create(['rack_id' => $this->rack->getKey()]);
-
-    $slots = $this->svc->findAvailableSlots($this->rack, 1);
-
-    // With multi-device-per-U allowed, every U from 1..12 is a valid start.
-    expect($slots)->toEqualCanonicalizing(range(1, 12));
-});

@@ -399,7 +399,7 @@ class Index extends Component
                 ->with(['endpointAInterface.equipment', 'endpointBInterface.equipment'])
                 ->orderBy('name')
                 ->get(),
-            'firewallInterfaces' => $this->firewallInterfaces()->get(['id', 'name', 'equipment_id']),
+            'firewallInterfaces' => $this->formType !== '' ? $this->firewallInterfaces()->get(['id', 'name', 'equipment_id']) : collect(),
             'protocols' => VpnProtocol::cases(),
             'routingModes' => VpnRoutingMode::cases(),
             'prefixOptions' => $this->prefixOptions(),

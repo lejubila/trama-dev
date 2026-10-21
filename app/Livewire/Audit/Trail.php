@@ -47,10 +47,8 @@ class Trail extends Component
         // Audit model isn't BelongsToTenant, so we filter manually on tenant_id.
         $tenantId = TenantContext::id();
 
-        // Note: lazy-load `user` in the view rather than eager-loading here.
-        // owen-it/laravel-auditing exposes the relation via the trait, but it's
-        // not visible to static analysis on the Audit model.
         $audits = Audit::query()
+            ->with('user')
             ->when($tenantId !== null, fn ($q) => $q->where('tenant_id', $tenantId))
             ->when($this->modelFilter !== '', fn ($q) => $q->where('auditable_type', $this->modelFilter))
             ->when($this->eventFilter !== '', fn ($q) => $q->where('event', $this->eventFilter))
