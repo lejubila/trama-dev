@@ -10,6 +10,7 @@ use App\Enums\EquipmentType;
 use App\Enums\HypervisorVendor;
 use App\Livewire\Concerns\NotifiesGuide;
 use App\Livewire\Concerns\RemembersFilters;
+use App\Livewire\Equipment\Concerns\EditsEquipmentDetails;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
 use App\Models\Rack;
@@ -33,7 +34,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    use NotifiesGuide, RemembersFilters, WithFileUploads, WithPagination;
+    use EditsEquipmentDetails, NotifiesGuide, RemembersFilters, WithFileUploads, WithPagination;
 
     #[Url(except: '')]
     public string $search = '';
@@ -83,25 +84,7 @@ class Index extends Component
 
     public string $guestOs = '';
 
-    public string $name = '';
-
-    public string $type = 'switch';
-
-    public string $vendor = '';
-
-    public string $modelName = '';
-
-    public string $serial = '';
-
-    public string $firmware = '';
-
-    public string $assetTag = '';
-
-    public string $managementIp = '';
-
     public bool $mounted = false;
-
-    public bool $locked = false;
 
     public ?int $positionUStart = null;
 
@@ -111,18 +94,7 @@ class Index extends Component
 
     public bool $onTop = false;
 
-    public bool $hiddenInTopology = false;
-
-    public string $status = 'active';
-
-    public string $description = '';
-
-    public $iconUpload = null;
-
     public ?string $existingIconPath = null;
-
-    /** @var array<int, int|string> */
-    public array $selectedTagIds = [];
 
     /**
      * @return array<string, mixed>
@@ -130,6 +102,7 @@ class Index extends Component
     public function rules(): array
     {
         return [
+            ...$this->detailRules(),
             'rackId' => ['nullable', TenantExists::in('racks')],
             'roomId' => ['nullable', TenantExists::in('rooms')],
             'hostEquipmentId' => [
@@ -143,26 +116,11 @@ class Index extends Component
             'ramMb' => 'nullable|integer|min:1|max:8388608',
             'diskGb' => 'nullable|integer|min:1|max:1048576',
             'guestOs' => 'nullable|string|max:120',
-            'name' => 'required|string|max:150',
-            'type' => ['required', Rule::enum(EquipmentType::class)],
-            'vendor' => 'nullable|string|max:80',
-            'modelName' => 'nullable|string|max:120',
-            'serial' => 'nullable|string|max:120',
-            'firmware' => 'nullable|string|max:80',
-            'assetTag' => 'nullable|string|max:80',
-            'managementIp' => 'nullable|ip',
             'mounted' => 'boolean',
-            'locked' => 'boolean',
             'positionUStart' => 'nullable|integer|min:1|max:60',
             'positionUHeight' => 'nullable|integer|min:1|max:60',
             'positionOrient' => 'required|in:front,rear',
             'onTop' => 'boolean',
-            'hiddenInTopology' => 'boolean',
-            'status' => ['required', Rule::enum(EquipmentStatus::class)],
-            'description' => 'nullable|string|max:5000',
-            'iconUpload' => 'nullable|image|max:5120',
-            'selectedTagIds' => 'array',
-            'selectedTagIds.*' => ['integer', TenantExists::in('tags', softDeletes: false)],
         ];
     }
 
@@ -222,9 +180,8 @@ class Index extends Component
     public function openCreate(): void
     {
         $this->authorize('create', Equipment::class);
-        $this->reset(['editingId', 'duplicatingFromId', 'rackId', 'roomId', 'hostEquipmentId', 'hypervisorVendor', 'vcpu', 'ramMb', 'diskGb', 'guestOs', 'name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'mounted', 'locked', 'positionUStart', 'description', 'iconUpload', 'existingIconPath', 'onTop', 'hiddenInTopology', 'selectedTagIds']);
-        $this->type = 'switch';
-        $this->status = 'active';
+        $this->reset(['editingId', 'duplicatingFromId', 'rackId', 'roomId', 'hostEquipmentId', 'hypervisorVendor', 'vcpu', 'ramMb', 'diskGb', 'guestOs', 'mounted', 'positionUStart', 'existingIconPath', 'onTop']);
+        $this->resetDetails();
         $this->positionUHeight = 1;
         $this->positionOrient = 'front';
         $this->resetErrorBag();
@@ -380,26 +337,15 @@ class Index extends Component
         }
 
         $payload = [
+            ...$this->detailAttributes(),
             'rack_id' => $this->rackId,
             'room_id' => $this->roomId,
             'host_equipment_id' => $this->hostEquipmentId,
-            'name' => $this->name,
-            'type' => EquipmentType::from($this->type),
-            'vendor' => $this->vendor !== '' ? $this->vendor : null,
-            'model' => $this->modelName !== '' ? $this->modelName : null,
-            'serial' => $this->serial !== '' ? $this->serial : null,
-            'firmware' => $this->firmware !== '' ? $this->firmware : null,
-            'asset_tag' => $this->assetTag !== '' ? $this->assetTag : null,
-            'management_ip' => $this->managementIp !== '' ? $this->managementIp : null,
             'mounted' => $this->mounted,
-            'locked' => $this->locked,
             'on_top' => $this->mounted ? $this->onTop : false,
-            'hidden_in_topology' => $this->hiddenInTopology,
             'position_u_start' => $useUs ? $this->positionUStart : null,
             'position_u_height' => $useUs ? $this->positionUHeight : null,
             'position_orient' => $this->mounted ? $this->positionOrient : null,
-            'status' => EquipmentStatus::from($this->status),
-            'description' => $this->description !== '' ? $this->description : null,
         ];
 
         // Merge dei custom_fields preservando eventuali chiavi esistenti

@@ -162,6 +162,7 @@ it('creates a mounted equipment at the clicked U', function (): void {
         ->where('mounted', true)
         ->where('position_u_start', 7)
         ->where('position_u_height', 1)
+        ->where('room_id', $rack->room_id)
         ->exists()
     )->toBeTrue();
 });

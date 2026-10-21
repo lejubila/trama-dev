@@ -7,13 +7,12 @@ namespace App\Livewire\Racks;
 use App\Enums\EquipmentStatus;
 use App\Enums\EquipmentType;
 use App\Livewire\Concerns\NotifiesGuide;
+use App\Livewire\Equipment\Concerns\EditsEquipmentDetails;
 use App\Models\Equipment;
 use App\Models\Rack;
 use App\Models\Tag;
 use App\Services\RackPlacementService;
-use App\Validation\TenantExists;
 use Illuminate\Contracts\View\View;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -21,7 +20,7 @@ use Livewire\WithFileUploads;
 
 class Elevation extends Component
 {
-    use NotifiesGuide, WithFileUploads;
+    use EditsEquipmentDetails, NotifiesGuide, WithFileUploads;
 
     public Rack $rack;
 
@@ -35,35 +34,6 @@ class Elevation extends Component
     public bool $onTop = false;
 
     public int $positionUHeight = 1;
-
-    public string $name = '';
-
-    public string $type = 'switch';
-
-    public string $vendor = '';
-
-    public string $modelName = '';
-
-    public string $serial = '';
-
-    public string $firmware = '';
-
-    public string $assetTag = '';
-
-    public string $managementIp = '';
-
-    public string $status = 'active';
-
-    public bool $locked = false;
-
-    public bool $hiddenInTopology = false;
-
-    public string $description = '';
-
-    public $iconUpload = null;
-
-    /** @var array<int, int|string> */
-    public array $selectedTagIds = [];
 
     public function mount(Rack $rack): void
     {
@@ -118,8 +88,7 @@ class Elevation extends Component
     {
         $this->authorize('create', Equipment::class);
 
-        $this->reset(['name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'locked', 'hiddenInTopology', 'description', 'iconUpload', 'selectedTagIds']);
-        $this->status = 'active';
+        $this->resetDetails();
         $this->selectedU = $u;
         // The slot belongs to the side the user is currently viewing.
         // Falling back to component state keeps backwards-compat with
@@ -129,7 +98,6 @@ class Elevation extends Component
         }
         $this->onTop = false;
         $this->positionUHeight = 1;
-        $this->type = 'switch';
         $this->resetErrorBag();
         $this->showForm = true;
     }
@@ -143,12 +111,10 @@ class Elevation extends Component
     {
         $this->authorize('create', Equipment::class);
 
-        $this->reset(['name', 'vendor', 'modelName', 'serial', 'firmware', 'assetTag', 'managementIp', 'locked', 'hiddenInTopology', 'description', 'iconUpload', 'selectedTagIds']);
-        $this->status = 'active';
+        $this->resetDetails();
         $this->selectedU = null;
         $this->onTop = true;
         $this->positionUHeight = 1;
-        $this->type = 'switch';
         $this->resetErrorBag();
         $this->showForm = true;
     }
@@ -168,23 +134,7 @@ class Elevation extends Component
             return;
         }
 
-        $rules = [
-            'name' => 'required|string|max:150',
-            'type' => ['required', Rule::enum(EquipmentType::class)],
-            'vendor' => 'nullable|string|max:80',
-            'modelName' => 'nullable|string|max:120',
-            'serial' => 'nullable|string|max:120',
-            'firmware' => 'nullable|string|max:80',
-            'assetTag' => 'nullable|string|max:80',
-            'managementIp' => 'nullable|ip',
-            'status' => ['required', Rule::enum(EquipmentStatus::class)],
-            'locked' => 'boolean',
-            'hiddenInTopology' => 'boolean',
-            'description' => 'nullable|string|max:5000',
-            'iconUpload' => 'nullable|image|max:5120',
-            'selectedTagIds' => 'array',
-            'selectedTagIds.*' => ['integer', TenantExists::in('tags', softDeletes: false)],
-        ];
+        $rules = $this->detailRules();
         if (! $this->onTop) {
             $rules['positionUHeight'] = 'required|integer|min:1|max:60';
         }
@@ -197,24 +147,14 @@ class Elevation extends Component
         }
 
         $equipment = Equipment::create([
+            ...$this->detailAttributes(),
             'rack_id' => $this->rack->getKey(),
-            'name' => $this->name,
-            'type' => EquipmentType::from($this->type),
-            'vendor' => $this->vendor !== '' ? $this->vendor : null,
-            'model' => $this->modelName !== '' ? $this->modelName : null,
-            'serial' => $this->serial !== '' ? $this->serial : null,
-            'firmware' => $this->firmware !== '' ? $this->firmware : null,
-            'asset_tag' => $this->assetTag !== '' ? $this->assetTag : null,
-            'management_ip' => $this->managementIp !== '' ? $this->managementIp : null,
+            'room_id' => $this->rack->room_id,
             'mounted' => true,
-            'locked' => $this->locked,
-            'hidden_in_topology' => $this->hiddenInTopology,
             'on_top' => $this->onTop,
             'position_u_start' => $this->onTop ? null : $this->selectedU,
             'position_u_height' => $this->onTop ? null : $this->positionUHeight,
             'position_orient' => $this->onTop ? null : $this->orient,
-            'status' => EquipmentStatus::from($this->status),
-            'description' => $this->description !== '' ? $this->description : null,
         ]);
 
         if ($this->iconUpload instanceof TemporaryUploadedFile) {
