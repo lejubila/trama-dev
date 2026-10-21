@@ -51,6 +51,21 @@ it('creates a new rack', function (): void {
     expect(Rack::query()->where('name', 'Rack-A')->exists())->toBeTrue();
 });
 
+it('rejects a room of another tenant', function (): void {
+    [$tenant] = setupRackContext('admin');
+
+    TenantContext::setId(Tenant::factory()->create()->getKey());
+    $foreign = Room::factory()->create(['site_id' => Site::factory()->create()->getKey()]);
+    TenantContext::setId($tenant->getKey());
+
+    Livewire::test(Index::class)
+        ->call('openCreate')
+        ->set('roomId', $foreign->getKey())
+        ->set('name', 'Rack-X')
+        ->call('save')
+        ->assertHasErrors(['roomId']);
+});
+
 it('updates an existing rack', function (): void {
     [$tenant, $user, $room] = setupRackContext('admin');
     $rack = Rack::factory()->create(['room_id' => $room->getKey(), 'name' => 'Old']);

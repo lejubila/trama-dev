@@ -45,7 +45,7 @@ class Show extends Component
     /** Existing stored path for the floor-plan image, when editing. */
     public ?string $existingFloorPlanPath = null;
 
-    #[Validate('nullable|string|max:2000')]
+    #[Validate('nullable|string|max:5000')]
     public string $roomNotes = '';
 
     public function mount(Site $site): void

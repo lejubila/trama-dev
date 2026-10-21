@@ -9,6 +9,7 @@ use App\Livewire\Concerns\RemembersFilters;
 use App\Models\NetworkInterface;
 use App\Models\Site;
 use App\Models\WifiNetwork;
+use App\Validation\TenantExists;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -31,7 +32,6 @@ class Index extends Component
 
     public ?int $editingId = null;
 
-    #[Validate('nullable|integer|exists:sites,id')]
     public ?int $siteId = null;
 
     #[Validate('required|string|max:64')]
@@ -45,11 +45,23 @@ class Index extends Component
 
     public bool $hiddenSsid = false;
 
-    #[Validate('nullable|string|max:2000')]
+    #[Validate('nullable|string|max:5000')]
     public string $notes = '';
 
     /** @var array<int, int> Selected broadcaster NetworkInterface IDs. */
     public array $broadcasterIds = [];
+
+    /**
+     * Rules that need objects, which attributes can't hold.
+     *
+     * @return array<string, mixed>
+     */
+    protected function rules(): array
+    {
+        return [
+            'siteId' => ['nullable', 'integer', TenantExists::in('sites')],
+        ];
+    }
 
     public function clearFilters(): void
     {

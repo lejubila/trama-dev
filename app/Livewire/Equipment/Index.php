@@ -17,6 +17,7 @@ use App\Models\Room;
 use App\Models\Site;
 use App\Models\Tag;
 use App\Services\RackPlacementService;
+use App\Validation\TenantExists;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -129,21 +130,21 @@ class Index extends Component
     public function rules(): array
     {
         return [
-            'rackId' => 'nullable|exists:racks,id',
-            'roomId' => 'nullable|exists:rooms,id',
+            'rackId' => ['nullable', TenantExists::in('racks')],
+            'roomId' => ['nullable', TenantExists::in('rooms')],
             'hostEquipmentId' => [
                 'nullable',
                 'integer',
-                'exists:equipment,id',
+                TenantExists::in('equipment'),
                 Rule::requiredIf(fn () => $this->type === EquipmentType::VirtualMachine->value),
             ],
-            'hypervisorVendor' => ['nullable', Rule::in(array_column(HypervisorVendor::cases(), 'value'))],
+            'hypervisorVendor' => ['nullable', Rule::enum(HypervisorVendor::class)],
             'vcpu' => 'nullable|integer|min:1|max:1024',
             'ramMb' => 'nullable|integer|min:1|max:8388608',
             'diskGb' => 'nullable|integer|min:1|max:1048576',
             'guestOs' => 'nullable|string|max:120',
             'name' => 'required|string|max:150',
-            'type' => ['required', Rule::in(array_column(EquipmentType::cases(), 'value'))],
+            'type' => ['required', Rule::enum(EquipmentType::class)],
             'vendor' => 'nullable|string|max:80',
             'modelName' => 'nullable|string|max:120',
             'serial' => 'nullable|string|max:120',
@@ -157,11 +158,11 @@ class Index extends Component
             'positionOrient' => 'required|in:front,rear',
             'onTop' => 'boolean',
             'hiddenInTopology' => 'boolean',
-            'status' => ['required', Rule::in(array_column(EquipmentStatus::cases(), 'value'))],
+            'status' => ['required', Rule::enum(EquipmentStatus::class)],
             'description' => 'nullable|string|max:5000',
             'iconUpload' => 'nullable|image|max:5120',
             'selectedTagIds' => 'array',
-            'selectedTagIds.*' => 'integer|exists:tags,id',
+            'selectedTagIds.*' => ['integer', TenantExists::in('tags', softDeletes: false)],
         ];
     }
 

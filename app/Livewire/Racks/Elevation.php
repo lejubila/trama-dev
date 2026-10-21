@@ -11,6 +11,7 @@ use App\Models\Equipment;
 use App\Models\Rack;
 use App\Models\Tag;
 use App\Services\RackPlacementService;
+use App\Validation\TenantExists;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\On;
@@ -169,20 +170,20 @@ class Elevation extends Component
 
         $rules = [
             'name' => 'required|string|max:150',
-            'type' => ['required', Rule::in(array_column(EquipmentType::cases(), 'value'))],
+            'type' => ['required', Rule::enum(EquipmentType::class)],
             'vendor' => 'nullable|string|max:80',
             'modelName' => 'nullable|string|max:120',
             'serial' => 'nullable|string|max:120',
             'firmware' => 'nullable|string|max:80',
             'assetTag' => 'nullable|string|max:80',
             'managementIp' => 'nullable|ip',
-            'status' => ['required', Rule::in(array_column(EquipmentStatus::cases(), 'value'))],
+            'status' => ['required', Rule::enum(EquipmentStatus::class)],
             'locked' => 'boolean',
             'hiddenInTopology' => 'boolean',
             'description' => 'nullable|string|max:5000',
             'iconUpload' => 'nullable|image|max:5120',
             'selectedTagIds' => 'array',
-            'selectedTagIds.*' => 'integer|exists:tags,id',
+            'selectedTagIds.*' => ['integer', TenantExists::in('tags', softDeletes: false)],
         ];
         if (! $this->onTop) {
             $rules['positionUHeight'] = 'required|integer|min:1|max:60';

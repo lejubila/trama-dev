@@ -11,6 +11,7 @@ use App\Models\NetworkInterface;
 use App\Models\VpnRemoteAccess;
 use App\Models\VpnSiteToSite;
 use Illuminate\Contracts\View\View;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -28,14 +29,12 @@ class Index extends Component
     #[Validate('required|string|max:100')]
     public string $name = '';
 
-    #[Validate('required|string|in:wireguard,openvpn,ipsec,l2tp,pptp,ssl_vpn,gre,other')]
     public string $protocol = 'wireguard';
 
     /** Remote-access only. */
     public int $firewallInterfaceId = 0;
 
     /** Remote-access only: 'routed' | 'bridged'. */
-    #[Validate('required|string|in:routed,bridged')]
     public string $routingMode = 'routed';
 
     /** Remote-access only: IPv4 of the client subnet (without prefix). */
@@ -62,6 +61,19 @@ class Index extends Component
     public string $routedNetworksB = '';
 
     public string $notes = '';
+
+    /**
+     * Rules that need objects, which attributes can't hold.
+     *
+     * @return array<string, mixed>
+     */
+    protected function rules(): array
+    {
+        return [
+            'protocol' => ['required', Rule::enum(VpnProtocol::class)],
+            'routingMode' => ['required', Rule::enum(VpnRoutingMode::class)],
+        ];
+    }
 
     public function openCreateRemote(): void
     {

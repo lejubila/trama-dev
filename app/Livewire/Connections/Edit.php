@@ -8,6 +8,7 @@ use App\Enums\ConnectionStatus;
 use App\Models\Connection;
 use App\Models\Tag;
 use App\Support\CableColors;
+use App\Validation\TenantExists;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -64,11 +65,11 @@ class Edit extends Component
             'cableLengthM' => 'nullable|numeric|min:0',
             'cableLabel' => 'nullable|string|max:80',
             'color' => ['nullable', 'string', 'regex:'.CableColors::HEX_REGEX],
-            'notes' => 'nullable|string|max:2000',
+            'notes' => 'nullable|string|max:5000',
             'establishedAt' => 'nullable|date',
             'status' => 'required|in:'.implode(',', array_map(fn ($c) => $c->value, ConnectionStatus::cases())),
             'selectedTagIds' => 'array',
-            'selectedTagIds.*' => 'integer|exists:tags,id',
+            'selectedTagIds.*' => ['integer', TenantExists::in('tags', softDeletes: false)],
         ]);
 
         $this->connection->update([

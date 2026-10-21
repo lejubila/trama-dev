@@ -32,7 +32,7 @@ class Index extends Component
     #[Validate('nullable|string|max:255')]
     public string $address = '';
 
-    #[Validate('nullable|string|max:2000')]
+    #[Validate('nullable|string|max:5000')]
     public string $notes = '';
 
     /**

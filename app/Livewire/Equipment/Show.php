@@ -17,6 +17,7 @@ use App\Livewire\Concerns\NotifiesGuide;
 use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
+use App\Validation\TenantExists;
 use App\Validation\VnicBacking;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
@@ -89,19 +90,19 @@ class Show extends Component
     public function rules(): array
     {
         $base = [
-            'ifType' => ['required', Rule::in(array_column(InterfaceType::cases(), 'value'))],
-            'ifMedia' => ['required', Rule::in(array_column(InterfaceMedia::cases(), 'value'))],
+            'ifType' => ['required', Rule::enum(InterfaceType::class)],
+            'ifMedia' => ['required', Rule::enum(InterfaceMedia::class)],
             'ifConnector' => 'nullable|string|max:20',
             'ifSpeedMbps' => 'nullable|integer|min:1',
-            'ifVlanMode' => ['nullable', Rule::in(array_column(InterfaceVlanMode::cases(), 'value'))],
+            'ifVlanMode' => ['nullable', Rule::enum(InterfaceVlanMode::class)],
             'ifVlanDefault' => 'nullable|integer|min:1|max:4094',
             'ifVlansAllowedText' => 'nullable|string|max:255',
             'ifIpAddress' => 'nullable|string|max:45',
             'ifMacAddress' => 'nullable|string|max:17',
-            'ifStatus' => ['required', Rule::in(array_column(InterfaceStatus::cases(), 'value'))],
-            'ifPoe' => ['required', Rule::in(array_column(InterfacePoe::cases(), 'value'))],
+            'ifStatus' => ['required', Rule::enum(InterfaceStatus::class)],
+            'ifPoe' => ['required', Rule::enum(InterfacePoe::class)],
             'ifDescription' => 'nullable|string|max:255',
-            'ifBackedById' => ['nullable', 'integer', 'exists:interfaces,id'],
+            'ifBackedById' => ['nullable', 'integer', TenantExists::in('interfaces', softDeletes: false)],
         ];
 
         // In bulk mode the name is a *prefix*; the unicità is checked per

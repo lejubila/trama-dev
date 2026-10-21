@@ -9,8 +9,10 @@ use App\Livewire\Concerns\NotifiesGuide;
 use App\Livewire\Concerns\RemembersFilters;
 use App\Models\Rack;
 use App\Models\Room;
+use App\Validation\TenantExists;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Attributes\Validate;
@@ -38,7 +40,6 @@ class Index extends Component
 
     public ?int $editingId = null;
 
-    #[Validate('required|exists:rooms,id')]
     public ?int $roomId = null;
 
     #[Validate('required|string|max:100')]
@@ -53,10 +54,9 @@ class Index extends Component
     #[Validate('nullable|integer|min:100|max:2000')]
     public ?int $depthMm = 1000;
 
-    #[Validate('required|in:bottom_up,top_down')]
     public string $numbering = 'bottom_up';
 
-    #[Validate('nullable|string|max:2000')]
+    #[Validate('nullable|string|max:5000')]
     public string $notes = '';
 
     #[Validate('nullable|numeric|min:0|max:999.99')]
@@ -69,6 +69,19 @@ class Index extends Component
     public $iconUpload = null;
 
     public ?string $existingIconPath = null;
+
+    /**
+     * Rules that need objects, which attributes can't hold.
+     *
+     * @return array<string, mixed>
+     */
+    protected function rules(): array
+    {
+        return [
+            'roomId' => ['required', TenantExists::in('rooms')],
+            'numbering' => ['required', Rule::enum(RackNumbering::class)],
+        ];
+    }
 
     public function mount(): void
     {

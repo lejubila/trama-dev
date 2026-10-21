@@ -17,7 +17,7 @@ class WifiNetworkRules
             'security_type' => 'nullable|string|max:32',
             'vlan_id' => 'nullable|integer|min:1|max:4094',
             'hidden_ssid' => 'boolean',
-            'notes' => 'nullable|string|max:2000',
+            'notes' => 'nullable|string|max:5000',
             'broadcaster_interface_ids' => 'array',
             'broadcaster_interface_ids.*' => 'integer|distinct',
         ];

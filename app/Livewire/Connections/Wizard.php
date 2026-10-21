@@ -13,6 +13,7 @@ use App\Models\NetworkInterface;
 use App\Models\Tag;
 use App\Services\ConnectionService;
 use App\Support\CableColors;
+use App\Validation\TenantExists;
 use Illuminate\Contracts\View\View;
 use InvalidArgumentException;
 use Livewire\Attributes\Layout;
@@ -138,16 +139,16 @@ class Wizard extends Component
         $this->resetValidation();
 
         $this->validate([
-            'fromInterfaceId' => 'required|exists:interfaces,id',
-            'toInterfaceId' => 'required|exists:interfaces,id|different:fromInterfaceId',
+            'fromInterfaceId' => ['required', TenantExists::in('interfaces', softDeletes: false)],
+            'toInterfaceId' => ['required', TenantExists::in('interfaces', softDeletes: false), 'different:fromInterfaceId'],
             'cableType' => 'required|string|max:30',
             'cableLengthM' => 'nullable|numeric|min:0',
             'cableLabel' => 'nullable|string|max:80',
             'color' => ['nullable', 'string', 'regex:'.CableColors::HEX_REGEX],
-            'notes' => 'nullable|string|max:2000',
+            'notes' => 'nullable|string|max:5000',
             'establishedAt' => 'nullable|date',
             'selectedTagIds' => 'array',
-            'selectedTagIds.*' => 'integer|exists:tags,id',
+            'selectedTagIds.*' => ['integer', TenantExists::in('tags', softDeletes: false)],
         ]);
 
         $a = NetworkInterface::query()->findOrFail($this->fromInterfaceId);
