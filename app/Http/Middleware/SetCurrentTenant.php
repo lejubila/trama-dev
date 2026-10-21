@@ -21,11 +21,7 @@ class SetCurrentTenant
             return $next($request);
         }
 
-        // Resolve the set of tenants the user may operate in: admins/tecnici can
-        // access every tenant; clienti only the ones they are assigned to.
-        $accessibleQuery = $user->canManageData()
-            ? Tenant::query()
-            : $user->tenants();
+        $accessibleQuery = $user->accessibleTenants();
 
         $current = CurrentTenant::perSession()
             ? $request->session()->get(CurrentTenant::SESSION_KEY)

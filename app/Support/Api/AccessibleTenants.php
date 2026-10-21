@@ -22,11 +22,7 @@ final class AccessibleTenants
     {
         $token = $user->currentAccessToken();
 
-        $query = $user->canManageData()
-            ? Tenant::query()
-            : Tenant::query()->whereIn('tenants.id', $user->tenants()->select('tenants.id'));
-
-        return $query->when(
+        return $user->accessibleTenants()->when(
             $token instanceof PersonalAccessToken && $token->tenant_ids !== null,
             fn (Builder $q) => $q->whereIn('tenants.id', $token->tenant_ids),
         );

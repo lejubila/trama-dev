@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -118,6 +119,19 @@ class User extends Authenticatable
      * Whether the user is allowed to operate within the given tenant: admins and
      * tecnici may access any tenant; clienti only the ones they are assigned to.
      */
+    /**
+     * Tenants this user may work in: every tenant for admins and tecnici,
+     * only the assigned ones for clienti.
+     *
+     * @return Builder<Tenant>
+     */
+    public function accessibleTenants(): Builder
+    {
+        return $this->canManageData()
+            ? Tenant::query()
+            : Tenant::query()->whereIn('tenants.id', $this->tenants()->select('tenants.id'));
+    }
+
     public function canAccessTenant(Tenant $tenant): bool
     {
         if ($this->canManageData()) {
