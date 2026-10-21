@@ -97,7 +97,15 @@ class DocumentPdfBuilder
             </div>
         HTML;
 
-        Browsershot::html($html)
+        $browser = Browsershot::html($html);
+        if ($chrome = config('services.browsershot.chrome_path')) {
+            $browser->setChromePath($chrome);
+        }
+        if ($node = config('services.browsershot.node_binary')) {
+            $browser->setNodeBinary($node);
+        }
+
+        $browser
             ->noSandbox()
             ->emulateMedia('print')
             ->showBackground()
