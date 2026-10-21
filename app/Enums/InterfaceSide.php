@@ -21,12 +21,4 @@ enum InterfaceSide: string
             self::Rear => __('enums.interface_side.rear'),
         };
     }
-
-    public function opposite(): self
-    {
-        return match ($this) {
-            self::Front => self::Rear,
-            self::Rear => self::Front,
-        };
-    }
 }

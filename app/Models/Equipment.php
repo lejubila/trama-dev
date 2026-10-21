@@ -116,16 +116,6 @@ class Equipment extends Model implements AuditableContract
         return $this->morphToMany(Tag::class, 'taggable');
     }
 
-    public function isRackMounted(): bool
-    {
-        return $this->mounted && $this->rack_id !== null;
-    }
-
-    public function isHypervisor(): bool
-    {
-        return $this->type === EquipmentType::Hypervisor;
-    }
-
     public function isVirtualMachine(): bool
     {
         return $this->type === EquipmentType::VirtualMachine;
@@ -145,17 +135,5 @@ class Equipment extends Model implements AuditableContract
     public function virtualMachines(): HasMany
     {
         return $this->hasMany(self::class, 'host_equipment_id');
-    }
-
-    /**
-     * @return list<int>|null
-     */
-    public function rackUnitsRange(): ?array
-    {
-        if (! $this->isRackMounted() || $this->position_u_start === null || $this->position_u_height === null) {
-            return null;
-        }
-
-        return range($this->position_u_start, $this->position_u_start + $this->position_u_height - 1);
     }
 }

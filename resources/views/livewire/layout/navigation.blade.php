@@ -1,20 +1,8 @@
 <?php
 
-use App\Livewire\Actions\Logout;
 use Livewire\Volt\Component;
 
-new class extends Component
-{
-    /**
-     * Log the current user out of the application.
-     */
-    public function logout(Logout $logout): void
-    {
-        $logout();
-
-        $this->redirect('/', navigate: true);
-    }
-}; ?>
+new class extends Component {}; ?>
 
 <nav x-data="{ open: false }" x-on:sidebar-state.window="open = $event.detail.open" class="bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700">
     <!-- Primary Navigation Menu -->

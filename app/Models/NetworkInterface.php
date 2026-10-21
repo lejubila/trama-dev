@@ -173,20 +173,6 @@ class NetworkInterface extends Model implements AuditableContract
         return $this->hasMany(self::class, 'backed_by_interface_id');
     }
 
-    /**
-     * True when this interface participates in the front/rear pairing
-     * machinery: keystone ports on patch panels and wall outlets.
-     */
-    public function requiresSide(): bool
-    {
-        return $this->type === InterfaceType::Keystone;
-    }
-
-    public function isFront(): bool
-    {
-        return $this->side === InterfaceSide::Front;
-    }
-
     public function isRear(): bool
     {
         return $this->side === InterfaceSide::Rear;

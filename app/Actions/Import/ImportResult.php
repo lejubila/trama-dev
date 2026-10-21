@@ -8,8 +8,6 @@ class ImportResult
 {
     public int $created = 0;
 
-    public int $skipped = 0;
-
     /**
      * @var list<array{row: int, messages: list<string>}>
      */
@@ -18,11 +16,6 @@ class ImportResult
     public function incrementCreated(): void
     {
         $this->created++;
-    }
-
-    public function incrementSkipped(): void
-    {
-        $this->skipped++;
     }
 
     /**
@@ -39,13 +32,12 @@ class ImportResult
     }
 
     /**
-     * @return array{created: int, skipped: int, errors: list<array{row: int, messages: list<string>}>}
+     * @return array{created: int, errors: list<array{row: int, messages: list<string>}>}
      */
     public function toArray(): array
     {
         return [
             'created' => $this->created,
-            'skipped' => $this->skipped,
             'errors' => $this->errors,
         ];
     }

@@ -88,8 +88,7 @@ icone custom per ogni tipo di nodo. Perfetta per il caso d'uso.
   - **tecnico**: gestisce i dati di tutti i tenant + le icone tenant; **non** gestisce utenti
     né le icone globali. (`User::canManageData()` = admin || tecnico.)
   - **cliente**: sola lettura, e solo sui tenant a cui è esplicitamente assegnato.
-- Helper su `User`: `isAdmin()`, `isTecnico()`, `isCliente()`, `canManageData()`,
-  `canAccessTenant()`. Gestione utenti centralizzata e cross-tenant in
+- Helper su `User`: `isAdmin()`, `canManageData()`, `canAccessTenant()`. Gestione utenti centralizzata e cross-tenant in
   `App\Livewire\Users\Index` (admin only); assegnazione clienti↔tenant via
   `App\Actions\Tenancy\AssignTenant` (anche dalla tab "Clienti assegnati" di Tenants/Manage).
 

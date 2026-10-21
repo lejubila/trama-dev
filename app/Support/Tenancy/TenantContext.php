@@ -22,9 +22,4 @@ final class TenantContext
     {
         self::$tenantId = null;
     }
-
-    public static function isSet(): bool
-    {
-        return self::$tenantId !== null;
-    }
 }

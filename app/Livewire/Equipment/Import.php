@@ -38,7 +38,7 @@ class Import extends Component
     public array $rowsPreview = [];
 
     /**
-     * @var array{created: int, skipped: int, errors: list<array{row: int, messages: list<string>}>}|null
+     * @var array{created: int, errors: list<array{row: int, messages: list<string>}>}|null
      */
     public ?array $summary = null;
 

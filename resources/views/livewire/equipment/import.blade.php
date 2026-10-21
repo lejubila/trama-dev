@@ -60,14 +60,10 @@
         @else
             @if ($summary)
                 <div class="space-y-3">
-                    <div class="grid grid-cols-3 gap-3">
+                    <div class="grid grid-cols-2 gap-3">
                         <div class="bg-emerald-50 text-emerald-900 p-3 rounded">
                             <div class="text-xs uppercase">{{ __('equipment.import_created') }}</div>
                             <div class="text-2xl font-semibold">{{ $summary['created'] }}</div>
-                        </div>
-                        <div class="bg-amber-50 text-amber-900 p-3 rounded">
-                            <div class="text-xs uppercase">{{ __('equipment.import_skipped') }}</div>
-                            <div class="text-2xl font-semibold">{{ $summary['skipped'] }}</div>
                         </div>
                         <div class="bg-red-50 text-red-900 p-3 rounded">
                             <div class="text-xs uppercase">{{ __('equipment.import_errors') }}</div>

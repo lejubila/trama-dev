@@ -55,15 +55,11 @@ class Editor extends Component
     // Sections — racks
     public bool $racksEnabled = false;
 
-    public string $racksDescription = '';
-
     /** @var array<int, int> */
     public array $racksIds = [];
 
     // Sections — equipment
     public bool $equipmentEnabled = false;
-
-    public string $equipmentDescription = '';
 
     /** @var array<int, int> */
     public array $equipmentIds = [];
@@ -160,11 +156,9 @@ class Editor extends Component
         $this->roomsIds = array_values(array_map('intval', $sec['rooms']['ids'] ?? []));
 
         $this->racksEnabled = (bool) ($sec['racks']['enabled'] ?? false);
-        $this->racksDescription = (string) ($sec['racks']['description'] ?? '');
         $this->racksIds = array_values(array_map('intval', $sec['racks']['ids'] ?? []));
 
         $this->equipmentEnabled = (bool) ($sec['equipment']['enabled'] ?? false);
-        $this->equipmentDescription = (string) ($sec['equipment']['description'] ?? '');
         $this->equipmentIds = array_values(array_map('intval', $sec['equipment']['ids'] ?? []));
         $this->equipmentPortsExcluded = array_values(array_map('intval', $sec['equipment']['ports_excluded'] ?? []));
 
@@ -403,8 +397,6 @@ class Editor extends Component
             'locale' => ['required', Rule::in(config('app.supported_locales'))],
             'sitesDescription' => 'nullable|string|max:5000',
             'roomsDescription' => 'nullable|string|max:5000',
-            'racksDescription' => 'nullable|string|max:5000',
-            'equipmentDescription' => 'nullable|string|max:5000',
             'topologiesDescription' => 'nullable|string|max:5000',
             'wifiDescription' => 'nullable|string|max:5000',
             'vpnDescription' => 'nullable|string|max:5000',
@@ -424,12 +416,10 @@ class Editor extends Component
                 ],
                 'racks' => [
                     'enabled' => $this->racksEnabled,
-                    'description' => $this->racksDescription,
                     'ids' => array_values(array_map('intval', $this->racksIds)),
                 ],
                 'equipment' => [
                     'enabled' => $this->equipmentEnabled,
-                    'description' => $this->equipmentDescription,
                     'ids' => array_values(array_map('intval', $this->equipmentIds)),
                     'ports_excluded' => array_values(array_map('intval', $this->equipmentPortsExcluded)),
                 ],

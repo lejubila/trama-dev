@@ -144,7 +144,6 @@ return [
     'import_ignore_errors' => 'Import valid rows even if others fail (no rollback)',
     'import_run' => 'Run import',
     'import_created' => 'Created',
-    'import_skipped' => 'Skipped',
     'import_errors' => 'Errors',
     'import_row' => 'Row',
     'import_again' => 'New import',

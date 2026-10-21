@@ -144,7 +144,6 @@ return [
     'import_ignore_errors' => 'Importa righe valide anche se altre falliscono (no rollback)',
     'import_run' => 'Esegui import',
     'import_created' => 'Creati',
-    'import_skipped' => 'Saltati',
     'import_errors' => 'Errori',
     'import_row' => 'Riga',
     'import_again' => 'Nuovo import',

@@ -106,16 +106,6 @@ class User extends Authenticatable
         return $this->role === UserRole::Admin;
     }
 
-    public function isTecnico(): bool
-    {
-        return $this->role === UserRole::Tecnico;
-    }
-
-    public function isCliente(): bool
-    {
-        return $this->role === UserRole::Cliente;
-    }
-
     /**
      * Admin and tecnico may create/update/delete tenant data.
      */

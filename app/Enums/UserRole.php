@@ -36,16 +36,4 @@ enum UserRole: string
     {
         return $this === self::Admin || $this === self::Tecnico;
     }
-
-    /**
-     * Rank for picking the highest role when backfilling from old pivot rows.
-     */
-    public function rank(): int
-    {
-        return match ($this) {
-            self::Admin => 3,
-            self::Tecnico => 2,
-            self::Cliente => 1,
-        };
-    }
 }
