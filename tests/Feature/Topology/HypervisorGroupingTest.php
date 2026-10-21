@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Enums\EquipmentType;
+use App\Enums\InterfaceType;
 use App\Models\Equipment;
+use App\Models\NetworkInterface;
 use App\Models\Rack;
 use App\Models\Room;
 use App\Models\Site;
@@ -67,18 +69,18 @@ it('wraps VMs and their hypervisor in a host compound when groupByHypervisor is 
 it('emits a dashed vnic edge between VM and hypervisor for each backed vNIC', function (): void {
     [, , $hv, $vm1] = makeHypervisorScene();
 
-    $pnic = \App\Models\NetworkInterface::factory()->ethernet()->create([
+    $pnic = NetworkInterface::factory()->ethernet()->create([
         'equipment_id' => $hv->getKey(),
         'name' => 'eno1',
     ]);
-    \App\Models\NetworkInterface::factory()->create([
+    NetworkInterface::factory()->create([
         'equipment_id' => $vm1->getKey(),
         'name' => 'net0',
-        'type' => \App\Enums\InterfaceType::Virtual,
+        'type' => InterfaceType::Virtual,
         'backed_by_interface_id' => $pnic->getKey(),
     ]);
 
-    $graph = app(\App\Services\TopologyService::class)->buildGraph();
+    $graph = app(TopologyService::class)->buildGraph();
 
     $vnicEdges = collect($graph['edges'])->filter(fn ($e) => ($e['data']['kind'] ?? null) === 'vnic')->values();
     expect($vnicEdges)->toHaveCount(1)

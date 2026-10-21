@@ -91,8 +91,8 @@ it('emits a site-to-site VPN node with edges to both firewalls', function (): vo
 
     expect($nodeIds)->toContain('vpn-stos-'.$vpn->id)
         ->and($edgeIds)
-            ->toContain('vpn-stos-a-'.$vpn->id)
-            ->toContain('vpn-stos-b-'.$vpn->id);
+        ->toContain('vpn-stos-a-'.$vpn->id)
+        ->toContain('vpn-stos-b-'.$vpn->id);
 });
 
 it('vlan filter drops a remote-access VPN with mismatched routed_vlans', function (): void {

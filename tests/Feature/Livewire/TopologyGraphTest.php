@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Enums\EquipmentType;
-use App\Livewire\Topology\Graph;
 use App\Enums\InterfaceVlanMode;
+use App\Livewire\Topology\Graph;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
 use App\Models\Rack;
@@ -15,6 +15,7 @@ use App\Models\TopologySnapshot;
 use App\Models\User;
 use App\Services\TopologyService;
 use App\Support\Tenancy\TenantContext;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Livewire\Livewire;
 
 afterEach(function (): void {
@@ -151,7 +152,7 @@ it('fetchInterfaces refuses cross-tenant equipment', function (): void {
     // throws ModelNotFoundException, which Laravel converts to a 404
     // outside of test context. Here we just assert the exception fires.
     expect(fn () => (new Graph)->fetchInterfaces($eqB->getKey()))
-        ->toThrow(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        ->toThrow(ModelNotFoundException::class);
 });
 
 it('hideAlways and showAlways flip the hidden_in_topology flag', function (): void {
