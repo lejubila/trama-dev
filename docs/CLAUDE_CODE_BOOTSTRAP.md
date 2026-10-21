@@ -1,5 +1,8 @@
 # Da dare a Claude Code come PRIMO messaggio
 
+> **Archiviato** — specifica storica della fase. Ruoli e permessi sono cambiati
+> (ruolo globale su `users.role`, spatie/laravel-permission rimosso): fa fede `CLAUDE.md`.
+
 Copia incolla questo prompt come prima istruzione a Claude Code una volta aperto il progetto:
 
 ---

@@ -1,5 +1,8 @@
 # FASE 0 — Setup ambiente
 
+> **Archiviato** — specifica storica della fase. Ruoli e permessi sono cambiati
+> (ruolo globale su `users.role`, spatie/laravel-permission rimosso): fa fede `CLAUDE.md`.
+
 > Obiettivo: avere Laravel 11 funzionante dentro Docker con tutti i servizi up.
 
 ## Prerequisiti verificati

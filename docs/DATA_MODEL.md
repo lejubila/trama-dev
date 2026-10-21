@@ -37,21 +37,21 @@ Utente dell'applicazione (può appartenere a più tenant).
 | email                | string UNQ           |                                   |
 | email_verified_at    | timestamp nullable   |                                   |
 | password             | string               | bcrypt                            |
+| role                 | string               | enum `UserRole`: admin / tecnico / cliente (globale) |
 | current_tenant_id    | bigint FK→tenants    | Tenant attivo nella sessione      |
 | remember_token       | string nullable      |                                   |
 | created_at/updated_at| timestamp            |                                   |
 
 ## tenant_user
-Pivot utente↔tenant con ruolo.
+Assegna i **clienti** ai tenant che possono vedere (admin e tecnici accedono a tutti i
+tenant senza assegnazione). Nessun ruolo qui: il ruolo è globale su `users.role` e le
+autorizzazioni sono nelle Policy.
 
 | Campo      | Tipo                  | Note                                  |
 |------------|-----------------------|---------------------------------------|
 | tenant_id  | bigint FK             | PK composta (tenant_id, user_id)      |
 | user_id    | bigint FK             |                                       |
-| role       | string                | enum: admin / tecnico / cliente       |
 | created_at | timestamp             |                                       |
-
-> I permessi granulari arrivano da spatie/laravel-permission con team scope = tenant_id.
 
 ---
 
@@ -254,6 +254,29 @@ Tabella gestita da `owen-it/laravel-auditing`. Schema standard del package; aggi
 
 ---
 
+## Altre tabelle
+
+Non dettagliate campo per campo: lo schema di riferimento sono le migration in
+`database/migrations/`.
+
+| Tabella | Scopo |
+|---|---|
+| `wifi_networks`, `wifi_network_broadcasters`, `wifi_associations` | SSID, interfacce wireless che lo trasmettono, client associati |
+| `vpn_site_to_site`, `vpn_remote_access`, `vpn_remote_access_clients` | VPN tra due firewall e accessi remoti con i loro client |
+| `documents` | Documenti PDF configurabili (sezioni, id selezionati) |
+| `topology_snapshots` | Istantanee salvate della vista topologica |
+| `rack_photos` | Foto dei rack |
+| `device_icons` | Icone globali e per tenant dei tipi di dispositivo |
+| `imports` | Storico degli import CSV |
+| `personal_access_tokens`, `oauth_*` | Token API (Sanctum) e server OAuth per l'endpoint MCP |
+
+Colonne aggiunte a `equipment` dopo la prima stesura: `room_id` (dispositivo in una stanza
+senza rack), `host_equipment_id` (VM → hypervisor), `on_top`, `position_orient`,
+`hidden_in_topology`, `locked`, `icon_path`; a `interfaces`: `side` e la coppia front/rear dei
+keystone, `backed_by_interface_id` (vNIC → NIC fisica).
+
+---
+
 ## Relazioni Eloquent — riassunto
 
 ```
@@ -267,5 +290,5 @@ NetworkInterface 1—1 Connection (as to)
 LinkGroup N—N Connection (via link_group_connection)
 Equipment N—N Tag (polimorfico via taggables)
 Connection N—N Tag (polimorfico via taggables)
-User N—N Tenant (via tenant_user, con campo role)
+User N—N Tenant (via tenant_user, solo per i clienti)
 ```

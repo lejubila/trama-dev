@@ -1,5 +1,8 @@
 # FASE 1 — Auth & Multi-tenancy
 
+> **Archiviato** — specifica storica della fase. Ruoli e permessi sono cambiati
+> (ruolo globale su `users.role`, spatie/laravel-permission rimosso): fa fede `CLAUDE.md`.
+
 > Obiettivo: utenti autenticati che possono appartenere a più tenant, switch tenant via UI,
 > tutti i dati di dominio scoped per `tenant_id`.
 

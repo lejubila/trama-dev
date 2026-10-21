@@ -10,7 +10,7 @@ Laravel 11 · Livewire 3 · Alpine.js · Tailwind · PostgreSQL 16 · Redis 7 ·
 ## Funzionalità
 
 - **Multi-tenant** (FASE 1): un'app per N clienti, isolamento completo via `tenant_id` + global scope.
-  Ruoli admin/tecnico/cliente per-tenant via spatie/laravel-permission con teams.
+  Ruoli globali admin/tecnico/cliente (`users.role`); i clienti vedono solo i tenant assegnati.
 - **Modello di rete completo** (FASE 2): sites → rooms → racks → equipment → interfaces → connections,
   con vincolo unique parziale che impedisce due connessioni attive sulla stessa interfaccia.
 - **CRUD Livewire** (FASE 3) per ogni entità, audit log, validazione client+server.
