@@ -78,7 +78,7 @@ class Index extends Component
         $rules = [
             'name' => 'required|string|max:150',
             'email' => [
-                'required', 'email', 'max:255',
+                'required', 'email:rfc,strict', 'max:255',
                 Rule::unique('users', 'email')->ignore($this->editingId),
             ],
             'role' => ['required', Rule::enum(UserRole::class)],

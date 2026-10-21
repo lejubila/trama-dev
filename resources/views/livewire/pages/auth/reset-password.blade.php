@@ -35,7 +35,7 @@ new #[Layout('layouts.guest')] class extends Component
     {
         $this->validate([
             'token' => ['required'],
-            'email' => ['required', 'string', 'email'],
+            'email' => ['required', 'string', 'email:rfc,strict'],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
         ]);
 

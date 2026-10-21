@@ -19,6 +19,19 @@ test('profile page is displayed', function () {
         ->assertSeeVolt('profile.delete-user-form');
 });
 
+test('email with CR/LF is rejected', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    Volt::test('profile.update-profile-information-form')
+        ->set('email', "a\r\n @example.com")
+        ->call('updateProfileInformation')
+        ->assertHasErrors(['email']);
+
+    expect($user->refresh()->email)->not->toContain("\n");
+});
+
 test('profile information can be updated', function () {
     $user = User::factory()->create();
 
