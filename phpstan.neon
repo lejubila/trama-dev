@@ -22,11 +22,10 @@ parameters:
             messages:
                 - '#Call to an undefined method PHPUnit\\Framework\\TestCase::(get|post|put|patch|delete|getJson|postJson|patchJson|putJson|deleteJson|withHeaders|actingAs|assertAuthenticated|assertGuest|seed)\(\)#'
                 - '#Call to an undefined method Pest\\PendingCalls\\TestCall\|Pest\\Support\\HigherOrderTapProxy::(actingAs|seed)\(\)#'
-        # Pest's expect()->extend() callbacks bind $this at runtime — PHPStan
-        # only sees the static call site.
+        # owen-it/laravel-auditing adds Audit::user() through a trait Larastan
+        # doesn't resolve; eager-loading it is valid at runtime.
         -
-            message: '#Undefined variable: \$this#'
-            path: tests/Pest.php
+            message: '#Relation ''user'' is not found in OwenIt\\Auditing\\Models\\Audit model#'
         # Pest beforeEach/afterEach closures bind $this to the underlying
         # TestCase, where `$this->foo = ...` adds dynamic properties shared
         # across the file. PHPStan can't see the binding, so suppress the

@@ -39,7 +39,7 @@ trait EditsEquipmentDetails
 
     public string $description = '';
 
-    public $iconUpload = null;
+    public mixed $iconUpload = null;
 
     /** @var array<int, int|string> */
     public array $selectedTagIds = [];
