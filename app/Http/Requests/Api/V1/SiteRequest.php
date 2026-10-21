@@ -4,35 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Http\Requests\Api\V1\Concerns\MakesOptionalOnUpdate;
 use App\Models\Site;
 use App\Validation\SiteRules;
-use Illuminate\Foundation\Http\FormRequest;
 
-class SiteRequest extends FormRequest
+class SiteRequest extends ResourceRequest
 {
-    use MakesOptionalOnUpdate;
+    protected string $model = Site::class;
 
-    public function authorize(): bool
+    protected string $routeKey = 'site';
+
+    protected function baseRules(): array
     {
-        if ($this->isMethod('POST')) {
-            return $this->user()?->can('create', Site::class) ?? false;
-        }
-
-        $site = $this->route('site');
-
-        return $site instanceof Site
-            ? ($this->user()?->can('update', $site) ?? false)
-            : false;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function rules(): array
-    {
-        $rules = SiteRules::rules();
-
-        return $this->isMethod('POST') ? $rules : $this->makeOptional($rules);
+        return SiteRules::rules();
     }
 }
