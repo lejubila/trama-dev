@@ -73,7 +73,7 @@ class Photos extends Component
 
         $count = count($storedPaths);
         $this->newPhotos = [];
-        $this->dispatch('toast', type: 'success', message: $count.' '.($count === 1 ? 'foto caricata.' : 'foto caricate.'));
+        $this->dispatch('toast', type: 'success', message: trans_choice('racks.photos_uploaded', $count));
     }
 
     public function deletePhoto(int $id): void
@@ -100,7 +100,7 @@ class Photos extends Component
             }
         }
 
-        $this->dispatch('toast', type: 'success', message: 'Foto eliminata.');
+        $this->dispatch('toast', type: 'success', message: __('racks.photo_deleted'));
     }
 
     public function openLightbox(int $index): void

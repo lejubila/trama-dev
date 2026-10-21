@@ -157,7 +157,7 @@ class Index extends Component
             }
 
             $rack->update($payload);
-            $message = 'Rack aggiornato.';
+            $message = __('racks.toast_updated');
         } else {
             $this->authorize('create', Rack::class);
             $rack = Rack::create($payload);
@@ -192,7 +192,7 @@ class Index extends Component
 
         $this->iconUpload = null;
         $this->existingIconPath = null;
-        $this->dispatch('toast', type: 'success', message: 'Icona rimossa.');
+        $this->dispatch('toast', type: 'success', message: __('racks.icon_removed'));
     }
 
     public function delete(int $id): void
@@ -205,7 +205,7 @@ class Index extends Component
         }
 
         $rack->delete();
-        $this->dispatch('toast', type: 'success', message: 'Rack rimosso.');
+        $this->dispatch('toast', type: 'success', message: __('racks.toast_deleted'));
     }
 
     private function storeIcon(TemporaryUploadedFile $file, ?string $previousPath, int $tenantId): string

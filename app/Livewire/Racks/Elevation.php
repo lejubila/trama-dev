@@ -98,14 +98,14 @@ class Elevation extends Component
 
         $eqOrient = $eq->position_orient ?: 'front';
         if (! $placement->canPlace($this->rack, $newStartU, (int) $eq->position_u_height, $eq, $eqOrient)) {
-            $this->dispatch('toast', type: 'error', message: 'Posizione occupata o fuori dal rack su questo lato.');
+            $this->dispatch('toast', type: 'error', message: __('racks.toast_occupied'));
 
             return;
         }
 
         $eq->update(['position_u_start' => $newStartU]);
 
-        $this->dispatch('toast', type: 'success', message: "Spostato in U{$newStartU}.");
+        $this->dispatch('toast', type: 'success', message: __('racks.toast_moved', ['u' => $newStartU]));
     }
 
     /**
@@ -191,7 +191,7 @@ class Elevation extends Component
         $this->validate($rules);
 
         if (! $this->onTop && ! $placement->canPlace($this->rack, $this->selectedU, $this->positionUHeight, null, $this->orient)) {
-            $this->addError('positionUHeight', 'Posizione occupata sul lato '.($this->orient === 'rear' ? 'posteriore' : 'anteriore').' o fuori dal rack.');
+            $this->addError('positionUHeight', __($this->orient === 'rear' ? 'racks.error_occupied_rear' : 'racks.error_occupied_front'));
 
             return;
         }
