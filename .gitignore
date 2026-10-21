@@ -20,4 +20,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/.claude
 .DS_Store

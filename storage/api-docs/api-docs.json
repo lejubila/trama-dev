@@ -45,8 +45,24 @@
                         }
                     },
                     {
+                        "name": "room_id",
+                        "in": "query",
+                        "description": "Apparati del locale, nei rack o fuori",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
                         "name": "rack_id",
                         "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "host_equipment_id",
+                        "in": "query",
+                        "description": "VM ospitate da questo hypervisor",
                         "schema": {
                             "type": "integer"
                         }
