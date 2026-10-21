@@ -35,31 +35,6 @@ class Index extends Component
     #[Url(except: 0)]
     public int $tagFilter = 0;
 
-    public function updatingSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingStatusFilter(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingEquipmentFilter(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingPortFilter(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingTagFilter(): void
-    {
-        $this->resetPage();
-    }
-
     /**
      * @return array<int, string>
      */

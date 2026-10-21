@@ -33,21 +33,6 @@ class Index extends Component
         $this->authorize('viewAny', Document::class);
     }
 
-    public function updatingSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingDateFrom(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingDateTo(): void
-    {
-        $this->resetPage();
-    }
-
     /**
      * @return array<int, string>
      */

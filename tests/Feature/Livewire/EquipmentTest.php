@@ -354,6 +354,19 @@ it('remembers the last filter in session across visits', function (): void {
         ->assertSet('search', 'border');
 });
 
+it('goes back to the first page when a filter changes', function (): void {
+    bootEquipmentScene('admin');
+
+    Livewire::test(EquipmentIndex::class)
+        ->call('gotoPage', 2)
+        ->assertSet('paginators.page', 2)
+        ->set('statusFilter', 'active')
+        ->assertSet('paginators.page', 1)
+        ->set('roomFilter', 5)
+        ->set('siteFilter', 3)
+        ->assertSet('roomFilter', 0);
+});
+
 it('bulk-creates interfaces with the % placeholder mid-name', function (): void {
     [$tenant, $user, $rack] = bootEquipmentScene('admin');
     $eq = Equipment::factory()->ofType(EquipmentType::Switch)->create();

@@ -35,11 +35,6 @@ class Index extends Component
     #[Validate('nullable|string|max:2000')]
     public string $notes = '';
 
-    public function updatingSearch(): void
-    {
-        $this->resetPage();
-    }
-
     /**
      * @return array<int, string>
      */

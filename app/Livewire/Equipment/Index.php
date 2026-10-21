@@ -176,42 +176,15 @@ class Index extends Component
         }
     }
 
-    public function updatingSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingTypeFilter(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingRackFilter(): void
-    {
-        $this->resetPage();
-    }
-
     public function updatingSiteFilter(): void
     {
         $this->roomFilter = 0;
         $this->rackFilter = 0;
-        $this->resetPage();
     }
 
     public function updatingRoomFilter(): void
     {
         $this->rackFilter = 0;
-        $this->resetPage();
-    }
-
-    public function updatingStatusFilter(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingTagFilter(): void
-    {
-        $this->resetPage();
     }
 
     /**

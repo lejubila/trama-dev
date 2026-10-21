@@ -24,16 +24,6 @@ class Trail extends Component
     #[Url(except: '')]
     public string $eventFilter = '';
 
-    public function updatingModelFilter(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingEventFilter(): void
-    {
-        $this->resetPage();
-    }
-
     /**
      * @return array<int, string>
      */

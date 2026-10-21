@@ -81,16 +81,6 @@ class Index extends Component
         }
     }
 
-    public function updatingSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingRoomFilter(): void
-    {
-        $this->resetPage();
-    }
-
     /**
      * @return array<int, string>
      */

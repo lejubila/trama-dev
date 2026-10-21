@@ -30,6 +30,17 @@ trait RemembersFilters
         }
     }
 
+    /**
+     * Every list using this trait is paginated: a filter change starts again
+     * from page one.
+     */
+    public function updatingRemembersFilters(string $name): void
+    {
+        if (in_array(explode('.', $name)[0], $this->rememberedFilters(), true)) {
+            $this->resetPage();
+        }
+    }
+
     public function updatedRemembersFilters(string $name): void
     {
         $base = explode('.', $name)[0];

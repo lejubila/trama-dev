@@ -51,16 +51,6 @@ class Index extends Component
     /** @var array<int, int> Selected broadcaster NetworkInterface IDs. */
     public array $broadcasterIds = [];
 
-    public function updatingSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingSiteFilter(): void
-    {
-        $this->resetPage();
-    }
-
     public function clearFilters(): void
     {
         $this->reset(['search', 'siteFilter']);

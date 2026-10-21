@@ -46,26 +46,6 @@ class SnapshotIndex extends Component
         $this->authorize('viewAny', TopologySnapshot::class);
     }
 
-    public function updatingSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingDateFrom(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingDateTo(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingSiteFilter(): void
-    {
-        $this->resetPage();
-    }
-
     /**
      * @return array<int, string>
      */
