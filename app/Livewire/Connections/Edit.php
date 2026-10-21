@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Livewire\Connections;
 
 use App\Enums\ConnectionStatus;
+use App\Livewire\Connections\Concerns\EditsCable;
 use App\Models\Connection;
 use App\Models\Tag;
 use App\Support\CableColors;
-use App\Validation\TenantExists;
 use Illuminate\Contracts\View\View;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -17,24 +18,11 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Edit extends Component
 {
+    use EditsCable;
+
     public Connection $connection;
 
-    public string $cableType = '';
-
-    public ?string $cableLengthM = null;
-
-    public string $cableLabel = '';
-
-    public string $color = '';
-
-    public string $notes = '';
-
-    public ?string $establishedAt = null;
-
     public string $status = '';
-
-    /** @var array<int, int|string> */
-    public array $selectedTagIds = [];
 
     /** When ?from_equipment=<id> lands on the page, save/cancel returns to
      *  that equipment's Connessioni tab instead of the global list. */
@@ -60,51 +48,17 @@ class Edit extends Component
     {
         $this->resetValidation();
 
-        $data = $this->validate([
-            'cableType' => 'required|string|max:30',
-            'cableLengthM' => 'nullable|numeric|min:0',
-            'cableLabel' => 'nullable|string|max:80',
-            'color' => ['nullable', 'string', 'regex:'.CableColors::HEX_REGEX],
-            'notes' => 'nullable|string|max:5000',
-            'establishedAt' => 'nullable|date',
-            'status' => 'required|in:'.implode(',', array_map(fn ($c) => $c->value, ConnectionStatus::cases())),
-            'selectedTagIds' => 'array',
-            'selectedTagIds.*' => ['integer', TenantExists::in('tags', softDeletes: false)],
+        $this->validate([
+            ...$this->cableRules(),
+            'status' => ['required', Rule::enum(ConnectionStatus::class)],
         ]);
 
-        $this->connection->update([
-            'cable_type' => $data['cableType'],
-            'cable_length_m' => $this->cableLengthM !== null && $this->cableLengthM !== '' ? (float) $this->cableLengthM : null,
-            'cable_label' => $this->cableLabel !== '' ? $this->cableLabel : null,
-            'color' => $this->color !== '' ? $this->color : null,
-            'notes' => $this->notes !== '' ? $this->notes : null,
-            'established_at' => $this->establishedAt !== null && $this->establishedAt !== '' ? $this->establishedAt : null,
-            'status' => $this->status,
-        ]);
+        $this->connection->update([...$this->cableAttributes(), 'status' => $this->status]);
 
         $this->connection->tags()->sync($this->selectedTagIds);
 
         $this->dispatch('toast', type: 'success', message: __('connections.toast_updated'));
         $this->redirectAfterExit();
-    }
-
-    /**
-     * Where to send the browser after save/cancel: back to the originating
-     * equipment's Connessioni tab when the edit was opened from a device,
-     * otherwise to the global connections list.
-     */
-    private function redirectAfterExit(): void
-    {
-        if ($this->fromEquipmentId !== null) {
-            $this->redirectRoute('equipment.show', [
-                'equipment' => $this->fromEquipmentId,
-                'tab' => 'connections',
-            ], navigate: true);
-
-            return;
-        }
-
-        $this->redirectRoute('connections.index', navigate: true);
     }
 
     public function render(): View

@@ -7,6 +7,7 @@ namespace App\Livewire\Connections;
 use App\Enums\EquipmentType;
 use App\Enums\InterfaceType;
 use App\Livewire\Concerns\NotifiesGuide;
+use App\Livewire\Connections\Concerns\EditsCable;
 use App\Models\Connection;
 use App\Models\Equipment;
 use App\Models\NetworkInterface;
@@ -23,28 +24,13 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Wizard extends Component
 {
-    use NotifiesGuide;
+    use EditsCable, NotifiesGuide;
 
     public int $step = 1;
 
     public ?int $fromInterfaceId = null;
 
     public ?int $toInterfaceId = null;
-
-    public string $cableType = 'utp_cat6';
-
-    public ?string $cableLengthM = null;
-
-    public string $cableLabel = '';
-
-    public string $color = '';
-
-    public string $notes = '';
-
-    public ?string $establishedAt = null;
-
-    /** @var array<int, int|string> */
-    public array $selectedTagIds = [];
 
     /** When ?from_equipment=<id> lands on the page, scope step 1 (Estremo A)
      *  to only the interfaces of that equipment. Step 2 stays unrestricted. */
@@ -141,28 +127,14 @@ class Wizard extends Component
         $this->validate([
             'fromInterfaceId' => ['required', TenantExists::in('interfaces', softDeletes: false)],
             'toInterfaceId' => ['required', TenantExists::in('interfaces', softDeletes: false), 'different:fromInterfaceId'],
-            'cableType' => 'required|string|max:30',
-            'cableLengthM' => 'nullable|numeric|min:0',
-            'cableLabel' => 'nullable|string|max:80',
-            'color' => ['nullable', 'string', 'regex:'.CableColors::HEX_REGEX],
-            'notes' => 'nullable|string|max:5000',
-            'establishedAt' => 'nullable|date',
-            'selectedTagIds' => 'array',
-            'selectedTagIds.*' => ['integer', TenantExists::in('tags', softDeletes: false)],
+            ...$this->cableRules(),
         ]);
 
         $a = NetworkInterface::query()->findOrFail($this->fromInterfaceId);
         $b = NetworkInterface::query()->findOrFail($this->toInterfaceId);
 
         try {
-            $conn = $service->connect($a, $b, [
-                'cable_type' => $this->cableType,
-                'cable_length_m' => $this->cableLengthM !== null && $this->cableLengthM !== '' ? (float) $this->cableLengthM : null,
-                'cable_label' => $this->cableLabel !== '' ? $this->cableLabel : null,
-                'color' => $this->color !== '' ? $this->color : null,
-                'notes' => $this->notes !== '' ? $this->notes : null,
-                'established_at' => $this->establishedAt !== null && $this->establishedAt !== '' ? $this->establishedAt : null,
-            ]);
+            $conn = $service->connect($a, $b, $this->cableAttributes());
         } catch (InvalidArgumentException $e) {
             $this->addError('toInterfaceId', $e->getMessage());
 
@@ -174,25 +146,6 @@ class Wizard extends Component
 
         $this->dispatch('toast', type: 'success', message: __('connections.toast_created'));
         $this->redirectAfterExit();
-    }
-
-    /**
-     * Where to send the browser after save/cancel: back to the originating
-     * equipment's Connessioni tab when the wizard was opened from a device,
-     * otherwise to the global connections list.
-     */
-    private function redirectAfterExit(): void
-    {
-        if ($this->fromEquipmentId !== null) {
-            $this->redirectRoute('equipment.show', [
-                'equipment' => $this->fromEquipmentId,
-                'tab' => 'connections',
-            ], navigate: true);
-
-            return;
-        }
-
-        $this->redirectRoute('connections.index', navigate: true);
     }
 
     public function render(): View
