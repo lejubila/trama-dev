@@ -1,52 +1,40 @@
+# Shared by app and scheduler: same image, code and dependencies.
+x-php: &php
+  build:
+    context: .
+    dockerfile: docker/app/Dockerfile
+    args:
+      UID: "${TRAMA_UID:-1000}"
+      GID: "${TRAMA_GID:-1000}"
+  restart: unless-stopped
+  working_dir: /var/www/html
+  volumes:
+    - ./:/var/www/html
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_started
+  networks:
+    - trama
+
 services:
   app:
-    build:
-      context: .
-      dockerfile: docker/app/Dockerfile
-      args:
-        UID: "${TRAMA_UID:-1000}"
-        GID: "${TRAMA_GID:-1000}"
+    <<: *php
     container_name: trama-app
-    restart: unless-stopped
-    working_dir: /var/www/html
     ports:
       # Vite dev server (HMR) — only used when running `npm run dev` inside
       # the container; harmless when only the prod build is in use.
       - "${TRAMA_VITE_PORT:-5173}:5173"
-    volumes:
-      - ./:/var/www/html
     environment:
       PHP_IDE_CONFIG: "serverName=trama"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    networks:
-      - trama
 
   # Runs Laravel's scheduler (exports:cleanup, demo:reset in demo mode).
   # Same image and code as `app`; it only executes `schedule:work`.
   scheduler:
-    build:
-      context: .
-      dockerfile: docker/app/Dockerfile
-      args:
-        UID: "${TRAMA_UID:-1000}"
-        GID: "${TRAMA_GID:-1000}"
+    <<: *php
     container_name: trama-scheduler
-    restart: unless-stopped
-    working_dir: /var/www/html
     command: ["php", "artisan", "schedule:work"]
-    volumes:
-      - ./:/var/www/html
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    networks:
-      - trama
 
   nginx:
     image: nginx:1.27-alpine

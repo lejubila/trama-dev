@@ -22,7 +22,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         chromium \
         ca-certificates \
         gnupg \
-        libgconf-2-4 \
         fonts-liberation \
         fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
@@ -54,7 +53,7 @@ RUN pecl install redis && docker-php-ext-enable redis
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
 # Puppeteer expects Chromium in this env var
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # PHP config tweaks
