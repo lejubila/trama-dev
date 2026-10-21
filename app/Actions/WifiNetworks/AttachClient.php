@@ -34,7 +34,7 @@ class AttachClient
         }
 
         return DB::transaction(function () use ($network, $client, $existingInterface, $preferredBroadcaster): WifiAssociation {
-            $iface = $existingInterface ?? $this->createDefaultWirelessInterface($client);
+            $iface = $existingInterface ?? $client->addNextInterface('wlan', InterfaceType::Wireless, InterfaceMedia::Wireless);
 
             if ((int) $iface->equipment_id !== (int) $client->id) {
                 throw new InvalidArgumentException('Interface does not belong to client equipment.');
@@ -50,32 +50,5 @@ class AttachClient
                 'preferred_broadcaster_interface_id' => $preferredBroadcaster?->id,
             ]);
         });
-    }
-
-    /**
-     * Pick the next available wlanN name on the client equipment and create
-     * a minimal wireless interface there. Used when the user picks
-     * "associate" without first manually creating an interface.
-     */
-    private function createDefaultWirelessInterface(Equipment $client): NetworkInterface
-    {
-        $existingNames = NetworkInterface::query()
-            ->where('equipment_id', $client->id)
-            ->pluck('name')
-            ->all();
-
-        $i = 0;
-        do {
-            $candidate = 'wlan'.$i;
-            $i++;
-        } while (in_array($candidate, $existingNames, true));
-
-        return NetworkInterface::create([
-            'tenant_id' => $client->tenant_id,
-            'equipment_id' => $client->id,
-            'name' => $candidate,
-            'type' => InterfaceType::Wireless,
-            'media' => InterfaceMedia::Wireless,
-        ]);
     }
 }

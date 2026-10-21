@@ -6,6 +6,8 @@ namespace App\Models;
 
 use App\Enums\EquipmentStatus;
 use App\Enums\EquipmentType;
+use App\Enums\InterfaceMedia;
+use App\Enums\InterfaceType;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\TenantAuditable;
 use Database\Factories\EquipmentFactory;
@@ -135,5 +137,25 @@ class Equipment extends Model implements AuditableContract
     public function virtualMachines(): HasMany
     {
         return $this->hasMany(self::class, 'host_equipment_id');
+    }
+
+    /**
+     * Adds a minimal interface named after the first free "{prefix}N" (wlan0,
+     * vpn1, ...), for clients attached without picking a port first.
+     */
+    public function addNextInterface(string $prefix, InterfaceType $type, InterfaceMedia $media): NetworkInterface
+    {
+        $taken = $this->interfaces()->pluck('name')->all();
+        $i = 0;
+        while (in_array($prefix.$i, $taken, true)) {
+            $i++;
+        }
+
+        return $this->interfaces()->create([
+            'tenant_id' => $this->tenant_id,
+            'name' => $prefix.$i,
+            'type' => $type,
+            'media' => $media,
+        ]);
     }
 }

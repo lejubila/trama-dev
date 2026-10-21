@@ -34,7 +34,7 @@ class AttachRemoteClient
         }
 
         return DB::transaction(function () use ($vpn, $client, $existingInterface, $username): VpnRemoteAccessClient {
-            $iface = $existingInterface ?? $this->createDefaultVirtualInterface($client);
+            $iface = $existingInterface ?? $client->addNextInterface('vpn', InterfaceType::Virtual, InterfaceMedia::Virtual);
 
             if ((int) $iface->equipment_id !== (int) $client->id) {
                 throw new InvalidArgumentException('Interface does not belong to client equipment.');
@@ -50,27 +50,5 @@ class AttachRemoteClient
                 'username' => $username,
             ]);
         });
-    }
-
-    private function createDefaultVirtualInterface(Equipment $client): NetworkInterface
-    {
-        $existingNames = NetworkInterface::query()
-            ->where('equipment_id', $client->id)
-            ->pluck('name')
-            ->all();
-
-        $i = 0;
-        do {
-            $candidate = 'vpn'.$i;
-            $i++;
-        } while (in_array($candidate, $existingNames, true));
-
-        return NetworkInterface::create([
-            'tenant_id' => $client->tenant_id,
-            'equipment_id' => $client->id,
-            'name' => $candidate,
-            'type' => InterfaceType::Virtual,
-            'media' => InterfaceMedia::Virtual,
-        ]);
     }
 }
