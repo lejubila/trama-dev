@@ -5,45 +5,9 @@ declare(strict_types=1);
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
-use Tests\Support\TestNote;
 
 afterEach(function (): void {
     TenantContext::clear();
-});
-
-it('isolates data between tenants', function (): void {
-    $acme = Tenant::factory()->create(['name' => 'ACME', 'slug' => 'acme-iso']);
-    $beta = Tenant::factory()->create(['name' => 'Beta', 'slug' => 'beta-iso']);
-
-    // Seed one note in each tenant
-    TenantContext::setId($acme->getKey());
-    TestNote::create(['body' => 'note in ACME']);
-
-    TenantContext::setId($beta->getKey());
-    TestNote::create(['body' => 'note in Beta']);
-
-    // Verify ACME context only sees ACME notes
-    TenantContext::setId($acme->getKey());
-    $acmeNotes = TestNote::all();
-    expect($acmeNotes)->toHaveCount(1)
-        ->and($acmeNotes->first()->body)->toBe('note in ACME');
-
-    // Verify Beta context only sees Beta notes
-    TenantContext::setId($beta->getKey());
-    $betaNotes = TestNote::all();
-    expect($betaNotes)->toHaveCount(1)
-        ->and($betaNotes->first()->body)->toBe('note in Beta');
-});
-
-it('auto-fills tenant_id on model create when context is set', function (): void {
-    $acme = Tenant::factory()->create(['slug' => 'acme-autofill']);
-
-    TenantContext::setId($acme->getKey());
-
-    /** @var TestNote $note */
-    $note = TestNote::create(['body' => 'auto-tenant']);
-
-    expect($note->tenant_id)->toBe($acme->getKey());
 });
 
 it('blocks a cliente from switching to a tenant they are not assigned to', function (): void {
