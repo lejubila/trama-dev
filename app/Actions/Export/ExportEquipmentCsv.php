@@ -45,10 +45,14 @@ class ExportEquipmentCsv
         $csv->insertOne(self::HEADER);
 
         Equipment::query()
-            ->when($siteId, fn ($q) => $q->whereHas('rack.room', fn ($qq) => $qq->where('site_id', $siteId)))
-            ->with('rack.room.site')
+            // A device sits in a room either through its rack or directly (no rack).
+            ->when($siteId, fn ($q) => $q->where(fn ($qq) => $qq
+                ->whereHas('room', fn ($qr) => $qr->where('site_id', $siteId))
+                ->orWhereHas('rack.room', fn ($qr) => $qr->where('site_id', $siteId))))
+            ->with('rack.room.site', 'room.site')
             ->lazy()
             ->each(function (Equipment $eq) use ($csv): void {
+                $room = $eq->rack?->room ?? $eq->room;
                 $csv->insertOne([
                     $eq->name,
                     $eq->type?->value ?? '',
@@ -57,8 +61,8 @@ class ExportEquipmentCsv
                     $eq->serial ?? '',
                     $eq->firmware ?? '',
                     $eq->asset_tag ?? '',
-                    $eq->rack?->room?->site?->name ?: '',
-                    $eq->rack?->room?->name ?: '',
+                    $room?->site?->name ?: '',
+                    $room?->name ?: '',
                     $eq->rack?->name ?: '',
                     $eq->mounted ? 'true' : 'false',
                     $eq->position_u_start !== null ? (string) $eq->position_u_start : '',

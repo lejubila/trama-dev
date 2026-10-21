@@ -97,3 +97,17 @@ it('allows importing a mounted equipment that overlaps another (multi-device per
     expect($import->status)->toBe('completed')
         ->and(Equipment::query()->where('name', 'STACKED')->exists())->toBeTrue();
 });
+
+it('places unmounted rows in their room and rejects invalid management IPs', function (): void {
+    TenantContext::setId(Tenant::factory()->create()->getKey());
+
+    $csv = "name,type,site,room,mounted,management_ip\n"
+        ."FW-LOOSE,firewall,Sede,Ufficio,false,10.0.0.1\n"
+        ."SW-BAD,switch,,,false,not-an-ip\n";
+
+    $import = app(ImportEquipmentCsv::class)->execute(writeFixtureCsv($csv), ignoreErrors: true);
+
+    expect($import->summary['created'])->toBe(1)
+        ->and($import->summary['errors'][0]['row'])->toBe(3)
+        ->and(Equipment::query()->where('name', 'FW-LOOSE')->first()->room->name)->toBe('Ufficio');
+});

@@ -59,3 +59,16 @@ it('isolates the CSV to the active tenant', function (): void {
     expect($content)->toContain('EQ-A-CSV')
         ->and($content)->not->toContain('EQ-B-CSV');
 });
+
+it('exports devices placed in a room without a rack, also when filtered by site', function (): void {
+    TenantContext::setId(Tenant::factory()->create()->getKey());
+    $site = Site::factory()->create(['name' => 'Sede Loose']);
+    $room = Room::factory()->create(['site_id' => $site->getKey(), 'name' => 'Ufficio']);
+    Equipment::factory()->create(['name' => 'FW-LOOSE', 'room_id' => $room->getKey(), 'rack_id' => null, 'mounted' => false]);
+    Equipment::factory()->create(['name' => 'ELSEWHERE']);
+
+    $content = Storage::disk('local')->get(app(ExportEquipmentCsv::class)->execute($site->getKey()));
+
+    expect($content)->toContain('FW-LOOSE', '"Sede Loose",Ufficio')
+        ->not->toContain('ELSEWHERE');
+});

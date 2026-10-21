@@ -15,11 +15,15 @@ use App\Services\RackPlacementService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use League\Csv\Reader;
 use Throwable;
 
 class ImportEquipmentCsv
 {
+    /** @var array<string, Site|Room|Rack> rows of one batch share their locations */
+    private array $locations = [];
+
     public function __construct(private readonly RackPlacementService $placement) {}
 
     /**
@@ -38,6 +42,7 @@ class ImportEquipmentCsv
         }
 
         $result = new ImportResult;
+        $this->locations = [];
 
         $import = Import::create([
             'tenant_id' => $tenantId,
@@ -69,7 +74,7 @@ class ImportEquipmentCsv
             });
 
             $import->update([
-                'status' => $result->hasErrors() && $ignoreErrors ? 'completed' : 'completed',
+                'status' => 'completed',
                 'summary' => $result->toArray(),
             ]);
         } catch (ImportFailedException) {
@@ -91,14 +96,15 @@ class ImportEquipmentCsv
 
         $validator = Validator::make($data, [
             'name' => 'required|string|max:150',
-            'type' => 'required|string|in:'.implode(',', array_column(EquipmentType::cases(), 'value')),
-            'status' => 'nullable|string|in:'.implode(',', array_column(EquipmentStatus::cases(), 'value')),
+            'type' => ['required', Rule::enum(EquipmentType::class)],
+            'status' => ['nullable', Rule::enum(EquipmentStatus::class)],
             'mounted' => 'nullable|in:true,false,1,0',
             'position_u_start' => 'nullable|integer|min:1|max:60',
             'position_u_height' => 'nullable|integer|min:1|max:60',
             'site' => 'nullable|string|max:150',
             'room' => 'nullable|string|max:150',
             'rack' => 'nullable|string|max:100',
+            'management_ip' => 'nullable|ip',
         ]);
 
         if ($validator->fails()) {
@@ -109,29 +115,19 @@ class ImportEquipmentCsv
 
         $mounted = in_array(strtolower((string) ($data['mounted'] ?? '')), ['true', '1'], true);
 
-        $rackId = null;
+        if ($mounted && ($data['site'] === '' || $data['room'] === '' || $data['rack'] === '')) {
+            $result->addError($rowNum, [__('equipment.import_err_mounted_location')]);
+
+            return;
+        }
+
+        // Unmounted rows with site+room sit loose in that room, as the export writes them.
+        $room = $data['site'] !== '' && $data['room'] !== '' ? $this->room($data['site'], $data['room']) : null;
+        $rack = null;
+
         if ($mounted) {
-            if (empty($data['site']) || empty($data['room']) || empty($data['rack'])) {
-                $result->addError($rowNum, [__('equipment.import_err_mounted_location')]);
+            $rack = $this->rack($room, $data['rack']);
 
-                return;
-            }
-
-            $site = Site::firstOrCreate(['name' => $data['site']]);
-            $room = Room::firstOrCreate(
-                ['site_id' => $site->getKey(), 'name' => $data['room']],
-                ['name' => $data['room'], 'site_id' => $site->getKey()],
-            );
-            $rack = Rack::firstOrCreate(
-                ['room_id' => $room->getKey(), 'name' => $data['rack']],
-                ['room_id' => $room->getKey(), 'name' => $data['rack']],
-            );
-            // firstOrCreate doesn't re-read DB defaults (height_units=42), so
-            // refresh the model so RackPlacementService sees the right height.
-            $rack->refresh();
-            $rackId = $rack->getKey();
-
-            // U-overlap check honoring placement service rules
             $startU = (int) ($data['position_u_start'] ?? 0);
             $heightU = (int) ($data['position_u_height'] ?? 1);
             if ($startU < 1 || ! $this->placement->canPlace($rack, $startU, $heightU)) {
@@ -142,7 +138,8 @@ class ImportEquipmentCsv
         }
 
         Equipment::create([
-            'rack_id' => $rackId,
+            'rack_id' => $rack?->getKey(),
+            'room_id' => $room?->getKey(),
             'name' => $data['name'],
             'type' => EquipmentType::from($data['type']),
             'vendor' => $data['vendor'] ?: null,
@@ -159,6 +156,20 @@ class ImportEquipmentCsv
         ]);
 
         $result->incrementCreated();
+    }
+
+    private function room(string $siteName, string $roomName): Room
+    {
+        $site = $this->locations['site:'.$siteName] ??= Site::firstOrCreate(['name' => $siteName]);
+
+        return $this->locations['room:'.$siteName."\0".$roomName] ??= Room::firstOrCreate(['site_id' => $site->getKey(), 'name' => $roomName]);
+    }
+
+    private function rack(Room $room, string $rackName): Rack
+    {
+        // refresh(): firstOrCreate doesn't re-read DB defaults (height_units=42)
+        // that RackPlacementService needs.
+        return $this->locations['rack:'.$room->getKey()."\0".$rackName] ??= Rack::firstOrCreate(['room_id' => $room->getKey(), 'name' => $rackName])->refresh();
     }
 
     /**
