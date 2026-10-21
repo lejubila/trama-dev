@@ -322,7 +322,7 @@ class Index extends Component
             }
             // Eredita la sede/locale dell'host per coerenza nei filtri.
             if ($this->roomId === null) {
-                $this->roomId = $host->room_id ?? $host->rack?->room_id;
+                $this->roomId = $host->locationRoomId();
             }
         } else {
             $this->hostEquipmentId = null;

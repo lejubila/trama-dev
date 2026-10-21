@@ -158,7 +158,7 @@ class EquipmentController extends Controller
         $data['position_u_height'] = null;
         // Same as the web form: the VM shows up under its host's room in filters.
         if ($current?->room_id === null && ! isset($data['room_id'])) {
-            $data['room_id'] = $host->room_id ?? $host->rack?->room_id;
+            $data['room_id'] = $host->locationRoomId();
         }
 
         return $data;

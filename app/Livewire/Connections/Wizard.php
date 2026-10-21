@@ -292,9 +292,7 @@ class Wizard extends Component
     {
         $fromEq = $from->equipment;
         $fromRack = $fromEq?->rack_id;
-        // Locale di riferimento: il locale del rack se il dispositivo è
-        // racked, altrimenti il suo room_id diretto.
-        $fromRoom = $fromEq?->rack?->room_id ?? $fromEq?->room_id;
+        $fromRoom = $fromEq?->locationRoomId();
 
         if ($from->isRear()) {
             $applyProximity = $fromEq?->type === EquipmentType::PatchPanel;

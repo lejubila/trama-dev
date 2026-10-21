@@ -296,10 +296,7 @@ class DocumentPdfBuilder
         if ($section === null || empty($section['enabled'])) {
             return null;
         }
-        $ids = array_values(array_filter(
-            array_map('intval', $section['ids'] ?? []),
-            fn (int $id) => $id > 0,
-        ));
+        $ids = $this->positiveIds($section['ids'] ?? []);
         if ($ids === []) {
             return collect();
         }
@@ -319,14 +316,8 @@ class DocumentPdfBuilder
         if ($section === null || empty($section['enabled'])) {
             return null;
         }
-        $remoteIds = array_values(array_filter(
-            array_map('intval', $section['remote_ids'] ?? []),
-            fn (int $id) => $id > 0,
-        ));
-        $siteIds = array_values(array_filter(
-            array_map('intval', $section['site_ids'] ?? []),
-            fn (int $id) => $id > 0,
-        ));
+        $remoteIds = $this->positiveIds($section['remote_ids'] ?? []);
+        $siteIds = $this->positiveIds($section['site_ids'] ?? []);
 
         $remote = $remoteIds === []
             ? collect()
@@ -367,10 +358,7 @@ class DocumentPdfBuilder
             return collect();
         }
 
-        $ids = array_values(array_filter(
-            array_map(fn ($i) => (int) ($i['id'] ?? 0), $items),
-            fn (int $id) => $id > 0,
-        ));
+        $ids = $this->positiveIds(array_column($items, 'id'));
         $byId = TopologySnapshot::query()->whereIn('id', $ids)->get()->keyBy('id');
 
         return collect($items)
@@ -390,5 +378,16 @@ class DocumentPdfBuilder
             })
             ->filter()
             ->values();
+    }
+
+    /**
+     * Ids stored in the document JSON, cast and stripped of junk.
+     *
+     * @param  array<int, mixed>  $raw
+     * @return list<int>
+     */
+    private function positiveIds(array $raw): array
+    {
+        return array_values(array_filter(array_map('intval', $raw), fn (int $id) => $id > 0));
     }
 }

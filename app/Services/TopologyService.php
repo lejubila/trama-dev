@@ -862,27 +862,32 @@ class TopologyService
 
     private function edgeData(Connection $c): array
     {
-        $fromName = (string) ($c->fromInterface?->name ?? '');
-        $toName = (string) ($c->toInterface?->name ?? '');
-        $label = (string) ($c->cable_label ?? '');
+        return $this->cableEdge($c, 'cn-'.$c->id, $c->fromInterface, $c->toInterface, (string) ($c->cable_label ?? ''));
+    }
 
-        $idealLength = (int) max(
-            80,
-            6.5 * (strlen($fromName) + strlen($label) + strlen($toName)) + 60,
-        );
+    /**
+     * Edge payload for a cable drawn between two (possibly resolved) endpoints.
+     * The ideal length grows with the labels so they don't overlap the nodes.
+     *
+     * @return array<string, mixed>
+     */
+    private function cableEdge(Connection $c, string $id, ?NetworkInterface $from, ?NetworkInterface $to, string $label): array
+    {
+        $fromName = (string) ($from?->name ?? '');
+        $toName = (string) ($to?->name ?? '');
 
         $data = [
-            'id' => 'cn-'.$c->id,
-            'source' => 'eq-'.$c->fromInterface?->equipment_id,
-            'target' => 'eq-'.$c->toInterface?->equipment_id,
+            'id' => $id,
+            'source' => 'eq-'.$from?->equipment_id,
+            'target' => 'eq-'.$to?->equipment_id,
             'media' => $c->fromInterface?->media?->value,
             'speed' => $c->fromInterface?->speed_mbps,
             'cableType' => $c->cable_type,
             'color' => $c->color,
             'status' => $c->status?->value,
-            'idealLength' => $idealLength,
-            'fromIfaceId' => $c->from_interface_id,
-            'toIfaceId' => $c->to_interface_id,
+            'idealLength' => (int) max(80, 6.5 * (strlen($fromName) + strlen($label) + strlen($toName)) + 60),
+            'fromIfaceId' => $from?->id,
+            'toIfaceId' => $to?->id,
         ];
         if ($label !== '') {
             $data['label'] = $label;
@@ -986,35 +991,7 @@ class TopologyService
             $transit = array_merge(array_reverse($transitA), $transitB);
             $viaLabel = $isPassthrough ? 'via '.implode(' · ', $transit) : (string) ($c->cable_label ?? '');
 
-            $fromName = (string) ($termA->name ?? '');
-            $toName = (string) ($termB->name ?? '');
-            $idealLength = (int) max(
-                80,
-                6.5 * (strlen($fromName) + strlen($viaLabel) + strlen($toName)) + 60,
-            );
-
-            $data = [
-                'id' => ($isPassthrough ? 'cn-pt-' : 'cn-').$c->id,
-                'source' => 'eq-'.$eqA,
-                'target' => 'eq-'.$eqB,
-                'media' => $c->fromInterface?->media?->value,
-                'speed' => $c->fromInterface?->speed_mbps,
-                'cableType' => $c->cable_type,
-                'color' => $c->color,
-                'status' => $c->status?->value,
-                'idealLength' => $idealLength,
-                'fromIfaceId' => $termA?->id,
-                'toIfaceId' => $termB?->id,
-            ];
-            if ($viaLabel !== '') {
-                $data['label'] = $viaLabel;
-            }
-            if ($fromName !== '') {
-                $data['fromIface'] = $fromName;
-            }
-            if ($toName !== '') {
-                $data['toIface'] = $toName;
-            }
+            $data = $this->cableEdge($c, ($isPassthrough ? 'cn-pt-' : 'cn-').$c->id, $termA, $termB, $viaLabel);
             if ($isPassthrough) {
                 $data['passthrough'] = true;
                 $data['transit'] = $transit;

@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Enums\EquipmentStatus;
 use App\Enums\EquipmentType;
+use App\Enums\HypervisorVendor;
 use App\Models\Equipment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -97,9 +98,9 @@ class EquipmentFactory extends Factory
         };
     }
 
-    public function hypervisor(?\App\Enums\HypervisorVendor $vendor = null): self
+    public function hypervisor(?HypervisorVendor $vendor = null): self
     {
-        $vendor ??= \App\Enums\HypervisorVendor::Proxmox;
+        $vendor ??= HypervisorVendor::Proxmox;
 
         return $this->state(fn (array $attrs) => [
             'type' => EquipmentType::Hypervisor,
@@ -117,7 +118,7 @@ class EquipmentFactory extends Factory
             'tenant_id' => $host->tenant_id,
             'rack_id' => null,
             'mounted' => false,
-            'room_id' => $host->room_id ?? $host->rack?->room_id,
+            'room_id' => $host->locationRoomId(),
             'custom_fields' => [
                 'vcpu' => $this->faker->numberBetween(1, 16),
                 'ram_mb' => $this->faker->randomElement([1024, 2048, 4096, 8192, 16384]),

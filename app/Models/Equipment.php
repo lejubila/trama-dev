@@ -118,6 +118,14 @@ class Equipment extends Model implements AuditableContract
         return $this->morphToMany(Tag::class, 'taggable');
     }
 
+    /**
+     * Room the device is in: its rack's room when racked, else the direct one.
+     */
+    public function locationRoomId(): ?int
+    {
+        return $this->rack?->room_id ?? $this->room_id;
+    }
+
     public function isVirtualMachine(): bool
     {
         return $this->type === EquipmentType::VirtualMachine;
