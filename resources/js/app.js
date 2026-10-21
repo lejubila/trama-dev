@@ -1,5 +1,3 @@
-import './bootstrap';
-
 import demoCountdown from './alpine/demo-countdown';
 import guideStore from './guide/guide';
 import rackDnD from './alpine/rack-dnd';
