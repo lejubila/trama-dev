@@ -19,7 +19,6 @@ class InterfaceRules
     public static function rules(): array
     {
         return [
-            'equipment_id' => 'required|integer|exists:equipment,id',
             'name' => 'required|string|max:80',
             'type' => ['required', Rule::enum(InterfaceType::class)],
             'media' => ['required', Rule::enum(InterfaceMedia::class)],

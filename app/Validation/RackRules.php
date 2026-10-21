@@ -12,7 +12,6 @@ class RackRules
     public static function rules(): array
     {
         return [
-            'room_id' => 'required|integer|exists:rooms,id',
             'name' => 'required|string|max:100',
             'height_units' => 'required|integer|min:1|max:60',
             'width_mm' => 'nullable|integer|min:100|max:1500',

@@ -6,6 +6,7 @@ namespace App\Validation;
 
 use App\Enums\EquipmentStatus;
 use App\Enums\EquipmentType;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Validation\Rule;
 
 class EquipmentRules
@@ -18,7 +19,8 @@ class EquipmentRules
         return [
             'name' => 'required|string|max:150',
             'type' => ['required', Rule::enum(EquipmentType::class)],
-            'rack_id' => 'nullable|integer|exists:racks,id',
+            // exists: bypasses the tenant global scope, so it is constrained by hand.
+            'rack_id' => ['nullable', 'integer', Rule::exists('racks', 'id')->where('tenant_id', TenantContext::id())->whereNull('deleted_at')],
             'host_equipment_id' => 'nullable|integer',
             'room_id' => 'nullable|integer',
             'vendor' => 'nullable|string|max:80',
